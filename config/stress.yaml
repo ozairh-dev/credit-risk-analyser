@@ -1,0 +1,15 @@
+# All values here are ASSUMED and go in the assumption register.
+ebitda_mode: constant_margin        # or operating_leverage
+fixed_cost_share: 0.3               # used only in operating_leverage mode
+floating_share: 1.0                 # share of debt that reprices under a rate shock
+default_tax_rate: 0.21              # used when pretax income <= 0
+new_debt_rate: null                 # null = use current interest_expense / total_debt
+
+presets:
+  base:     {revenue_shock: 0.00, margin_shock: 0.00, rate_shock_bps: 0,   additional_debt: 0, capex_shock: 0.0}
+  moderate: {revenue_shock: -0.10, margin_shock: 0.02, rate_shock_bps: 100, additional_debt: 0, capex_shock: 0.0}
+  severe:   {revenue_shock: -0.20, margin_shock: 0.05, rate_shock_bps: 200, additional_debt: 0, capex_shock: 0.0}
+
+sensitivity_grid:
+  revenue_shock: [0.0, -0.05, -0.10, -0.15, -0.20]
+  margin_shock:  [0.0, 0.01, 0.02, 0.03, 0.05]

@@ -1,0 +1,35 @@
+[project]
+name = "credit-risk"
+version = "0.1.0"
+description = "Credit risk analysis for US-listed non-financial companies, built on SEC XBRL data"
+requires-python = ">=3.11"
+dependencies = [
+    "requests>=2.31",
+    "pydantic>=2.6",
+    "sqlalchemy>=2.0",
+    "pandas>=2.2",
+    "pyyaml>=6.0",
+    "typer>=0.12",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-cov>=5.0",
+    "requests-mock>=1.12",
+]
+
+[project.scripts]
+credit-risk = "credit_risk.cli:app"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+addopts = "-q"

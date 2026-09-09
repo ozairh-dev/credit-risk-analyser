@@ -1,0 +1,30 @@
+# Cached SEC downloads and the local database — never committed
+data/raw/
+data/*.db
+*.db
+
+# Generated analyst outputs
+evidence/
+memos/
+exports/
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+htmlcov/
+*.egg-info/
+build/
+dist/
+
+# Environments and secrets
+.venv/
+venv/
+.env
+.env.local
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store

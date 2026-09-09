@@ -1,0 +1,62 @@
+# Project assumptions. See docs/credit-methodology.md "Calibration" before changing.
+weights:
+  leverage: 25
+  coverage: 20
+  liquidity: 20
+  cash_flow: 20
+  business_performance: 15
+
+max_grade_with_missing_category: 3
+
+grades:            # score lower bound -> grade
+  85: 1
+  70: 2
+  55: 3
+  40: 4
+  25: 5
+  0: 6
+
+bands:
+  net_debt_to_ebitda:      # lower is better; net cash scores 10
+    direction: lower_better
+    edges: [1.0, 2.0, 3.0, 4.0, 5.0]
+    points: [10, 8, 6, 4, 2, 0]
+  ebit_interest_cover:
+    direction: higher_better
+    edges: [1.0, 2.0, 3.0, 5.0, 8.0]
+    points: [0, 2, 4, 6, 8, 10]
+  debt_to_capital:
+    direction: lower_better
+    edges: [0.2, 0.35, 0.5, 0.65, 0.8]
+    points: [10, 8, 6, 4, 2, 0]
+  current_ratio:
+    direction: higher_better
+    edges: [0.8, 1.0, 1.2, 1.5, 2.0]
+    points: [0, 2, 4, 6, 8, 10]
+  cash_to_current_liabilities:
+    direction: higher_better
+    edges: [0.1, 0.2, 0.35, 0.5, 0.75]
+    points: [0, 2, 4, 6, 8, 10]
+  fcf_to_debt:
+    direction: higher_better
+    edges: [0.0, 0.05, 0.10, 0.20, 0.35]
+    points: [0, 2, 4, 6, 8, 10]
+  fcf_margin:
+    direction: higher_better
+    edges: [0.0, 0.03, 0.06, 0.10, 0.15]
+    points: [0, 2, 4, 6, 8, 10]
+  revenue_growth:
+    direction: higher_better
+    edges: [-0.10, -0.03, 0.0, 0.05, 0.10]
+    points: [0, 2, 4, 6, 8, 10]
+
+trend_materiality:
+  net_debt_to_ebitda: 0.5
+  ebit_interest_cover: 1.0
+  ebitda_margin: 0.02
+  revenue_growth_drop: 0.05
+  fcf: 0.20
+  cash_to_current_liabilities: 0.1
+  total_debt: 0.15
+
+warning_escalation_count: 3
