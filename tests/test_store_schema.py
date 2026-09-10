@@ -11,6 +11,7 @@ from pathlib import Path
 
 import pytest
 
+from credit_risk import config
 from credit_risk.normalise import map_concepts, select_annual_facts
 from credit_risk.store import db, queries, schema
 from credit_risk.store.fingerprint import (
@@ -21,6 +22,10 @@ from credit_risk.store.fingerprint import (
 from credit_risk.store.writer import store_company_data
 
 FIXTURE_PATH = Path(__file__).parent / "fixtures" / "companyfacts_minimal.json"
+# concept slots the fixture produces: every tag_map concept x its 2 fiscal years.
+# Derived, not hard-coded — adding a concept to config/tag_map.yaml legitimately
+# grows it (62 -> 68 when the lease-inclusive concepts were added, D27).
+SLOTS = len(config.tag_map()) * 2
 CIK = 999999
 A22 = "0000999999-23-000001"
 A23 = "0000999999-24-000001"
@@ -357,9 +362,9 @@ def test_fixture_row_counts(stored):
     assert count(stored, "facts", "status='CURRENT'") == 7
     assert count(stored, "facts", "status='SUPERSEDED'") == 1
     assert count(stored, "facts", "status='DUPLICATE'") == 1
-    assert count(stored, "concepts") == 62
+    assert count(stored, "concepts") == SLOTS
     assert count(stored, "concepts", "data_status='REPORTED'") == 7
-    assert count(stored, "concepts", "data_status='UNAVAILABLE'") == 55
+    assert count(stored, "concepts", "data_status='UNAVAILABLE'") == SLOTS - 7
     assert count(stored, "data_quality_events") == 0
 
 
@@ -423,7 +428,7 @@ def test_fallback_rank_recorded(stored):
 
 def test_q1_concepts_with_provenance_shape(stored):
     rows = queries.concepts_with_provenance(stored, CIK)
-    assert len(rows) == 62
+    assert len(rows) == SLOTS
     assert set(rows[0].keys()) == {
         "concept", "period_end", "value", "unit", "data_status",
         "source_tag", "label", "reason_code", "accession", "form", "filed",
@@ -438,9 +443,10 @@ def test_q2_data_quality_summary_shape(stored):
     rows = queries.data_quality_by_period(stored, CIK)
     summary = {r["period_end"]: (r["reported"], r["missing"], r["fallbacks_used"])
                for r in rows}
+    per_period = len(config.tag_map())
     assert summary == {
-        "2022-12-31": (3, 28, 0),     # revenue, net_income, cash
-        "2023-12-31": (4, 27, 1),     # + cost_of_revenue via the fallback tag
+        "2022-12-31": (3, per_period - 3, 0),   # revenue, net_income, cash
+        "2023-12-31": (4, per_period - 4, 1),   # + cost_of_revenue via the fallback tag
     }
     assert queries.event_counts(stored, CIK) == []
 
@@ -491,8 +497,8 @@ def test_restoring_unchanged_data_is_idempotent(conn):
     store_company_data(conn, CIK, raw["entityName"], selection, mapping)
     store_company_data(conn, CIK, raw["entityName"], selection, mapping)
     assert count(conn, "facts") == 9
-    assert count(conn, "concepts") == 62
-    assert count(conn, "concepts", "status='CURRENT'") == 62
+    assert count(conn, "concepts") == SLOTS
+    assert count(conn, "concepts", "status='CURRENT'") == SLOTS
     assert count(conn, "concepts", "status='SUPERSEDED'") == 0
 
 
@@ -507,11 +513,11 @@ def test_restoring_under_changed_config_writes_history(conn):
     store_company_data(conn, CIK, raw["entityName"], selection, mapping,
                        fingerprint="fp-leases-off")
     assert count(conn, "facts") == 9                     # reported facts unchanged
-    assert count(conn, "concepts") == 124
-    assert count(conn, "concepts", "status='CURRENT'") == 62
-    assert count(conn, "concepts", "status='SUPERSEDED'") == 62
+    assert count(conn, "concepts") == SLOTS * 2
+    assert count(conn, "concepts", "status='CURRENT'") == SLOTS
+    assert count(conn, "concepts", "status='SUPERSEDED'") == SLOTS
     assert count(conn, "concepts",
-                 "status='CURRENT' AND config_fingerprint='fp-leases-off'") == 62
+                 "status='CURRENT' AND config_fingerprint='fp-leases-off'") == SLOTS
 
 
 def test_cross_fetch_restatement_raises_rather_than_guessing(conn):

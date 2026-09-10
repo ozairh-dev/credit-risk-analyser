@@ -11,6 +11,7 @@ from pathlib import Path
 
 import pytest
 
+from credit_risk import config
 from credit_risk.normalise import map_concepts, quality, select_annual_facts
 from credit_risk.normalise.selection import SelectedFact, SelectionResult
 
@@ -67,9 +68,17 @@ def test_no_candidate_concept_unavailable(mapped):
 
 
 def test_completeness_counts(mapped):
-    """31 concepts x 2 fiscal years = 62 slots; the fixture resolves exactly 7."""
+    """Every concept x every fiscal year is a slot; the fixture resolves exactly 7.
+
+    The slot total is derived from the tag map rather than hard-coded: adding a
+    concept to config/tag_map.yaml legitimately grows it (it grew from 62 to 68
+    when the lease-inclusive concepts were added, D27). The load-bearing
+    assertion is that exactly 7 resolve and which they are — see
+    test_selected_current_rows_match_expected_doc and the fallback test.
+    """
+    slots = len(config.tag_map()) * 2          # 2 fiscal years in the fixture
     assert len(mapped.concepts) == 7
-    assert len(mapped.unavailable) == 55
+    assert len(mapped.unavailable) == slots - 7
     assert mapped.warnings == []
 
 

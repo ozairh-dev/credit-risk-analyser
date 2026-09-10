@@ -21,6 +21,17 @@ short_term_debt: [ShortTermBorrowings, CommercialPaper, DebtCurrent]
 current_ltd: [LongTermDebtCurrent]
 noncurrent_ltd: [LongTermDebtNoncurrent]
 total_ltd_aggregate: [LongTermDebt]
+# Lease-inclusive LTD (DECISIONS D27). Some filers report long-term debt only bundled
+# with capital/finance lease obligations. These are DISTINCT concepts, not aliases of
+# current_ltd / noncurrent_ltd: on this branch the lease components are already inside
+# the figure and must not be added again.
+ltd_incl_leases_current: [LongTermDebtAndCapitalLeaseObligationsCurrent]
+ltd_incl_leases_noncurrent: [LongTermDebtAndCapitalLeaseObligations]
+# CROSS-CHECK ONLY — never a value source (D27). DebtAndCapitalLeaseObligations is used
+# solely to reconcile the two concepts above. Ford reports it as 152,577M for 2008-2017
+# and then 600M for 2018-2020 on the same tag; treating it as a value would reintroduce
+# exactly the error D25 retired Ford for.
+ltd_incl_leases_aggregate: [DebtAndCapitalLeaseObligations]
 finance_lease_liab_current: [FinanceLeaseLiabilityCurrent]
 finance_lease_liab_noncurrent: [FinanceLeaseLiabilityNoncurrent]
 operating_lease_liab_current: [OperatingLeaseLiabilityCurrent]

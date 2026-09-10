@@ -346,6 +346,80 @@ computes at all, so it must join D18's fingerprint allowlist in `store/fingerpri
 the composites are wired. It is deliberately absent from that allowlist for now because
 nothing reads it yet — noted in the YAML comment and here so it is not missed.
 
+## D27 — Lease-inclusive LTD is its own branch; plain LTD wins; leases become non-separable
+Decision (owner-approved 2026-09-10): filers who report long-term debt only bundled with
+capital/finance lease obligations get two new **distinct** concepts —
+`ltd_incl_leases_current` and `ltd_incl_leases_noncurrent` (not aliases of
+`current_ltd` / `noncurrent_ltd`) — and a third `total_ltd_aggregate`-style
+branch in `total_debt`:
+
+```
+total_debt = ltd_incl_leases_current + ltd_incl_leases_noncurrent + short_term_debt
+method     = debt_from_lease_inclusive_ltd
+```
+
+Lease components are **not** added on this branch; they are already inside. Four
+specifics:
+
+**1. Only the current/noncurrent pair is a value source.**
+`DebtAndCapitalLeaseObligations` is mapped as `ltd_incl_leases_aggregate` for
+**cross-checking only, never as a value**. Ford reports that single tag as 152,577M for
+2008-2017 and then 600M / 600M / 471M for 2018-2020; using it as a value would
+reintroduce precisely the error D25 retired Ford for, through a new door. Verified after
+implementing: Ford resolves the aggregate in 13 periods and the pair in **zero**, so the
+restriction keeps Ford out of the branch entirely. LUMN resolves the pair in 17 periods,
+KHC in 12.
+
+**2. Precedence: the plain LTD path wins when both resolve.** Three reasons, and **the
+third is decisive**: (a) the plain concepts are debt alone, so leases stay separable and
+`total_debt_ex_leases` stays computable; (b) the plain path can be policed by D26's
+reconciliation, which this branch often cannot; and (c) **it is the only ordering that
+does not propagate LUMN's uncorrected 2009 filer error into a 2x overstatement.** LUMN's
+FY2010 10-K tagged `LongTermDebtAndCapitalLeaseObligationsCurrent` with the *same* value
+as the noncurrent tag (7,254M for 2009, 7,316M for 2010). The FY2011 filing corrected
+2010 to 12M — which D15 supersession already picks up — but **2009 was never corrected**,
+so summing the pair there yields 14,508M against a true ~7,754M. Under plain-wins, 2009
+and 2010 instead take the plain path, hit D26's mismatch check (93.6% and 99.8%), and stay
+`UNAVAILABLE`. Stated explicitly: **LUMN gains 15 usable periods, not 17, and 2009/2010
+remaining UNAVAILABLE is the correct outcome, not a shortfall** — those two periods'
+inputs are self-contradictory and no honest number can be produced from them.
+
+**3. `total_debt_ex_leases` → `UNAVAILABLE`, `LEASES_NOT_SEPARABLE`.** Never approximated
+by subtracting the standalone lease tags: nothing guarantees those cover the same
+obligations as the bundled figure (LUMN 2019's standalone lease tags total 2,212M, but
+that is not demonstrably the lease content of the bundled 34,694M), so the subtraction
+would be a fabricated number — rule 3.
+
+**4. D26's consistency check extends to this branch.** Where `ltd_incl_leases_aggregate`
+resolves, `ltd_incl_leases_current + ltd_incl_leases_noncurrent` is reconciled against it
+at the same `component_aggregate_tolerance`; beyond it, `COMPONENT_AGGREGATE_MISMATCH`.
+Reason: leaving this branch unchecked would police the better-validated path while
+trusting the weaker one, which is backwards. And the cross-check-not-value-source
+distinction is the same one that made D26 work — **comparing against a second source is
+reliable, deriving a value from it is not.**
+
+`include_operating_leases` is **inoperative** on this branch: the composition is fixed by
+what the filer reported and there is no separable lease figure to include or omit. A row
+on this branch still records the config fingerprint in effect when written (D18),
+including a lease toggle that had no effect on it. That stays consistent — the
+fingerprint's contract is "the settings that produced this row", not "the settings that
+mattered" — but it means a fingerprint change must not be read as implying a
+lease-inclusive row's value should have moved. The `LEASES_NOT_SEPARABLE` record on
+`total_debt_ex_leases` is what makes that visible in the data. No allowlist change needed.
+
+Alternatives: map the family onto the existing LTD concepts (double-counts leases, breaks
+D6's toggle and `total_debt_ex_leases` — the certain form of the disjointness problem
+that began this investigation); lease-inclusive wins on conflict (emits LUMN 2009's
+14,508M); leave the branch unchecked (rejected per point 4); map the combined total as a
+value source (rejected per point 1).
+
+Consequences: LUMN 0 -> 15 usable `total_debt` periods, KHC 0 -> 12. CCL, JNJ and F are
+untouched — the branch never fires for them. `config/tag_map.yaml` grows from 31 to 34
+concepts, which grows the fixture's concept-slot count from 62 to 68; six tests that
+asserted those totals now derive them from the tag map, since a concept addition
+legitimately changes them while the load-bearing assertion (exactly 7 resolve, and which
+7) stays exact. Composites themselves are Task 9.
+
 ## D24 — Rule 5 classifies units three ways; FOREIGN_UNIT is for currencies only
 Decision (owner call, 2026-09-10, after measuring the three cached companies): rule 5
 splits units into monetary-USD (selected), monetary-non-USD (`UNAVAILABLE`,

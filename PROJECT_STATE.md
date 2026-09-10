@@ -108,11 +108,18 @@ the company's entire filing history first (DECISIONS D25) — not assumed from f
 |---|---|---|---|
 | CCL | 815097 | leveraged borrower | all five of total_debt / ebitda / interest_expense / cfo / capex resolve for 18 periods, **15 consecutive after D26** (2011-11-30 -> 2025-11-30; 2010-11-30 is a 7.9% component/aggregate mismatch); no config changes needed; debt/assets 22-69% |
 | JNJ | 200406 | strong / low-leverage anchor | total_debt 18/19 periods, but `ebit` only 2010-2014, so EBITDA leverage is limited to those years |
-| LUMN | 18926 | weak / deteriorating | ebitda 18/18, but **total_debt now 0/18** — its only two periods were component/aggregate mismatches of 94% and 100% and are UNAVAILABLE under D26; the real debt sits under the lease-bundled `LongTermDebtAndCapitalLeaseObligations` family (open methodology question) |
-| F | 37996 | **retained as a negative fixture, not a demonstration case** | no period produces both total_debt and ebitda, so no leverage metric can ever compute. Kept deliberately: it is a genuine test that the tool refuses to compute rather than inventing a number |
+| LUMN | 18926 | weak / deteriorating | ebitda 18/18; **total_debt 15/18 under D27's lease-inclusive branch** (2011-2025). 2009/2010 stay UNAVAILABLE — an uncorrected filer tagging error makes their inputs self-contradictory, and refusing them is correct (D27) |
 
 Still needed for Phase 10's four documented cases: one that looks weak at base but
 survives Severe stress. CCL's 2020-2022 distress and recovery may serve.
+
+**Cached fixtures that are NOT demonstration companies** — they do not count toward the
+v1 universe of 25-50 names and are not reported on:
+
+| Ticker | CIK | Why it is cached |
+|---|---|---|
+| F | 37996 | negative fixture: no period produces both total_debt and ebitda, so no leverage metric can ever compute. Retained deliberately as a test that the tool refuses rather than inventing a number (D25). Also the reason D27's aggregate is cross-check-only — F resolves that tag in 13 periods and the pair in zero |
+| KHC | 1637459 | second independent witness for D27's lease-inclusive branch (12 periods, no conflicts). A rule with one witness is worth less than one with two, so LUMN alone was not enough |
 
 ## Known dependencies (not open questions)
 - **SIC code has no source in v1 data.** companyfacts JSON does not carry it, and

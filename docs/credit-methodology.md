@@ -24,6 +24,10 @@ total_debt = short_term_debt + current_ltd + noncurrent_ltd + finance_lease_liab
            + operating_lease_liab            (if config include_operating_leases: true)
 ```
 
+That formula is the **plain-components** composition. Two other branches exist and are
+defined below: `debt_from_aggregate` and `debt_from_lease_inclusive_ltd`. Exactly one
+branch applies per period, and the method is always recorded.
+
 - Default `include_operating_leases: true`. Post-ASC 842 these are real fixed obligations;
   credit analysts and rating agencies treat them as debt-like. Always show
   `total_debt_ex_leases` alongside so the effect is visible.
@@ -49,6 +53,37 @@ total_debt = short_term_debt + current_ltd + noncurrent_ltd + finance_lease_liab
     debt; emitting one of them with a warning attached produces a plausible-looking
     wrong number with full provenance, which rule 9 forbids. Record both figures on the
     UNAVAILABLE record so the disagreement is reviewable.
+- **Lease-inclusive LTD branch** (DECISIONS D27). Some filers report long-term debt only
+  bundled with capital/finance lease obligations, mapped to `ltd_incl_leases_current` and
+  `ltd_incl_leases_noncurrent`. When those resolve:
+
+  ```
+  total_debt = ltd_incl_leases_current + ltd_incl_leases_noncurrent + short_term_debt
+  method     = debt_from_lease_inclusive_ltd
+  ```
+
+  Lease components are **not** added on this branch — they are already inside the bundled
+  figures, and adding them would double-count.
+  - **Precedence: the plain path wins.** If `current_ltd`, `noncurrent_ltd` or
+    `total_ltd_aggregate` resolves for the same period, this branch is **not** taken. The
+    plain concepts are debt alone, so they keep leases separable; and the plain path can
+    be policed by the reconciliation rule above, which this branch often cannot.
+  - **Consistency check, same tolerance.** Where `ltd_incl_leases_aggregate` resolves,
+    compare it against `ltd_incl_leases_current + ltd_incl_leases_noncurrent`; beyond
+    `component_aggregate_tolerance` → `UNAVAILABLE`,
+    `reason_code = COMPONENT_AGGREGATE_MISMATCH`. `ltd_incl_leases_aggregate` is a
+    **cross-check only and never a value source** — comparing against a second source is
+    reliable, deriving a value from it is not.
+  - `total_debt_ex_leases` → `UNAVAILABLE`, `reason_code = LEASES_NOT_SEPARABLE`. It is
+    **never** approximated by subtracting the standalone lease tags: nothing guarantees
+    those cover the same obligations as the bundled figure, so the subtraction would be a
+    fabricated number.
+  - `include_operating_leases` is **inoperative** on this branch — the composition is
+    fixed by what the filer reported, and there is no separable lease figure to include or
+    omit. A row on this branch still records the config fingerprint in effect when it was
+    written (D18), including a lease toggle that had no effect on it; the
+    `LEASES_NOT_SEPARABLE` record on `total_debt_ex_leases` is what makes that visible,
+    so a fingerprint change must not be read as implying the value should have moved.
 - If nothing is present → `UNAVAILABLE`, `reason_code = NO_DEBT_DATA`. Do **not** assume
   zero debt.
 
