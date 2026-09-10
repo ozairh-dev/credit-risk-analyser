@@ -173,3 +173,68 @@ Consequences: each call has a test; the disagreement warning will fire routinely
 equity on companies with noncontrolling interests (StockholdersEquity vs the
 ...IncludingPortionAttributableToNoncontrollingInterest candidate differ by NCI) — that
 is by design, the config ordering prefers parent-only equity.
+
+## D18 — concepts and metrics are append-with-history, fingerprinted by config
+Decision (owner amendment, 2026-09-10): concepts and metrics are not upserted on
+identity. A partial unique index keeps one CURRENT row per identity (the pattern already
+proven in facts) and each row records a `config_fingerprint`.
+Reason: CALCULATED values are not config-independent — total_debt varies with
+include_operating_leases (D6) and net_debt with include_st_investments — so a config
+change silently alters every derived value while the underlying facts are unchanged.
+Upsert would destroy the evidence that a number moved for a settings reason rather than
+a filing reason: the same silent-provenance-loss D15 exists to prevent.
+What the fingerprint covers: only the toggles that change a computed value
+(include_operating_leases, include_st_investments — the allowlist in
+store/fingerprint.py), never the whole config file. Band edges, weights and grade
+boundaries are deliberately excluded: they change *scores*, not concept or metric
+values, and scores keep their own history. The composites config file does not exist
+yet (Task 9 creates it); until then the methodology's documented defaults are
+fingerprinted, so the value is stable from the first stored row.
+Alternatives: upsert (rejected above); fingerprint the whole config (every unrelated
+threshold edit would orphan history).
+Consequences: two implementation calls follow from it and are tested.
+(a) No `superseded_by` pointer on concepts/metrics: the replacing row is the CURRENT row
+with the same identity, and a pointer would need the CHECK-plus-partial-index pair to be
+satisfiable in an impossible order. Supersession here is recompute history, not the
+filing relationship facts model.
+(b) Re-storing an IDENTICAL row under an identical fingerprint is a no-op, not a new
+history entry — history exists to record that a value moved, and nothing moved. Facts
+are likewise idempotent on (cik, tag, period_end, accession); a *changed* value for an
+identity already stored CURRENT is a cross-fetch restatement, which nothing drives yet
+and which raises rather than guessing (CLAUDE.md rule 9).
+
+## D19 — No index on fy, deliberately
+Decision: there is no index on `fy` anywhere, and "company + fiscal year" lookups go
+through `(cik, period_end)` instead. A test asserts no index covers `fy`.
+Reason: period identity is (concept, period_end) because SEC stamps `fy` with the
+filing's fiscal year, not the fact's period (the fy-stamp trap). A fast fy index would
+*invite* the exact query this schema exists to prevent; leaving the fy-keyed query
+unsupported by any index is stronger protection than documenting against it.
+Alternatives: add the fy index as originally requested in the Task 8 brief.
+Consequences: code grouping by fy gets no index support and, if it tries to write two
+periods under one identity, collides with a unique constraint loudly.
+
+## D20 — Stress tables deferred to Phase 8
+Decision (owner amendment, 2026-09-10): stress_runs, stress_results and stress_drivers
+are not created in Task 8. scores, score_components, warnings and warning_evidence are,
+as designed.
+Reason: the stress engine still has unresolved config — new_debt_rate's fallback is an
+open TODO in config/stress.yaml and fixed_cost_share is an untested assumption — so the
+tables' shape is not yet determined by anything real. Phase 6-7 is fully specified in
+the methodology, so its tables are.
+Alternatives: build all three now from the methodology's stress section.
+Consequences: Phase 8 adds them when it knows what it needs; no columns exist "for
+later".
+
+## D21 — filings.form is unconstrained; annual-only is a selection rule
+Decision: `filings.form` has no CHECK restricting it to 10-K/10-K/A, although the
+approved design had one.
+Reason: the facts table also stores UNAVAILABLE rejection records, and a FOREIGN_UNIT
+rejection is raised before rule 1 filtering — so a rejected fact can legitimately come
+from a 10-Q, whose filing row must then be storable. Annual-only is a selection rule
+(rule 1, enforced and tested in normalise/selection.py), not a storage invariant;
+putting it in both places made the storage layer reject valid audit records.
+Alternatives: apply rule 1 before rule 5 (changes approved Task 6 semantics); make
+facts.accession nullable for UNAVAILABLE rows (two deviations instead of one).
+Consequences: UnavailableFact now carries form/filed so every referenced filing can be
+stored completely.

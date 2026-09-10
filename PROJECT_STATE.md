@@ -3,7 +3,8 @@
 _Update at the end of every working session._
 
 ## Phase
-Phases 1-2 complete. Phase 3 in progress — Tasks 5-7 done, Task 8 (SQLite schema) next.
+Phases 1-2 complete. Phase 3 complete — Tasks 5-8 done. Phase 4 (integrity + data
+quality) / Task 9 (composite concepts) next.
 
 ## Completed
 - Specification: CLAUDE.md, docs/, DECISIONS.md D1-D10
@@ -80,10 +81,37 @@ Phases 1-2 complete. Phase 3 in progress — Tasks 5-7 done, Task 8 (SQLite sche
   disagreement warnings will be routine for NCI companies; pretax_income likely
   needs tag variants added.
 
+- Task 8 (2026-09-10, on Opus per the model protocol) — SQLite schema, designed
+  and approved before implementation per build-plan's two-stage requirement,
+  then built with four owner amendments. src/credit_risk/store/: schema.py (raw
+  DDL, 14 tables, 12 indexes, STRICT where supported with a tested fallback),
+  db.py (connections with PRAGMA foreign_keys=ON), fingerprint.py (config
+  fingerprints, documented allowlist), writer.py (stores selection + mapping
+  output), queries.py (the five queries the app runs). data_status constrained
+  to the six allowed values at DB level; supersession of facts is a self-FK
+  relationship, never a deletion; concepts/metrics are append-with-history with
+  a partial unique index on the CURRENT row (D18); no index on fy anywhere, by
+  design and asserted by a test (D19); stress tables deferred (D20);
+  filings.form CHECK dropped with reasons (D21). Also completed the flagged
+  string->structured refactor: selection and mapping warnings are now
+  DataQualityEvent records (normalise/quality.py) persisted to
+  data_quality_events, so only one shape exists in the codebase.
+
+## Known dependencies (not open questions)
+- **SIC code has no source in v1 data.** companyfacts JSON does not carry it, and
+  docs/data-sources.md excludes SIC 6000-6799 (banks, insurers, REITs) from the
+  universe — so that exclusion cannot be enforced programmatically until SIC has
+  a source. The SEC submissions endpoint
+  (https://data.sec.gov/submissions/CIK{cik:010d}.json) is the likely source; it
+  is a scope addition to ingestion. Needed before Phase 10 validation.
+
 ## Tests
-- 56 passing (6 setup + 3 env + 6 ingest/tickers + 9 ingest/companyfacts (all
-  HTTP-mocked) + 3 cli wiring + 3 fixture guards + 16 selection + 10 mapping:
-  6 fixture-driven + 4 synthetic)
+- 105 passing (6 setup + 3 env + 6 ingest/tickers + 9 ingest/companyfacts (all
+  HTTP-mocked) + 3 cli wiring + 3 fixture guards + 16 selection + 10 mapping +
+  49 store: constraint-rejection tests for every CHECK, the six-value
+  data_status constraint, FK enforcement, STRICT + fallback, the circular-FK
+  path, the fixture's exact stored rows, the fy-trap at storage, the
+  supersession self-join, Q1/Q2 shapes, and append-with-history)
 
 ## In progress
 - nothing
@@ -95,6 +123,9 @@ Phases 1-2 complete. Phase 3 in progress — Tasks 5-7 done, Task 8 (SQLite sche
 - Which 25-50 companies form the v1 universe? (US-listed, non-financial, 3+ years of 10-K data)
 
 ## Next priorities
-- Task 8 — SQLite schema: write the DDL, review it, then implement (Opus tier per the
-  model protocol). The short_term_debt/DebtCurrent double-count flag belongs to Task 9's
-  total_debt design — carry it there.
+- Task 9 — composite concepts (total_debt / net_debt / ebitda / fcf) with a test per
+  rule in the methodology. Carries two open items: the short_term_debt/DebtCurrent
+  double-count risk flagged in Task 7, and creating config/composites.yaml with
+  include_operating_leases / include_st_investments (the fingerprint allowlist in
+  store/fingerprint.py already expects that file and falls back to the methodology
+  defaults until it exists).

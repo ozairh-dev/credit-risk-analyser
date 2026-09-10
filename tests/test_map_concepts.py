@@ -11,7 +11,7 @@ from pathlib import Path
 
 import pytest
 
-from credit_risk.normalise import map_concepts, select_annual_facts
+from credit_risk.normalise import map_concepts, quality, select_annual_facts
 from credit_risk.normalise.selection import SelectedFact, SelectionResult
 
 FIXTURE_PATH = Path(__file__).parent / "fixtures" / "companyfacts_minimal.json"
@@ -115,8 +115,9 @@ def test_candidate_disagreement_warns_first_wins():
     ]
     assert len(res.warnings) == 1
     w = res.warnings[0]
-    assert w.startswith("CANDIDATE_TAG_DISAGREEMENT")
-    assert "Revenues=100" in w and "SalesRevenueNet=95" in w
+    assert w.code == quality.CANDIDATE_TAG_DISAGREEMENT
+    assert (w.concept, w.tag, w.period_end) == ("revenue", "Revenues", "2022-12-31")
+    assert "Revenues=100" in w.detail and "SalesRevenueNet=95" in w.detail
 
 
 def test_equal_value_candidates_do_not_warn():

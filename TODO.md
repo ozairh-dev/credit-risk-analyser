@@ -25,7 +25,8 @@ Ordered. Top unchecked item is next.
       tests/fixtures/companyfacts_minimal_expected.md — owner to verify before Task 6
 - [x] Task 6: select_annual_facts passes that fixture
 - [x] Task 7: tag mapping with source_tag recorded; fallback case tested
-- [ ] Task 8: SQLite schema - write the DDL, review it, then implement
+- [x] Task 8: SQLite schema - write the DDL, review it, then implement
+      (14 tables; stress tables deferred to Phase 8 per D20)
 
 ## Phase 4-5 - integrity, composites, metrics
 - [ ] Task 9: total_debt / net_debt / ebitda / fcf with a test per rule in the methodology

@@ -14,6 +14,8 @@ from collections import defaultdict
 from dataclasses import dataclass
 
 from credit_risk import config
+from credit_risk.normalise import quality
+from credit_risk.normalise.quality import DataQualityEvent
 from credit_risk.normalise.selection import SelectionResult
 
 
@@ -46,7 +48,7 @@ class UnavailableConcept:
 class MappingResult:
     concepts: list[MappedConcept]
     unavailable: list[UnavailableConcept]
-    warnings: list[str]
+    warnings: list[DataQualityEvent]
 
 
 def map_concepts(selection: SelectionResult, tag_map: dict | None = None) -> MappingResult:
@@ -71,7 +73,7 @@ def map_concepts(selection: SelectionResult, tag_map: dict | None = None) -> Map
 
     concepts: list[MappedConcept] = []
     unavailable: list[UnavailableConcept] = []
-    warnings: list[str] = []
+    warnings: list[DataQualityEvent] = []
 
     for concept, candidates in tag_map.items():
         # canonical fiscal year ends, plus any period a candidate actually has,
@@ -90,9 +92,17 @@ def map_concepts(selection: SelectionResult, tag_map: dict | None = None) -> Map
                     chosen = fact
                 elif fact.val != chosen.val:
                     warnings.append(
-                        f"CANDIDATE_TAG_DISAGREEMENT: {concept} {end}: using "
-                        f"{chosen.tag}={chosen.val}, but {fact.tag}={fact.val} "
-                        f"is also present"
+                        DataQualityEvent(
+                            code=quality.CANDIDATE_TAG_DISAGREEMENT,
+                            concept=concept,
+                            tag=chosen.tag,
+                            period_end=end,
+                            accession=chosen.accn,
+                            detail=(
+                                f"{concept} {end}: using {chosen.tag}={chosen.val}, "
+                                f"but {fact.tag}={fact.val} is also present"
+                            ),
+                        )
                     )
             if chosen is None:
                 unavailable.append(

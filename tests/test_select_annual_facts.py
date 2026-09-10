@@ -14,7 +14,7 @@ from pathlib import Path
 
 import pytest
 
-from credit_risk.normalise import select_annual_facts
+from credit_risk.normalise import quality, select_annual_facts
 
 FIXTURE_PATH = Path(__file__).parent / "fixtures" / "companyfacts_minimal.json"
 
@@ -179,7 +179,8 @@ def test_fye_disagreement_most_common_wins_and_flags():
     })
     res = select_annual_facts(cf)
     assert res.fiscal_year_ends == ["2022-12-31"]       # 2 votes beat 1
-    assert len(res.warnings) == 1 and "disagreement" in res.warnings[0]
+    assert [w.code for w in res.warnings] == [quality.FYE_DISAGREEMENT]
+    assert res.warnings[0].period_end == "2022-12-31"   # the winning anchor
     kept_instants = [f for f in res.selected if f.start is None]
     assert [(f.end, f.val) for f in kept_instants] == [("2022-12-31", 900)]
 
@@ -197,7 +198,7 @@ def test_fye_tie_is_ambiguous_and_fail_safe():
     })
     res = select_annual_facts(cf)
     assert res.fiscal_year_ends == []
-    assert len(res.warnings) == 1 and "tie" in res.warnings[0]
+    assert [w.code for w in res.warnings] == [quality.FYE_TIE]
     assert [(u.tag, u.reason_code) for u in res.unavailable] == [("Assets", "AMBIGUOUS_FYE")]
     assert all(f.start is not None for f in res.selected)  # durations still selected
 
@@ -213,10 +214,13 @@ def test_same_day_refiling_tiebreak_warns():
     res = select_annual_facts(cf)
     assert [(f.val, f.accn) for f in res.selected] == [(90, "s-2")]
     assert [(s.val, s.superseded_by) for s in res.superseded] == [(100, "s-2")]
-    tiebreaks = [w for w in res.warnings if w.startswith("SAME_DAY_REFILING_TIEBREAK")]
+    tiebreaks = [w for w in res.warnings if w.code == quality.SAME_DAY_REFILING_TIEBREAK]
     assert len(tiebreaks) == 1
-    assert "Revenues" in tiebreaks[0] and "2022-12-31" in tiebreaks[0]
-    assert "s-1" in tiebreaks[0] and "s-2" in tiebreaks[0]
+    event = tiebreaks[0]
+    assert (event.tag, event.period_end, event.accession) == (
+        "Revenues", "2022-12-31", "s-1",
+    )
+    assert "s-1" in event.detail and "s-2" in event.detail
 
 
 def test_10ka_form_accepted():

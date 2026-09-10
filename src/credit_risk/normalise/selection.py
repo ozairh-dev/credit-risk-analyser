@@ -14,8 +14,11 @@ share an `fy`. Period identity is always (tag, end).
 """
 
 from collections import Counter, defaultdict
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import date
+
+from credit_risk.normalise import quality
+from credit_risk.normalise.quality import DataQualityEvent
 
 ANNUAL_FORMS = {"10-K", "10-K/A"}       # rule 1
 DURATION_MIN_DAYS = 350                 # rule 2, inclusive (per the expectations doc)
@@ -49,6 +52,8 @@ class UnavailableFact:
     end: str | None
     reason_code: str                    # FOREIGN_UNIT | NO_FYE_ANCHOR | AMBIGUOUS_FYE
     accn: str | None = None
+    form: str | None = None             # carried so the filing can be stored (Task 8)
+    filed: str | None = None
 
 
 @dataclass
@@ -57,7 +62,7 @@ class SelectionResult:
     superseded: list[SelectedFact]      # kept, superseded_by set — never deleted
     duplicates: list[SelectedFact]      # equal-value later copies (D15), no supersession
     unavailable: list[UnavailableFact]
-    warnings: list[str]
+    warnings: list[DataQualityEvent]
     fiscal_year_ends: list[str]         # derived FYE dates, ISO, sorted (D13)
 
 
@@ -102,7 +107,7 @@ def _derive_fiscal_year_ends(duration_facts: list[SelectedFact]):
         clusters.append(cluster)
 
     fyes: set[str] = set()
-    warnings: list[str] = []
+    warnings: list[DataQualityEvent] = []
     ambiguous: set[str] = set()
     for cl in clusters:
         if len(cl) == 1:
@@ -114,14 +119,25 @@ def _derive_fiscal_year_ends(duration_facts: list[SelectedFact]):
         if len(winners) == 1:
             fyes.add(winners[0])
             warnings.append(
-                f"Fiscal year end disagreement ({detail}); "
-                f"using most common {winners[0]} (D13)"
+                DataQualityEvent(
+                    code=quality.FYE_DISAGREEMENT,
+                    period_end=winners[0],
+                    detail=(
+                        f"Fiscal year end disagreement ({detail}); "
+                        f"using most common {winners[0]} (D13)"
+                    ),
+                )
             )
         else:
             ambiguous.update(cl)
             warnings.append(
-                f"Fiscal year end tie ({detail}); no anchor chosen — instants "
-                f"near these dates are UNAVAILABLE with AMBIGUOUS_FYE (D16)"
+                DataQualityEvent(
+                    code=quality.FYE_TIE,
+                    detail=(
+                        f"Fiscal year end tie ({detail}); no anchor chosen — instants "
+                        f"near these dates are UNAVAILABLE with AMBIGUOUS_FYE (D16)"
+                    ),
+                )
             )
     return fyes, warnings, ambiguous
 
@@ -155,6 +171,8 @@ def select_annual_facts(companyfacts: dict) -> SelectionResult:
                             end=raw.get("end"),
                             reason_code="FOREIGN_UNIT",
                             accn=raw.get("accn"),
+                            form=raw.get("form"),
+                            filed=raw.get("filed"),
                         )
                     )
                 continue
@@ -184,6 +202,7 @@ def select_annual_facts(companyfacts: dict) -> SelectionResult:
                 UnavailableFact(
                     tag=sf.tag, unit=sf.unit, end=sf.end,
                     reason_code="AMBIGUOUS_FYE", accn=sf.accn,
+                    form=sf.form, filed=sf.filed,
                 )
             )
         elif sf.accn in anchored_filings:
@@ -193,6 +212,7 @@ def select_annual_facts(companyfacts: dict) -> SelectionResult:
                 UnavailableFact(
                     tag=sf.tag, unit=sf.unit, end=sf.end,
                     reason_code="NO_FYE_ANCHOR", accn=sf.accn,
+                    form=sf.form, filed=sf.filed,
                 )
             )
 
@@ -211,8 +231,16 @@ def select_annual_facts(companyfacts: dict) -> SelectionResult:
         for a, b in zip(facts, facts[1:]):
             if a.filed == b.filed and a.accn != b.accn:
                 warnings.append(
-                    f"SAME_DAY_REFILING_TIEBREAK: {a.tag} {a.end}: accession order "
-                    f"used to sequence {a.accn} and {b.accn}, both filed {a.filed}"
+                    DataQualityEvent(
+                        code=quality.SAME_DAY_REFILING_TIEBREAK,
+                        tag=a.tag,
+                        period_end=a.end,
+                        accession=a.accn,
+                        detail=(
+                            f"{a.tag} {a.end}: accession order used to sequence "
+                            f"{a.accn} and {b.accn}, both filed {a.filed}"
+                        ),
+                    )
                 )
         current = facts[0]
         for later in facts[1:]:
