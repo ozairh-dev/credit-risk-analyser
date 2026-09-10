@@ -150,3 +150,26 @@ Alternatives: block and ask per case (stalls on vanishing-rare edges the owner a
 delegated as "internal calls"); calendar-year bucketing for (1) — breaks 52/53-week
 filers at year boundaries.
 Consequences: changing any of the four is a one-line edit plus its test.
+
+## D17 — Tag-mapping behaviour beyond the docs' one-line rule (Task 7)
+Decision: five calls in map_concepts. (1) Owner call, 2026-09-10: when two candidate
+tags for one concept are both present in a period with different values, first-found
+still wins but a CANDIDATE_TAG_DISAGREEMENT warning names both tags and both values —
+conflicting figures are a data-quality signal, not something to swallow. (2) Equal-value
+co-tagging does NOT warn: real filings routinely tag the same number under two candidate
+tags (e.g. Revenues and RevenueFromContractWithCustomer...), so warning on equality
+would fire on most companies and drown the signal. (3) Mapping consumes CURRENT facts
+only; superseded and duplicate facts are audit trail. (4) A concept with no candidate
+present for a period is UNAVAILABLE with reason NO_CANDIDATE_TAG, one row per
+concept-period over the derived fiscal year ends plus any period a candidate actually
+has — the raw material for Phase 4's completeness summary. (5) The reported label is
+carried by selection (SelectedFact.label) so mapping can preserve it, implementing the
+docs' "keep the original label".
+Reason: docs/data-sources.md defines first-found-wins in one line; these are the
+behaviours around it that the line does not determine.
+Alternatives: warn on any co-presence (noise); map from superseded values (breaks
+restatement semantics); skip UNAVAILABLE rows (hides gaps until scoring).
+Consequences: each call has a test; the disagreement warning will fire routinely for
+equity on companies with noncontrolling interests (StockholdersEquity vs the
+...IncludingPortionAttributableToNoncontrollingInterest candidate differ by NCI) — that
+is by design, the config ordering prefers parent-only equity.

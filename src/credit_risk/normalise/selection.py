@@ -37,6 +37,7 @@ class SelectedFact:
     filed: str | None
     accn: str | None
     frame: str | None
+    label: str | None = None            # SEC's reported label for the tag
     status: str = "CURRENT"             # CURRENT | SUPERSEDED | DUPLICATE
     superseded_by: str | None = None    # accession of the displacing filing
 
@@ -60,7 +61,7 @@ class SelectionResult:
     fiscal_year_ends: list[str]         # derived FYE dates, ISO, sorted (D13)
 
 
-def _fact_from_raw(tag: str, unit: str, raw: dict) -> SelectedFact:
+def _fact_from_raw(tag: str, unit: str, raw: dict, label: str | None) -> SelectedFact:
     return SelectedFact(
         tag=tag,
         val=raw.get("val"),
@@ -73,6 +74,7 @@ def _fact_from_raw(tag: str, unit: str, raw: dict) -> SelectedFact:
         filed=raw.get("filed"),
         accn=raw.get("accn"),
         frame=raw.get("frame"),
+        label=label,
     )
 
 
@@ -139,6 +141,7 @@ def select_annual_facts(companyfacts: dict) -> SelectionResult:
     instant_facts: list[SelectedFact] = []
 
     for tag, tag_obj in us_gaap.items():
+        label = tag_obj.get("label")
         for unit, facts in tag_obj.get("units", {}).items():
             if unit in IGNORED_UNITS:
                 continue
@@ -159,7 +162,7 @@ def select_annual_facts(companyfacts: dict) -> SelectionResult:
                 # rule 1: annual facts from annual filings only
                 if raw.get("fp") != "FY" or raw.get("form") not in ANNUAL_FORMS:
                     continue
-                sf = _fact_from_raw(tag, unit, raw)
+                sf = _fact_from_raw(tag, unit, raw, label)
                 if sf.start is not None:
                     # rule 2: full-year durations only
                     days = (date.fromisoformat(sf.end) - date.fromisoformat(sf.start)).days

@@ -3,7 +3,7 @@
 _Update at the end of every working session._
 
 ## Phase
-Phases 1-2 complete. Phase 3 in progress — Tasks 5-6 done, Task 7 (tag mapping) next.
+Phases 1-2 complete. Phase 3 in progress — Tasks 5-7 done, Task 8 (SQLite schema) next.
 
 ## Completed
 - Specification: CLAUDE.md, docs/, DECISIONS.md D1-D10
@@ -65,10 +65,25 @@ Phases 1-2 complete. Phase 3 in progress — Tasks 5-6 done, Task 7 (tag mapping
   the 10-K/A acceptance branch the fixture leaves uncovered is also
   synthetically tested.
 
+- Task 7 (2026-09-10, on Fable per the model protocol) —
+  src/credit_risk/normalise/mapping.py: map_concepts consumes select_annual_facts
+  output; candidate lists and their order come only from config/tag_map.yaml
+  (a test proves reversing the list flips the winner); first-found-wins per
+  concept per period; source_tag + reported label on every value (label carried
+  by a new SelectedFact.label field); data_status=REPORTED; no candidate for a
+  period -> UNAVAILABLE NO_CANDIDATE_TAG (fixture: 7 resolved / 55 unavailable
+  of 62 slots); differing candidate values -> CANDIDATE_TAG_DISAGREEMENT warning
+  (owner call), equal-value co-tagging silent (D17). Composites and the
+  gross_profit CALCULATED fallback deferred to Task 9 as scoped. Tag-map review
+  flagged for Phase 9/10: short_term_debt candidates overlap current_ltd
+  (DebtCurrent includes current LTD -> double-count risk in total_debt); equity
+  disagreement warnings will be routine for NCI companies; pretax_income likely
+  needs tag variants added.
+
 ## Tests
-- 46 passing (6 setup + 3 env + 6 ingest/tickers + 9 ingest/companyfacts (all
-  HTTP-mocked) + 3 cli wiring + 3 fixture guards + 16 selection: 10 fixture-driven
-  + 6 synthetic edge cases)
+- 56 passing (6 setup + 3 env + 6 ingest/tickers + 9 ingest/companyfacts (all
+  HTTP-mocked) + 3 cli wiring + 3 fixture guards + 16 selection + 10 mapping:
+  6 fixture-driven + 4 synthetic)
 
 ## In progress
 - nothing
@@ -80,5 +95,6 @@ Phases 1-2 complete. Phase 3 in progress — Tasks 5-6 done, Task 7 (tag mapping
 - Which 25-50 companies form the v1 universe? (US-listed, non-financial, 3+ years of 10-K data)
 
 ## Next priorities
-- Task 7 — tag mapping with source_tag recorded; fallback case tested (the fixture's
-  CostOfGoodsAndServicesSold case is ready for it)
+- Task 8 — SQLite schema: write the DDL, review it, then implement (Opus tier per the
+  model protocol). The short_term_debt/DebtCurrent double-count flag belongs to Task 9's
+  total_debt design — carry it there.
