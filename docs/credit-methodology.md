@@ -32,8 +32,23 @@ total_debt = short_term_debt + current_ltd + noncurrent_ltd + finance_lease_liab
   `current_ltd` / `noncurrent_ltd` is present. Record which components were zero-by-absence.
 - If neither `current_ltd` nor `noncurrent_ltd` is present but `total_ltd_aggregate`
   (`LongTermDebt`) is, use the aggregate and set `method = debt_from_aggregate`.
-- If both components and the aggregate are present, use the components (avoids double
-  counting) and flag if they differ from the aggregate by more than 5%.
+- **If the aggregate and at least one component are both present, reconcile them before
+  using either** (DECISIONS D26):
+  - Compare `current_ltd + noncurrent_ltd` against `total_ltd_aggregate`. A missing
+    component counts as zero **for this comparison only** — that is the point of the
+    check, since a silently absent component is what makes the components wrong.
+  - The comparison basis is the long-term components **only**. `short_term_debt` is
+    excluded: `LongTermDebt` is a long-term-debt tag, so this is the apples-to-apples
+    comparison. Be aware the tag's scope varies by filer — some include short-term
+    borrowings in it, which shows up as a real deviation rather than an exact match.
+  - Deviation **within** `config/composites.yaml: component_aggregate_tolerance`
+    (default 0.05) → use the components, `method = debt_from_components`, as before.
+  - Deviation **above** tolerance → `total_debt` is `UNAVAILABLE`,
+    `reason_code = COMPONENT_AGGREGATE_MISMATCH`. It is **not** computed-and-flagged.
+    Two mutually contradictory figures for the same quantity mean we do not know the
+    debt; emitting one of them with a warning attached produces a plausible-looking
+    wrong number with full provenance, which rule 9 forbids. Record both figures on the
+    UNAVAILABLE record so the disagreement is reviewable.
 - If nothing is present → `UNAVAILABLE`, `reason_code = NO_DEBT_DATA`. Do **not** assume
   zero debt.
 

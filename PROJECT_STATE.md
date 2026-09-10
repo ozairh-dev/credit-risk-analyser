@@ -106,9 +106,9 @@ the company's entire filing history first (DECISIONS D25) — not assumed from f
 
 | Ticker | CIK | Role | Pipeline-verified |
 |---|---|---|---|
-| CCL | 815097 | leveraged borrower | all five of total_debt / ebitda / interest_expense / cfo / capex resolve for **18 consecutive periods, 2008-11-30 -> 2025-11-30**; no config changes needed; both debt components resolve every period; debt/assets 22-69% |
+| CCL | 815097 | leveraged borrower | all five of total_debt / ebitda / interest_expense / cfo / capex resolve for 18 periods, **15 consecutive after D26** (2011-11-30 -> 2025-11-30; 2010-11-30 is a 7.9% component/aggregate mismatch); no config changes needed; debt/assets 22-69% |
 | JNJ | 200406 | strong / low-leverage anchor | total_debt 18/19 periods, but `ebit` only 2010-2014, so EBITDA leverage is limited to those years |
-| LUMN | 18926 | weak / deteriorating | ebitda 18/18, but total_debt only 2/18 — debt sits under the lease-bundled `LongTermDebtAndCapitalLeaseObligations` family (open methodology question) |
+| LUMN | 18926 | weak / deteriorating | ebitda 18/18, but **total_debt now 0/18** — its only two periods were component/aggregate mismatches of 94% and 100% and are UNAVAILABLE under D26; the real debt sits under the lease-bundled `LongTermDebtAndCapitalLeaseObligations` family (open methodology question) |
 | F | 37996 | **retained as a negative fixture, not a demonstration case** | no period produces both total_debt and ebitda, so no leverage metric can ever compute. Kept deliberately: it is a genuine test that the tool refuses to compute rather than inventing a number |
 
 Still needed for Phase 10's four documented cases: one that looks weak at base but

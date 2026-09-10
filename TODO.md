@@ -33,8 +33,10 @@ Task order interleaves the phases here: composites (Phase 5) come before the int
 checks (Phase 4) because the checks depend on them. See docs/build-plan.md.
 
 - [ ] Task 9 (Phase 5): total_debt / net_debt / ebitda / fcf with a test per rule in the
-      methodology. Also creates config/composites.yaml (include_operating_leases,
-      include_st_investments) which store/fingerprint.py already expects
+      methodology, including D26's COMPONENT_AGGREGATE_MISMATCH refusal. config/composites.yaml
+      now exists (holds component_aggregate_tolerance); Task 9 adds include_operating_leases
+      and include_st_investments to it, and must add the tolerance to the fingerprint
+      allowlist in store/fingerprint.py (D18/D26)
 - [ ] Task 10 (Phase 4): integrity checks + per-period data-quality summary; a failing
       period is stored, marked integrity = FAIL, and excluded from scoring. Passing and
       failing fixture per check

@@ -286,6 +286,66 @@ named here so Task 10 implements them rather than inventing its own; they are st
 data_quality_events like the other structured codes. A concept UNAVAILABLE in either
 period is not an abnormal movement — it is already recorded as a data gap.
 
+## D26 — Component/aggregate debt mismatch refuses to compute, it does not compute-and-flag
+Decision (owner call, 2026-09-10): where `total_ltd_aggregate` and at least one of
+`current_ltd` / `noncurrent_ltd` both resolve, the two are reconciled **before** either is
+used. Within `config/composites.yaml: component_aggregate_tolerance` (default 0.05) the
+components are used as before; above it `total_debt` is `UNAVAILABLE` with
+`reason_code = COMPONENT_AGGREGATE_MISMATCH`, both figures recorded for review. The old
+rule — "use the components, and flag if they differ from the aggregate by more than 5%" —
+is replaced.
+
+Reason: the old rule flagged a number as suspect and then used it anyway. WBD 2018
+reported `current_ltd` 1,819M with `noncurrent_ltd` absent and a `LongTermDebt` aggregate
+of **16,793M in the same filing**; the rule discarded the aggregate and emitted 1,819M, an
+**89% understatement stamped REPORTED with full provenance**. That is precisely the
+plausible-looking wrong number CLAUDE.md rule 9 forbids. Two contradictory figures for one
+quantity mean the debt is not known, and the honest output is `UNAVAILABLE`.
+
+**The detector matters, and a ratio heuristic is not it.** While screening candidates I
+first tested plausibility as "total_debt below 2% of total liabilities". WBD sat at **8%**
+and passed; the error was invisible to the ratio. Comparing against the aggregate caught it
+immediately. Any future plausibility work on debt should compare against the aggregate, not
+against a balance-sheet ratio.
+
+**The comparison basis had to be specified, because `LongTermDebt`'s scope varies by
+filer.** Measured: for JNJ the aggregate equals `current_ltd + noncurrent_ltd` **exactly in
+all 8 periods** (0.0%), excluding short-term borrowings; for CCL it equals those
+components **plus `short_term_debt`** exactly in 5 of 9 periods (2009-2013). Including
+`short_term_debt` in the basis would therefore flag all 8 JNJ periods falsely (7.6%-83%
+deviation), while excluding it flags CCL 2010 at 7.9%. The rule uses the long-term
+components only — `LongTermDebt` is a long-term-debt tag, so that is the apples-to-apples
+comparison — and a filer who bundles short-term borrowings into it shows up as a genuine
+deviation rather than a silent exact match.
+
+Alternatives: keep compute-and-flag (rejected, above); prefer the aggregate over the
+components on mismatch (it is not knowable which is right — WBD's aggregate was correct,
+but that cannot be assumed in general); include `short_term_debt` in the basis (falsely
+flags every JNJ period); raise the tolerance to 10% to spare CCL 2010 (rejected — tuning a
+correctness threshold to make a demonstration case look better is backwards; 7.9% is a real
+discrepancy worth surfacing).
+
+Consequences, measured across the four cached companies at the 5% default:
+
+| Company | total_debt periods before | after | newly UNAVAILABLE |
+|---|---|---|---|
+| F | 3 | 3 | none (no period has both an aggregate and a component) |
+| JNJ | 18 | 18 | none — exact agreement in all 8 comparable periods |
+| LUMN | 2 | **0** | 2009-12-31 (500M vs 7,754M, 93.6%); 2010-12-31 (12M vs 7,328M, 99.8%) |
+| CCL | 18 | **17** | 2010-11-30 (8,624M vs 9,364M, 7.9%) |
+
+Total 41 -> 38 periods. Two consequences worth stating plainly: **LUMN now has no usable
+`total_debt` in any period** — its only two were the WBD shape and were wrong by 94% and
+100%, so losing them is the rule working, not a regression; and CCL's longest consecutive
+run drops from 18 to 15 periods (2011-2025), still far above the three-period bar that
+qualified it under D25.
+
+`config/composites.yaml` is created by this change to hold the tolerance rather than
+hard-coding 5%. **Open dependency for Task 9:** the tolerance changes whether `total_debt`
+computes at all, so it must join D18's fingerprint allowlist in `store/fingerprint.py` when
+the composites are wired. It is deliberately absent from that allowlist for now because
+nothing reads it yet — noted in the YAML comment and here so it is not missed.
+
 ## D24 — Rule 5 classifies units three ways; FOREIGN_UNIT is for currencies only
 Decision (owner call, 2026-09-10, after measuring the three cached companies): rule 5
 splits units into monetary-USD (selected), monetary-non-USD (`UNAVAILABLE`,
