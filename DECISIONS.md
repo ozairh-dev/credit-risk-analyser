@@ -125,3 +125,24 @@ Alternatives: literal rule 4 — latest filing always current regardless of valu
 Consequences: docs/data-sources.md rule 4 amended; fixture expectations updated — FY2022
 revenue provenance is now the original 10-K (R1), and only the restated net income pair
 produces a supersession record.
+
+## D16 — Selection-plumbing details underdetermined by D13-D15, resolved fail-safe
+Decision: four internal calls in select_annual_facts (Task 6), all invisible to the
+Task 5 fixture and each with its own unit test:
+1. D13 disagreement scope — accepted duration end-dates within 14 days of each other
+   are the same fiscal year; farther apart are different fiscal years.
+2. D13 most-common tie — no fiscal year end is chosen; instant facts near the tied
+   dates are UNAVAILABLE with reason AMBIGUOUS_FYE, and the period is flagged.
+3. NO_FYE_ANCHOR association — an instant whose end matches no derived FYE is a plain
+   rule 3 exclusion when its own filing contributed accepted duration facts; it is
+   UNAVAILABLE with NO_FYE_ANCHOR only when its filing contributed none. Keyed per
+   filing (accession), never per fy stamp.
+4. Same-day refilings — filed-date ties in the rule 4 supersession pass are broken by
+   accession order.
+Reason: D13-D15 do not determine these; each default follows the fail-safe principle
+(CLAUDE.md rules 3 and 9) rather than guessing, and (1) keeps 52/53-week filers whose
+year end drifts across the calendar boundary in one fiscal year.
+Alternatives: block and ask per case (stalls on vanishing-rare edges the owner already
+delegated as "internal calls"); calendar-year bucketing for (1) — breaks 52/53-week
+filers at year boundaries.
+Consequences: changing any of the four is a one-line edit plus its test.

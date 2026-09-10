@@ -3,8 +3,7 @@
 _Update at the end of every working session._
 
 ## Phase
-Phases 1-2 complete. Phase 3 in progress — Task 5 done (expected answers await owner
-verification), Task 6 next.
+Phases 1-2 complete. Phase 3 in progress — Tasks 5-6 done, Task 7 (tag mapping) next.
 
 ## Completed
 - Specification: CLAUDE.md, docs/, DECISIONS.md D1-D10
@@ -53,9 +52,23 @@ verification), Task 6 next.
   code written (that is Task 6). No DECISIONS entry — interpretation flags below
   were deliberately left for the owner, not decided.
 
+- Task 6 (2026-09-10, on Fable per the model protocol) —
+  src/credit_risk/normalise/selection.py: select_annual_facts implementing
+  docs/data-sources.md rules 1-6 in D14's order (filter 1-3, then dedup 4), with
+  D13 FYE derivation (NO_FYE_ANCHOR / AMBIGUOUS_FYE fail-safes), D15 equal-value
+  provenance (supersession only on changed values), rule 5 FOREIGN_UNIT markers,
+  and rule 6 provenance on every output fact. Period identity is always
+  (tag, end), never the fy stamp. Reproduces every row of
+  tests/fixtures/companyfacts_minimal_expected.md exactly — no disagreement with
+  the specification document arose. Four underdetermined plumbing details
+  resolved fail-safe and recorded as DECISIONS D16, each with a synthetic test;
+  the 10-K/A acceptance branch the fixture leaves uncovered is also
+  synthetically tested.
+
 ## Tests
-- 30 passing (6 setup + 3 env + 6 ingest/tickers + 9 ingest/companyfacts (all
-  HTTP-mocked) + 3 cli wiring + 3 fixture guards)
+- 45 passing (6 setup + 3 env + 6 ingest/tickers + 9 ingest/companyfacts (all
+  HTTP-mocked) + 3 cli wiring + 3 fixture guards + 15 selection: 10 fixture-driven
+  + 5 synthetic edge cases)
 
 ## In progress
 - nothing
@@ -67,7 +80,5 @@ verification), Task 6 next.
 - Which 25-50 companies form the v1 universe? (US-listed, non-financial, 3+ years of 10-K data)
 
 ## Next priorities
-- Task 6 — select_annual_facts passes the fixture, value by value (flags A-C settled
-  by the owner 2026-09-10 as DECISIONS D13-D15; expected answers in
-  tests/fixtures/companyfacts_minimal_expected.md updated to match; not started yet
-  at the owner's request)
+- Task 7 — tag mapping with source_tag recorded; fallback case tested (the fixture's
+  CostOfGoodsAndServicesSold case is ready for it)

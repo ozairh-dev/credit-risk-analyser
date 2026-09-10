@@ -23,7 +23,7 @@ Ordered. Top unchecked item is next.
       one restated value, one fallback tag, one quarterly fact that must be excluded;
       also a bad-duration fact and an off-FYE instant fact). Expected answers in
       tests/fixtures/companyfacts_minimal_expected.md — owner to verify before Task 6
-- [ ] Task 6: select_annual_facts passes that fixture
+- [x] Task 6: select_annual_facts passes that fixture
 - [ ] Task 7: tag mapping with source_tag recorded; fallback case tested
 - [ ] Task 8: SQLite schema - write the DDL, review it, then implement
 
