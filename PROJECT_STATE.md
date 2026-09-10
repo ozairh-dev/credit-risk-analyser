@@ -40,7 +40,8 @@ because the integrity checks depend on the composites. See docs/build-plan.md.
   strong/low-leverage anchor case), **LUMN** (Lumen Technologies, CIK 18926 —
   Communication Services, heavily leveraged/weak case). All three fetched real SEC data
   (589-666 us-gaap concepts each) and a repeat fetch confirmed the cache hit path
-  (0.014s, no network round trip).
+  (0.014s, no network round trip). **Ford was later replaced as the leveraged case by
+  CCL (2026-09-10) — see "Demonstration companies" below and DECISIONS D25.**
 - Task 5 (2026-09-10, on Fable per the model protocol) — hand-built
   tests/fixtures/companyfacts_minimal.json: fictional Fixture Manufacturing Co
   (CIK 999999), 3 filings, 13 facts across Revenues / NetIncomeLoss /
@@ -97,6 +98,21 @@ because the integrity checks depend on the composites. See docs/build-plan.md.
   string->structured refactor: selection and mapping warnings are now
   DataQualityEvent records (normalise/quality.py) persisted to
   data_quality_events, so only one shape exists in the codebase.
+
+## Demonstration companies (current set)
+
+Cached in `data/raw/`. Every adoption must be validated by running the full pipeline over
+the company's entire filing history first (DECISIONS D25) — not assumed from familiarity.
+
+| Ticker | CIK | Role | Pipeline-verified |
+|---|---|---|---|
+| CCL | 815097 | leveraged borrower | all five of total_debt / ebitda / interest_expense / cfo / capex resolve for **18 consecutive periods, 2008-11-30 -> 2025-11-30**; no config changes needed; both debt components resolve every period; debt/assets 22-69% |
+| JNJ | 200406 | strong / low-leverage anchor | total_debt 18/19 periods, but `ebit` only 2010-2014, so EBITDA leverage is limited to those years |
+| LUMN | 18926 | weak / deteriorating | ebitda 18/18, but total_debt only 2/18 — debt sits under the lease-bundled `LongTermDebtAndCapitalLeaseObligations` family (open methodology question) |
+| F | 37996 | **retained as a negative fixture, not a demonstration case** | no period produces both total_debt and ebitda, so no leverage metric can ever compute. Kept deliberately: it is a genuine test that the tool refuses to compute rather than inventing a number |
+
+Still needed for Phase 10's four documented cases: one that looks weak at base but
+survives Severe stress. CCL's 2020-2022 distress and recovery may serve.
 
 ## Known dependencies (not open questions)
 - **SIC code has no source in v1 data.** companyfacts JSON does not carry it, and

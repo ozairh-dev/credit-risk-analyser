@@ -312,3 +312,52 @@ and that one is JNJ's single genuine `EUR` fact, which is exactly the case the c
 exists for. Selected fact counts and all mapped values are unchanged (verified: JNJ 4,055
 current facts before and after; `short_term_debt` 2025-12-28 still 8,495M via
 `ShortTermBorrowings`). `classify_unit` is the single place this decision lives.
+
+## D25 — CCL replaces Ford as the leveraged demonstration case; companies are validated, not assumed
+Decision (2026-09-10): **CCL** (Carnival Corp, CIK 815097) is the leveraged demonstration
+case. Ford is dropped from that role but its cached data is **retained deliberately** as a
+negative fixture. And, generally: **a demonstration company may not be adopted until the
+full pipeline has been run over its entire filing history**, including a
+partial-components-versus-aggregate audit of `total_debt`. Familiarity with a company is
+not evidence that its XBRL is usable.
+
+Reason: Ford was adopted on familiarity, without that check. Running it revealed Ford
+cannot produce a single period with both `total_debt` and `ebitda`, so no leverage metric
+can ever compute for it: `OperatingIncomeLoss` covers only 2017-2025 while consolidated
+debt is absent from companyfacts from 2018 (it exists only in dimensioned
+Automotive/Ford-Credit contexts the endpoint does not return). Fixing that would have
+required period-scoped tag candidates — a `tag_map.yaml` format change to solve one
+company's problem, which CLAUDE.md rule 9 rules out.
+
+The audit requirement is not theoretical: screening 13 candidates, **WBD passed the
+mechanical bar (10 consecutive periods) while reporting 1,819M of debt for 2018 against a
+`LongTermDebt` aggregate of 16,793M sitting in the same filing — an 89% understatement
+stamped REPORTED**. The cause is the methodology's own components-vs-aggregate rule: the
+aggregate is used only when *neither* `current_ltd` nor `noncurrent_ltd` is present, so one
+resolving component is enough to discard it. The same shape appeared benignly in MGM
+(2011-13, 2024-25) and CHTR (2014), where the aggregate happens to equal `noncurrent_ltd`.
+A ratio threshold does not detect this (WBD sat at 8% of liabilities, not the <2% that
+would look obviously wrong) — comparing against the aggregate does. **This is a live
+methodology defect for Task 9, independent of company choice.**
+
+On the slot itself: the sector label "industrial" was incidental. The requirement was a
+genuinely leveraged, non-captive-finance, non-financial US borrower, which CCL satisfies
+(SIC 4400, verified from the SEC submissions endpoint). Ford's captive finance arm was
+part of why its debt was unreadable in the first place. No industrial screened passed —
+URI has no true `InterestExpense` (only `InterestPaidNet`, a cash-flow concept), AAL and
+DAL lack `capex` under the mapped tag, KHC's debt is lease-bundled.
+
+Alternatives: keep Ford and add period-scoped tag candidates (format change, rule 9);
+adopt WBD or CHTR (rejected — WBD factually wrong, CHTR's coverage ends in 2013 because
+`InterestExpense` stops); adopt MGM (viable second choice, but its debt is lease-dominated
+— 25.5bn of 31.9bn in 2025 — so its leverage swings on the `include_operating_leases`
+toggle alone).
+
+Consequences: CCL gives 18 consecutive validated periods (2008-2025) spanning a full
+distress-and-recovery arc — debt tripling 11.5bn -> 35.9bn, three years of negative EBITDA
+— which exercises D9's evidence-vs-gap paths on real data. No config changes were needed
+to adopt it. Ford stays cached as the refuses-to-compute fixture. **CCL's known
+limitation: `total_liabilities` never resolves for it — Carnival reports no `Liabilities`
+tag — so the "Debt ⊆ liabilities" integrity check will be `UNAVAILABLE` for CCL in every
+period.** That is correct fail-safe behaviour, not a defect, but it means CCL cannot serve
+as the fixture for that particular integrity check.
