@@ -32,7 +32,7 @@ judgement. Say so in any user-facing output.
 
 ## Stack (fixed for v1 — do not add to it)
 
-Python 3.11+, pandas, pydantic, SQLite via SQLAlchemy, requests, typer (CLI), pytest,
+Python 3.11+, pandas, pydantic, SQLite via stdlib sqlite3, requests, typer (CLI), pytest,
 PyYAML. No web framework, no frontend, no Postgres, no Docker, no vector database.
 The UI is a v2 decision recorded in `docs/build-plan.md`.
 

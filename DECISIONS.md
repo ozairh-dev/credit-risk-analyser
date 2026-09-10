@@ -192,6 +192,12 @@ yet (Task 9 creates it); until then the methodology's documented defaults are
 fingerprinted, so the value is stable from the first stored row.
 Alternatives: upsert (rejected above); fingerprint the whole config (every unrelated
 threshold edit would orphan history).
+**Scope note for Phase 6:** this fingerprint's scope is deliberately DISJOINT from what
+a score fingerprint will need. Band edges, weights and grade boundaries move *scores*,
+not concept or metric values — so Phase 6 needs its own fingerprint function over the
+thresholds.yaml values, not a reuse of `store.fingerprint.config_fingerprint`. Reusing
+this one would fingerprint scores against config that cannot affect them while ignoring
+the config that can. Flagged here so it is designed rather than discovered.
 Consequences: two implementation calls follow from it and are tested.
 (a) No `superseded_by` pointer on concepts/metrics: the replacing row is the CURRENT row
 with the same identity, and a pointer would need the CHECK-plus-partial-index pair to be
@@ -238,3 +244,19 @@ Alternatives: apply rule 1 before rule 5 (changes approved Task 6 semantics); ma
 facts.accession nullable for UNAVAILABLE rows (two deviations instead of one).
 Consequences: UnavailableFact now carries form/filed so every referenced filing can be
 stored completely.
+
+## D22 — SQLite via stdlib sqlite3, not SQLAlchemy
+Decision: the store layer uses raw DDL and Python's stdlib `sqlite3`. CLAUDE.md's stack
+line is amended from "SQLite via SQLAlchemy" to "SQLite via stdlib sqlite3".
+Reason: the CHECK constraints and partial unique indexes are the substance of this
+schema — they are what enforces the six data_status values, the UNAVAILABLE/reason_code
+biconditional and the one-CURRENT-row-per-identity rule at the database level. Expressed
+as raw SQL they are readable and reviewable; expressed through an ORM they would be
+obscured, and the ORM itself is an abstraction for a problem we do not have (CLAUDE.md
+rule 9).
+Alternatives: SQLAlchemy Core (table metadata in Python, constraints as keyword
+arguments); SQLAlchemy ORM (mapped classes).
+Consequences: SQLAlchemy remains layerable later without schema changes if a reason
+emerges — connection pooling, a second backend, or query composition that outgrows
+hand-written SQL. pyproject.toml still lists sqlalchemy as a dependency; it is unused
+for now and stays until something needs it or a cleanup pass removes it.

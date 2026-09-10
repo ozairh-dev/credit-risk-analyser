@@ -12,6 +12,11 @@ value — the allowlist below — never the whole config file. Band edges, weigh
 and grade boundaries are deliberately excluded: they change *scores*, not
 concept or metric values, and scores already keep their own history.
 
+Phase 6 must therefore write its OWN fingerprint function over thresholds.yaml
+rather than calling this one: the two scopes are disjoint by design, and reusing
+this function for scores would fingerprint them against config that cannot
+affect them while ignoring the config that can (D18).
+
 The composites config file does not exist yet (Task 9 creates it); until then
 the methodology's documented defaults are fingerprinted, so the value is
 stable and meaningful from the first stored row.
