@@ -8,13 +8,20 @@ import json
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
-MAX_AGE = timedelta(hours=24)
+from credit_risk import config
 
 
-def read_cache(path: Path, max_age: timedelta = MAX_AGE):
+def default_max_age() -> timedelta:
+    """Cache staleness window, from config/ingestion.yaml (CLAUDE.md rule 6)."""
+    return timedelta(hours=config.ingestion()["max_age_hours"])
+
+
+def read_cache(path: Path, max_age: timedelta = None):
     """Return cached content if `path` exists and is fresh, else None."""
     if not path.exists():
         return None
+    if max_age is None:
+        max_age = default_max_age()
     cached = json.loads(path.read_text())
     fetched_at = datetime.fromisoformat(cached["fetched_at"])
     if datetime.now(timezone.utc) - fetched_at > max_age:

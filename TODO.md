@@ -15,7 +15,8 @@ Ordered. Top unchecked item is next.
 ## Phase 2 - ingestion
 - [x] Task 3: fetch company_tickers.json, cache it, ticker -> CIK lookup
 - [ ] Task 4: fetch_companyfacts(cik) with User-Agent from .env, rate limiting,
-      raw cache to data/raw/, --force flag; tests with mocked HTTP
+      raw cache to data/raw/, --force flag; wire a `credit-risk fetch <ticker>` CLI
+      command that calls it; tests with mocked HTTP
 
 ## Phase 3 - selection, normalisation, store
 - [ ] Task 5: hand-build tests/fixtures/companyfacts_minimal.json (2 fiscal years,

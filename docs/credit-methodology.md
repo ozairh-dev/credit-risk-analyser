@@ -243,7 +243,7 @@ All stress inputs are `ASSUMED` and go in the assumption register. All stress ou
 | Shock | Unit | Presets (config/stress.yaml) |
 |---|---|---|
 | revenue_shock | % | −5, −10, −15, −20 |
-| margin_shock | percentage points of EBITDA margin | −1, −3, −5 |
+| margin_shock | percentage points of EBITDA margin | see presets table below — sign convention: positive value reduces margin |
 | rate_shock | basis points | +100, +200, +300 |
 | additional_debt | currency | 0 |
 | capex_shock | % | 0 |

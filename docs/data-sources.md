@@ -67,8 +67,10 @@ Starting candidate lists (us-gaap taxonomy; validate, don't trust):
 | current_ltd             | `LongTermDebtCurrent` |
 | noncurrent_ltd          | `LongTermDebtNoncurrent` |
 | total_ltd_aggregate     | `LongTermDebt` (only used if components are absent — see methodology) |
-| finance_lease_liab      | `FinanceLeaseLiabilityCurrent`, `FinanceLeaseLiabilityNoncurrent` |
-| operating_lease_liab    | `OperatingLeaseLiabilityCurrent`, `OperatingLeaseLiabilityNoncurrent` |
+| finance_lease_liab_current    | `FinanceLeaseLiabilityCurrent` |
+| finance_lease_liab_noncurrent | `FinanceLeaseLiabilityNoncurrent` |
+| operating_lease_liab_current    | `OperatingLeaseLiabilityCurrent` |
+| operating_lease_liab_noncurrent | `OperatingLeaseLiabilityNoncurrent` |
 | equity                  | `StockholdersEquity`, `StockholdersEquityIncludingPortionAttributableToNoncontrollingInterest` |
 | cfo                     | `NetCashProvidedByUsedInOperatingActivities` |
 | capex                   | `PaymentsToAcquirePropertyPlantAndEquipment` |

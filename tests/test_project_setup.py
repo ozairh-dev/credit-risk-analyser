@@ -30,9 +30,27 @@ def test_grade_boundaries_are_descending():
 
 
 def test_stress_presets_present():
+    """Values hand-checked against docs/credit-methodology.md's preset descriptions:
+    Moderate = rev -10%, margin -2pp, rates +100bps; Severe = rev -20%, margin -5pp,
+    rates +200bps. margin_shock is positive because it is *subtracted* from the base
+    margin in the propagation formula (positive shock = margin reduction)."""
     presets = config.stress()["presets"]
     assert {"base", "moderate", "severe"} <= set(presets)
     assert presets["base"]["revenue_shock"] == 0.0
+    assert presets["moderate"] == {
+        "revenue_shock": -0.10,
+        "margin_shock": 0.02,
+        "rate_shock_bps": 100,
+        "additional_debt": 0,
+        "capex_shock": 0.0,
+    }
+    assert presets["severe"] == {
+        "revenue_shock": -0.20,
+        "margin_shock": 0.05,
+        "rate_shock_bps": 200,
+        "additional_debt": 0,
+        "capex_shock": 0.0,
+    }
 
 
 def test_tag_map_entries_are_ordered_candidate_lists():
@@ -40,3 +58,10 @@ def test_tag_map_entries_are_ordered_candidate_lists():
     assert "revenue" in tags and "ebit" in tags and "cfo" in tags
     for concept, candidates in tags.items():
         assert isinstance(candidates, list) and candidates, concept
+    # exact candidate tags checked against docs/data-sources.md's mapping table
+    assert tags["revenue"] == [
+        "Revenues",
+        "RevenueFromContractWithCustomerExcludingAssessedTax",
+        "SalesRevenueNet",
+    ]
+    assert tags["ebit"] == ["OperatingIncomeLoss"]

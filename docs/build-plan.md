@@ -93,7 +93,8 @@ Severe stress.
 3. Implement `ingest.fetch_company_tickers()` and `ingest.ticker_to_cik()` with a cached
    copy of `company_tickers.json`.
 4. Implement `ingest.fetch_companyfacts(cik)` with User-Agent, rate limiting, raw cache,
-   `--force`. Tests with mocked requests.
+   `--force`, and a `credit-risk fetch <ticker>` CLI command wired to it. Tests with
+   mocked requests.
 5. Build `tests/fixtures/companyfacts_minimal.json` by hand: two fiscal years, one
    restated value, one concept only available under a fallback tag, one quarterly fact
    that must be excluded.

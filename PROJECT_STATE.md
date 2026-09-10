@@ -16,7 +16,16 @@ Phase 1 complete. Phase 2 (SEC ingestion) in progress — Task 3 done, Task 4 ne
   fetched_at, 24h staleness, reused by Task 4), credit_risk/ingest/tickers.py
   (fetch_company_tickers, ticker_to_cik). Verified against the real SEC endpoint
   (AAPL -> 320193, MSFT -> 789019); cache written to data/raw/company_tickers.json.
-- 15 tests passing (6 setup + 3 env + 6 ingest/tickers), all with mocked HTTP
+- 15 tests passing (6 setup + 3 env + 6 ingest/tickers (HTTP-mocked))
+- Project review (2026-09-09): git repo initialized and initial commit made (Task 1's
+  "repo" item was checked off but never actually done until now); config/ingestion.yaml
+  added so the 24h cache staleness window is no longer hardcoded in cache.py (CLAUDE.md
+  rule 6); docs/data-sources.md's lease-liability tags split into current/noncurrent to
+  match config/tag_map.yaml (DECISIONS D11); docs/credit-methodology.md's stress Inputs
+  table no longer restates margin_shock values that had drifted out of sync with
+  config/stress.yaml (DECISIONS D12); TODO.md Task 4 and build-plan.md's task list now
+  explicitly include wiring a `credit-risk fetch <ticker>` CLI command; two tests
+  strengthened to assert exact values instead of just structure.
 
 ## In progress
 - nothing

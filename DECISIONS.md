@@ -64,3 +64,27 @@ Consequences: reason codes are load-bearing and must be tested.
 Reason: a score built on partial data should not be able to show "Very strong".
 Alternatives: no cap; refuse to score.
 Consequences: cap value is config; stated in the explain output.
+
+## D11 — Lease liability concepts split into current/noncurrent, not one "candidate" pair
+Reason: `docs/data-sources.md` originally listed `finance_lease_liab` and
+`operating_lease_liab` as single concepts with two "candidate" tags (first-found-wins),
+but `total_debt` needs current + noncurrent lease liability **summed**, not one picked
+over the other — the same relationship `current_ltd`/`noncurrent_ltd` already have as two
+separate rows in the same table. `config/tag_map.yaml` already implemented the correct
+split; the docs table was the one that was wrong.
+Alternatives: keep leases as a single concept and document a special summing rule just
+for those two rows.
+Consequences: docs/data-sources.md now matches config/tag_map.yaml exactly. No code
+impact — normalise/ tag-mapping (Phase 3) isn't built yet; this closes the mismatch
+before it starts.
+
+## D12 — margin_shock has one source of truth: the presets table, not the Inputs table
+Reason: the stress "Inputs" table stated example margin_shock values with a negative
+sign, contradicting both the propagation formula (`margin_s = ebitda_margin_base −
+margin_shock`, where a *positive* shock reduces margin) and `config/stress.yaml`'s actual
+positive preset/grid values. Two restatements of the same input had drifted apart.
+Alternatives: fix the sign in the Inputs table and keep both; leave it as-is.
+Consequences: the Inputs table now points to the presets table instead of restating
+numbers, so there is one place to get this wrong instead of two. config/stress.yaml was
+already correct and is unchanged. `test_stress_presets_present` now asserts the exact
+moderate/severe values so a future edit can't silently reintroduce a sign error.

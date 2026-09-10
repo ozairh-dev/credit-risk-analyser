@@ -34,3 +34,7 @@ def stress() -> dict:
 
 def tag_map() -> dict:
     return load("tag_map")
+
+
+def ingestion() -> dict:
+    return load("ingestion")

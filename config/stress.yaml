@@ -3,6 +3,7 @@ ebitda_mode: constant_margin        # or operating_leverage
 fixed_cost_share: 0.3               # used only in operating_leverage mode
 floating_share: 1.0                 # share of debt that reprices under a rate shock
 default_tax_rate: 0.21              # used when pretax income <= 0
+# TODO Phase 8: implement the else-branch default for new_debt_rate per docs/credit-methodology.md
 new_debt_rate: null                 # null = use current interest_expense / total_debt
 
 presets:

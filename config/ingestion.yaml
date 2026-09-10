@@ -1,0 +1,2 @@
+# Ingestion cache settings (docs/data-sources.md: "do not re-fetch within 24 hours").
+max_age_hours: 24
