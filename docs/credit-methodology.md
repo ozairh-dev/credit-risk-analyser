@@ -317,10 +317,41 @@ in each cell. Nothing more elaborate in v1.
 | Debt ⊆ liabilities | total_debt_ex_leases ≤ total_liabilities | fail |
 | Non-negative revenue | revenue ≥ 0 | fail |
 | Period continuity | consecutive fiscal years with no gap for trend use | warn, trend INSUFFICIENT_DATA |
-| Abnormal movement | any core concept moves > 300% year-on-year | warn, surface for review |
+| Abnormal movement | any **core concept** (defined below) moves > 300% year-on-year | warn, surface for review |
 
 "Fail" means the period is stored but marked `integrity = FAIL` and excluded from scoring
 until reviewed. Never silently accepted.
+
+### Core concepts (abnormal-movement scope)
+
+The abnormal-movement check runs over these 16 concepts only — not all 31 in
+`config/tag_map.yaml`. A large move in something like `dividends` is ordinary corporate
+behaviour and would only generate noise.
+
+**Composites:** `total_debt`, `net_debt`, `ebitda`, `fcf`.
+
+**Reported concepts feeding the composites and the ratios:** `revenue`, `ebit`,
+`d_and_a`, `interest_expense`, `cash`, `total_assets`, `total_liabilities`, `equity`,
+`current_assets`, `current_liabilities`, `cfo`, `capex`.
+
+Composites are in scope deliberately: they aggregate several tags, so a single
+mis-mapped input surfaces in the composite before it surfaces in any individual
+reported concept (DECISIONS D23).
+
+### Abnormal-movement edge cases
+
+A percentage move is not always defined. These two cases flag rather than being skipped,
+the same way a ratio with a bad denominator returns `UNAVAILABLE` with a reason code
+instead of a misleading number:
+
+| Situation | Result |
+|---|---|
+| Sign change between periods (e.g. EBITDA positive → negative) | flag, reason `ABNORMAL_SIGN_CHANGE`, **regardless of magnitude** — it is not a percentage move in any meaningful sense |
+| Prior-period value is zero | flag, reason `ABNORMAL_FROM_ZERO` — never compute an undefined or infinite percentage |
+| Otherwise | flag, reason `ABNORMAL_MOVEMENT`, when `abs(value_t / value_(t−1) − 1) > 3.0` |
+
+Neither edge case silently skips the concept. A concept `UNAVAILABLE` in either period is
+not an abnormal movement — it is already recorded as a data gap.
 
 ## Assumption register
 

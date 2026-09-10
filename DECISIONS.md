@@ -260,3 +260,28 @@ Consequences: SQLAlchemy remains layerable later without schema changes if a rea
 emerges — connection pooling, a second backend, or query composition that outgrows
 hand-written SQL. pyproject.toml still lists sqlalchemy as a dependency; it is unused
 for now and stays until something needs it or a cleanup pass removes it.
+
+## D23 — "Core concept" defined for the abnormal-movement check, with its edge cases
+Decision (owner call, 2026-09-10): the abnormal-movement integrity check runs over 16
+named concepts, not all 31 — the four composites (total_debt, net_debt, ebitda, fcf) plus
+the reported concepts feeding them and the ratios (revenue, ebit, d_and_a,
+interest_expense, cash, total_assets, total_liabilities, equity, current_assets,
+current_liabilities, cfo, capex). Two undefined cases are specified rather than left to
+implementation: a sign change between periods flags regardless of magnitude
+(ABNORMAL_SIGN_CHANGE), and a prior-period value of zero flags instead of producing an
+undefined percentage (ABNORMAL_FROM_ZERO).
+Reason: "any core concept" was undefined, so Task 10 would have resolved it by
+implementation — the check's scope would have become whatever the code happened to do.
+Composites are included deliberately: they aggregate several tags, so a single
+mis-mapped input surfaces in the composite before it surfaces in any individual reported
+concept; excluding them would skip the values most likely to be wrong. The full 31 are
+excluded because a large move in something like dividends is ordinary and would only
+generate noise. The two edge cases follow the same principle as the ratio rules — a
+comparison that is not meaningfully a percentage must flag, never silently skip.
+Alternatives: all 31 concepts (noise); reported concepts only (misses the aggregation
+errors this check is best placed to catch); leave the edge cases to implementation.
+Consequences: docs/credit-methodology.md carries the list and an edge-case table. The
+three reason codes (ABNORMAL_MOVEMENT, ABNORMAL_SIGN_CHANGE, ABNORMAL_FROM_ZERO) are
+named here so Task 10 implements them rather than inventing its own; they are stored in
+data_quality_events like the other structured codes. A concept UNAVAILABLE in either
+period is not an abnormal movement — it is already recorded as a data gap.
