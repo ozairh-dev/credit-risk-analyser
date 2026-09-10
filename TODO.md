@@ -19,8 +19,10 @@ Ordered. Top unchecked item is next.
       command that calls it; tests with mocked HTTP
 
 ## Phase 3 - selection, normalisation, store
-- [ ] Task 5: hand-build tests/fixtures/companyfacts_minimal.json (2 fiscal years,
-      one restated value, one fallback tag, one quarterly fact that must be excluded)
+- [x] Task 5: hand-build tests/fixtures/companyfacts_minimal.json (2 fiscal years,
+      one restated value, one fallback tag, one quarterly fact that must be excluded;
+      also a bad-duration fact and an off-FYE instant fact). Expected answers in
+      tests/fixtures/companyfacts_minimal_expected.md — owner to verify before Task 6
 - [ ] Task 6: select_annual_facts passes that fixture
 - [ ] Task 7: tag mapping with source_tag recorded; fallback case tested
 - [ ] Task 8: SQLite schema - write the DDL, review it, then implement

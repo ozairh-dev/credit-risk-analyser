@@ -1,0 +1,63 @@
+{
+  "cik": 999999,
+  "entityName": "Fixture Manufacturing Co",
+  "facts": {
+    "dei": {
+      "EntityCommonStockSharesOutstanding": {
+        "label": "Entity Common Stock, Shares Outstanding",
+        "description": "Indicate number of shares or other units outstanding of each of registrant's classes of capital or common stock or other ownership interests.",
+        "units": {
+          "shares": [
+            {"end": "2024-01-31", "val": 50000000, "accn": "0000999999-24-000001", "fy": 2023, "fp": "FY", "form": "10-K", "filed": "2024-02-15"}
+          ]
+        }
+      }
+    },
+    "us-gaap": {
+      "Revenues": {
+        "label": "Revenues",
+        "description": "Amount of revenue recognized from goods sold, services rendered, insurance premiums, or other activities that constitute an earning process.",
+        "units": {
+          "USD": [
+            {"start": "2022-01-01", "end": "2022-12-31", "val": 1000, "accn": "0000999999-23-000001", "fy": 2022, "fp": "FY", "form": "10-K", "filed": "2023-02-15"},
+            {"start": "2023-04-01", "end": "2023-06-30", "val": 260, "accn": "0000999999-23-000042", "fy": 2023, "fp": "Q2", "form": "10-Q", "filed": "2023-08-01", "frame": "CY2023Q2"},
+            {"start": "2022-01-01", "end": "2022-12-31", "val": 1000, "accn": "0000999999-24-000001", "fy": 2023, "fp": "FY", "form": "10-K", "filed": "2024-02-15", "frame": "CY2022"},
+            {"start": "2023-04-01", "end": "2023-12-31", "val": 800, "accn": "0000999999-24-000001", "fy": 2023, "fp": "FY", "form": "10-K", "filed": "2024-02-15"},
+            {"start": "2023-01-01", "end": "2023-12-31", "val": 1200, "accn": "0000999999-24-000001", "fy": 2023, "fp": "FY", "form": "10-K", "filed": "2024-02-15", "frame": "CY2023"}
+          ]
+        }
+      },
+      "NetIncomeLoss": {
+        "label": "Net Income (Loss) Attributable to Parent",
+        "description": "The portion of profit or loss for the period, net of income taxes, which is attributable to the parent.",
+        "units": {
+          "USD": [
+            {"start": "2022-01-01", "end": "2022-12-31", "val": 100, "accn": "0000999999-23-000001", "fy": 2022, "fp": "FY", "form": "10-K", "filed": "2023-02-15"},
+            {"start": "2022-01-01", "end": "2022-12-31", "val": 90, "accn": "0000999999-24-000001", "fy": 2023, "fp": "FY", "form": "10-K", "filed": "2024-02-15", "frame": "CY2022"},
+            {"start": "2023-01-01", "end": "2023-12-31", "val": 110, "accn": "0000999999-24-000001", "fy": 2023, "fp": "FY", "form": "10-K", "filed": "2024-02-15", "frame": "CY2023"}
+          ]
+        }
+      },
+      "CostOfGoodsAndServicesSold": {
+        "label": "Cost of Goods and Services Sold",
+        "description": "The aggregate costs related to goods produced and sold and services rendered by an entity during the reporting period.",
+        "units": {
+          "USD": [
+            {"start": "2023-01-01", "end": "2023-12-31", "val": 600, "accn": "0000999999-24-000001", "fy": 2023, "fp": "FY", "form": "10-K", "filed": "2024-02-15", "frame": "CY2023"}
+          ]
+        }
+      },
+      "CashAndCashEquivalentsAtCarryingValue": {
+        "label": "Cash and Cash Equivalents, at Carrying Value",
+        "description": "Amount of currency on hand as well as demand deposits with banks or financial institutions.",
+        "units": {
+          "USD": [
+            {"end": "2022-12-31", "val": 50, "accn": "0000999999-23-000001", "fy": 2022, "fp": "FY", "form": "10-K", "filed": "2023-02-15", "frame": "CY2022Q4I"},
+            {"end": "2023-06-30", "val": 55, "accn": "0000999999-24-000001", "fy": 2023, "fp": "FY", "form": "10-K", "filed": "2024-02-15"},
+            {"end": "2023-12-31", "val": 70, "accn": "0000999999-24-000001", "fy": 2023, "fp": "FY", "form": "10-K", "filed": "2024-02-15", "frame": "CY2023Q4I"}
+          ]
+        }
+      }
+    }
+  }
+}

@@ -3,7 +3,8 @@
 _Update at the end of every working session._
 
 ## Phase
-Phase 1 complete. Phase 2 (SEC ingestion) complete — Task 4 done. Phase 3 next.
+Phases 1-2 complete. Phase 3 in progress — Task 5 done (expected answers await owner
+verification), Task 6 next.
 
 ## Completed
 - Specification: CLAUDE.md, docs/, DECISIONS.md D1-D10
@@ -39,8 +40,22 @@ Phase 1 complete. Phase 2 (SEC ingestion) complete — Task 4 done. Phase 3 next
   Communication Services, heavily leveraged/weak case). All three fetched real SEC data
   (589-666 us-gaap concepts each) and a repeat fetch confirmed the cache hit path
   (0.014s, no network round trip).
-- 27 tests passing (6 setup + 3 env + 6 ingest/tickers + 9 ingest/companyfacts (all
-  HTTP-mocked) + 3 cli wiring)
+- Task 5 (2026-09-10, on Fable per the model protocol) — hand-built
+  tests/fixtures/companyfacts_minimal.json: fictional Fixture Manufacturing Co
+  (CIK 999999), 3 filings, 13 facts across Revenues / NetIncomeLoss /
+  CostOfGoodsAndServicesSold (fallback-tag case; primary CostOfRevenue absent) /
+  Cash (instant) / one dei shares fact. Covers: two clean fiscal years, a
+  restatement (100 -> 90 via the next year's 10-K), a same-value comparative
+  duplicate, a quarterly fact, a 274-day duration trap stamped fp=FY/form=10-K,
+  and an off-fiscal-year-end instant fact. Expected selection results hand-written
+  in tests/fixtures/companyfacts_minimal_expected.md BEFORE any selection code
+  exists; 3 structural guard tests protect the fixture's geometry. No selection
+  code written (that is Task 6). No DECISIONS entry — interpretation flags below
+  were deliberately left for the owner, not decided.
+
+## Tests
+- 30 passing (6 setup + 3 env + 6 ingest/tickers + 9 ingest/companyfacts (all
+  HTTP-mocked) + 3 cli wiring + 3 fixture guards)
 
 ## In progress
 - nothing
@@ -50,7 +65,16 @@ Phase 1 complete. Phase 2 (SEC ingestion) complete — Task 4 done. Phase 3 next
 
 ## Open questions
 - Which 25-50 companies form the v1 universe? (US-listed, non-financial, 3+ years of 10-K data)
+- Task 5 interpretation flags (details in tests/fixtures/companyfacts_minimal_expected.md),
+  owner to settle before/during Task 6; record outcomes in DECISIONS.md:
+  - A: how selection derives "the fiscal year end" for rule 3 — companyfacts JSON has
+    no per-company FYE field
+  - B: confirm rule ordering (1-3 filter, then 4 dedups survivors) — the fixture's R4/R3
+    pair shows any other order is indeterminate
+  - C: equal-value duplicates — rule 4 as written shifts provenance to the later
+    (comparative) filing even when the value is unchanged; confirm or amend
 
 ## Next priorities
-- Task 5 — hand-build tests/fixtures/companyfacts_minimal.json (2 fiscal years, one
-  restated value, one fallback tag, one quarterly fact that must be excluded)
+- Owner verifies the expected answers in tests/fixtures/companyfacts_minimal_expected.md
+  and settles flags A-C
+- Task 6 — select_annual_facts passes the fixture, value by value
