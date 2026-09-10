@@ -285,3 +285,30 @@ three reason codes (ABNORMAL_MOVEMENT, ABNORMAL_SIGN_CHANGE, ABNORMAL_FROM_ZERO)
 named here so Task 10 implements them rather than inventing its own; they are stored in
 data_quality_events like the other structured codes. A concept UNAVAILABLE in either
 period is not an abnormal movement — it is already recorded as a data gap.
+
+## D24 — Rule 5 classifies units three ways; FOREIGN_UNIT is for currencies only
+Decision (owner call, 2026-09-10, after measuring the three cached companies): rule 5
+splits units into monetary-USD (selected), monetary-non-USD (`UNAVAILABLE`,
+`FOREIGN_UNIT`), and not-a-monetary-item (ignored entirely — no fact, no marker, no
+event). The third kind covers `shares`, `pure`, compound per-unit denominations of the
+form `USD/<something>` (`USD/shares`, `USD/Warrant`), and count units naming a thing
+counted (`segment`, `patent`, `lawsuit`, `Employee`, `reporting_unit`, …).
+Implementation: a unit is treated as a currency only when it matches an ISO-4217 shape
+(exactly three uppercase letters), which is what SEC uses for monetary facts.
+Reason: the previous rule marked every non-USD, non-`shares`, non-`pure` unit as
+`FOREIGN_UNIT`, which produced **3,845 markers across F, JNJ and LUMN — 3,612 of them
+`USD/shares`** and ~233 count units. A data-quality marker that fires ~1,300 times per
+company on ordinary reporting is not a signal; it would have made the Phase 4 panel
+unreadable and buried the one marker that matters. Same principle as D15 (supersession
+only on changed values), D17(2) (no warning on equal-value co-tagging) and D16(4)'s
+tiebreak warning: a flag must fire when something is actually wrong. A per-share rate is
+not foreign currency, and neither is a count of patents.
+Alternatives: ignore only `USD/<something>` as literally scoped (would have left the
+~233 count-unit markers, which are equally misclassified); keep an explicit denylist of
+non-monetary unit names (unbounded — the sample alone contains `segment`, `Segment` and
+the SEC typo `segement`).
+Consequences: measured effect on the three cached companies — **3,845 markers -> 1**,
+and that one is JNJ's single genuine `EUR` fact, which is exactly the case the code
+exists for. Selected fact counts and all mapped values are unchanged (verified: JNJ 4,055
+current facts before and after; `short_term_debt` 2025-12-28 still 8,495M via
+`ShortTermBorrowings`). `classify_unit` is the single place this decision lives.

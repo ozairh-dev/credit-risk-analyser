@@ -144,13 +144,59 @@ def wrap(tag_units):
     }}}
 
 
-def test_foreign_unit_unavailable():
-    cf = wrap({"Revenues": {"EUR": [duration("Revenues", "2022-01-01", "2022-12-31", 500)]}})
+@pytest.mark.parametrize("unit", ["EUR", "GBP", "JPY"])
+def test_genuine_foreign_currency_is_unavailable(unit):
+    """Rule 5: a real ISO-4217 non-USD currency still produces a FOREIGN_UNIT
+    marker — this is the signal the code exists for (D24)."""
+    cf = wrap({"Revenues": {unit: [duration("Revenues", "2022-01-01", "2022-12-31", 500)]}})
     res = select_annual_facts(cf)
     assert res.selected == []
     assert [(u.tag, u.unit, u.reason_code) for u in res.unavailable] == [
-        ("Revenues", "EUR", "FOREIGN_UNIT")
+        ("Revenues", unit, "FOREIGN_UNIT")
     ]
+
+
+@pytest.mark.parametrize("unit", ["USD/shares", "USD/Warrant"])
+def test_per_unit_denomination_produces_no_marker(unit):
+    """USD/shares is a rate per unit, not a foreign currency and not an amount:
+    ignored like shares and pure, with no UNAVAILABLE marker at all (D24)."""
+    cf = wrap({"CommonStockDividendsPerShareCashPaid": {unit: [
+        duration("CommonStockDividendsPerShareCashPaid", "2022-01-01", "2022-12-31", 0.6)
+    ]}})
+    res = select_annual_facts(cf)
+    assert res.selected == []
+    assert res.unavailable == []
+    assert res.warnings == []
+
+
+@pytest.mark.parametrize("unit", ["shares", "pure", "segment", "patent", "Employee", "Y", "Rate"])
+def test_non_monetary_units_produce_no_marker(unit):
+    """Counts and dimensionless units are not money and not foreign currency."""
+    cf = wrap({"NumberOfReportableSegments": {unit: [
+        duration("NumberOfReportableSegments", "2022-01-01", "2022-12-31", 4)
+    ]}})
+    res = select_annual_facts(cf)
+    assert res.selected == []
+    assert res.unavailable == []
+
+
+def test_usd_and_per_share_units_on_the_same_tag():
+    """A tag carrying both USD and USD/shares yields the USD fact only."""
+    cf = wrap({"Revenues": {
+        "USD": [duration("Revenues", "2022-01-01", "2022-12-31", 500)],
+        "USD/shares": [duration("Revenues", "2022-01-01", "2022-12-31", 1.25)],
+    }})
+    res = select_annual_facts(cf)
+    assert [(f.val, f.unit) for f in res.selected] == [(500, "USD")]
+    assert res.unavailable == []
+
+
+def test_classify_unit_three_way_split():
+    from credit_risk.normalise.selection import classify_unit
+    assert classify_unit("USD") == "monetary"
+    assert classify_unit("EUR") == "foreign"
+    for unit in ("USD/shares", "shares", "pure", "segment", "Rate", "reporting_unit"):
+        assert classify_unit(unit) == "non_monetary", unit
 
 
 def test_no_fye_anchor_unavailable():

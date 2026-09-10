@@ -40,8 +40,19 @@ has to be explicit or you get duplicates and wrong periods.
    reporting), the earliest filing remains the source and no supersession is recorded —
    supersession marks changed values only. (DECISIONS D15)
    Rules apply in order: 1–3 filter, then this rule dedups the survivors. (DECISIONS D14)
-5. **Units:** USD for monetary items. Any other unit → `UNAVAILABLE`, reason `FOREIGN_UNIT`.
-   `shares` and `pure` units are ignored for financial items.
+5. **Units:** USD for monetary items. A unit is classified into exactly one of three
+   kinds (DECISIONS D24):
+   - **Monetary, USD** → the fact is selected normally.
+   - **Monetary, non-USD** — a genuine ISO-4217 currency code other than USD (`EUR`,
+     `GBP`, `JPY`) → `UNAVAILABLE`, reason `FOREIGN_UNIT`. Never converted.
+   - **Not a monetary item** → ignored entirely: no fact, no marker, no event. This
+     covers `shares` and `pure`, compound per-unit denominations of the form
+     `USD/<something>` (`USD/shares`, `USD/Warrant` — these are rates per unit, not
+     amounts), and count units naming a thing being counted (`segment`, `patent`,
+     `lawsuit`, `Employee`, `reporting_unit`, …).
+
+   `FOREIGN_UNIT` is reserved for the second kind only. A per-share amount is not
+   foreign currency, and neither is a count of patents.
 6. Store on every fact: `fy`, `fp`, `form`, `filed`, `accn`, `frame`, `start`, `end`.
 
 ## Normalisation

@@ -107,12 +107,16 @@ because the integrity checks depend on the composites. See docs/build-plan.md.
   is a scope addition to ingestion. Needed before Phase 10 validation.
 
 ## Tests
-- 105 passing (6 setup + 3 env + 6 ingest/tickers + 9 ingest/companyfacts (all
-  HTTP-mocked) + 3 cli wiring + 3 fixture guards + 16 selection + 10 mapping +
+- 118 passing (6 setup + 3 env + 6 ingest/tickers + 9 ingest/companyfacts (all
+  HTTP-mocked) + 3 cli wiring + 3 fixture guards + 29 selection + 10 mapping +
   49 store: constraint-rejection tests for every CHECK, the six-value
   data_status constraint, FK enforcement, STRICT + fallback, the circular-FK
   path, the fixture's exact stored rows, the fy-trap at storage, the
   supersession self-join, Q1/Q2 shapes, and append-with-history)
+- Rule 5 unit handling corrected (D24): FOREIGN_UNIT now fires only for genuine
+  ISO-4217 non-USD currencies. Measured on the three cached companies, spurious
+  markers went from 3,845 to 1 (JNJ's single real EUR fact); selected facts and
+  all mapped values unchanged.
 
 ## In progress
 - nothing

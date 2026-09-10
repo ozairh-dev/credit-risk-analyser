@@ -13,6 +13,7 @@ the filing's fiscal year, not the fact's period, so two different periods can
 share an `fy`. Period identity is always (tag, end).
 """
 
+import re
 from collections import Counter, defaultdict
 from dataclasses import dataclass
 from datetime import date
@@ -24,7 +25,29 @@ ANNUAL_FORMS = {"10-K", "10-K/A"}       # rule 1
 DURATION_MIN_DAYS = 350                 # rule 2, inclusive (per the expectations doc)
 DURATION_MAX_DAYS = 380
 FYE_CLUSTER_DAYS = 14                   # D16(1): duration ends this close = same fiscal year
-IGNORED_UNITS = {"shares", "pure"}      # rule 5: ignored for financial items
+
+MONETARY_UNIT = "USD"
+# ISO 4217 codes are always three letters, and SEC uses them for monetary facts.
+# Anything else — shares, pure, USD/shares, segment, patent — is not money (D24).
+CURRENCY_CODE = re.compile(r"^[A-Z]{3}$")
+
+MONETARY = "monetary"
+FOREIGN = "foreign"
+NON_MONETARY = "non_monetary"
+
+
+def classify_unit(unit: str) -> str:
+    """Rule 5's three-way split (D24).
+
+    Non-monetary units are ignored entirely — no fact and no marker — because a
+    per-share rate or a count of patents is not a foreign currency, and marking
+    it as one produces thousands of non-events per company.
+    """
+    if unit == MONETARY_UNIT:
+        return MONETARY
+    if CURRENCY_CODE.match(unit):
+        return FOREIGN
+    return NON_MONETARY
 
 
 @dataclass
@@ -159,9 +182,10 @@ def select_annual_facts(companyfacts: dict) -> SelectionResult:
     for tag, tag_obj in us_gaap.items():
         label = tag_obj.get("label")
         for unit, facts in tag_obj.get("units", {}).items():
-            if unit in IGNORED_UNITS:
-                continue
-            if unit != "USD":
+            kind = classify_unit(unit)
+            if kind == NON_MONETARY:
+                continue                # not money: no fact, no marker (D24)
+            if kind == FOREIGN:
                 # rule 5: non-USD monetary units are UNAVAILABLE, never converted
                 for raw in facts:
                     unavailable.append(
