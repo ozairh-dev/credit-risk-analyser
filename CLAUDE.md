@@ -90,10 +90,14 @@ credit-risk-platform/
 Default to Sonnet for mechanical, low-judgment work: project setup, the SEC fetcher,
 wiring, writing tests once the logic is agreed, small fixes.
 
-Escalate to Opus for judgment-heavy work: Phase 3 (fact selection and normalisation —
-Tasks 5–7), Task 8 (database schema design), Phase 6 (scoring logic). Also escalate any
-time a task involves interpreting an edge case or rule from `docs/credit-methodology.md`
-that isn't already spelled out step-by-step.
+Escalate to Opus for judgment-heavy work: Task 8 (database schema design), Phase 6
+(scoring logic). Also escalate any time a task involves interpreting an edge case or rule
+from `docs/credit-methodology.md` that isn't already spelled out step-by-step.
+
+Escalate to Fable for the highest-judgment work: Phase 3 (fact selection and
+normalisation — Tasks 5–7), and any other task where an error would produce a
+plausible-but-wrong result rather than a visible failure — the category the deterministic
+engine can least afford to get subtly wrong.
 
 Escalate mid-task, regardless of phase, if: a test keeps failing after two fix attempts
 on the current model, the proposed approach contradicts something stated in
