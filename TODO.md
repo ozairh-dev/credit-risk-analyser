@@ -28,10 +28,18 @@ Ordered. Top unchecked item is next.
 - [x] Task 8: SQLite schema - write the DDL, review it, then implement
       (14 tables; stress tables deferred to Phase 8 per D20)
 
-## Phase 4-5 - integrity, composites, metrics
-- [ ] Task 9: total_debt / net_debt / ebitda / fcf with a test per rule in the methodology
-- [ ] Task 10: net_debt_to_ebitda, ebit_interest_cover, current_ratio end to end on a
-      real cached company, with provenance printed
+## Phase 4-5 - composites, integrity, metrics
+Task order interleaves the phases here: composites (Phase 5) come before the integrity
+checks (Phase 4) because the checks depend on them. See docs/build-plan.md.
+
+- [ ] Task 9 (Phase 5): total_debt / net_debt / ebitda / fcf with a test per rule in the
+      methodology. Also creates config/composites.yaml (include_operating_leases,
+      include_st_investments) which store/fingerprint.py already expects
+- [ ] Task 10 (Phase 4): integrity checks + per-period data-quality summary; a failing
+      period is stored, marked integrity = FAIL, and excluded from scoring. Passing and
+      failing fixture per check
+- [ ] Task 11 (Phase 5): net_debt_to_ebitda, ebit_interest_cover, current_ratio end to
+      end on a real cached company, with provenance printed
 
 ## Later
 - See docs/build-plan.md

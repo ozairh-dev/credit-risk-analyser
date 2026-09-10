@@ -85,29 +85,46 @@ Severe stress.
 
 **Phase 11 — Docs and write-up.** README, methodology finalised, decisions log complete.
 
-## First ten tasks
+## Task sequence
 
-1. Create the repo, `pyproject.toml`, layout, `.gitignore`, empty `pytest` run.
-2. Copy the four docs and `CLAUDE.md` in; create `config/*.yaml` with the defaults from
-   the methodology.
-3. Implement `ingest.fetch_company_tickers()` and `ingest.ticker_to_cik()` with a cached
-   copy of `company_tickers.json`.
-4. Implement `ingest.fetch_companyfacts(cik)` with User-Agent, rate limiting, raw cache,
-   `--force`, and a `credit-risk fetch <ticker>` CLI command wired to it. Tests with
-   mocked requests.
-5. Build `tests/fixtures/companyfacts_minimal.json` by hand: two fiscal years, one
-   restated value, one concept only available under a fallback tag, one quarterly fact
-   that must be excluded.
-6. Implement fact selection (`normalise.select_annual_facts`) against that fixture until
-   every expected row matches.
-7. Implement tag mapping with `source_tag` recording; test the fallback case.
-8. Design and create the SQLite schema (`companies`, `filings`, `facts`, `concepts`,
-   `metrics`, `assumptions`, `overrides`, `scores`, `warnings`, `stress_runs`) — write
-   the DDL, review it, then implement.
-9. Implement composite concepts (`total_debt`, `net_debt`, `ebitda`, `fcf`) with every
-   rule in the methodology and a test per rule.
-10. Implement the first three ratios (`net_debt_to_ebitda`, `ebit_interest_cover`,
-    `current_ratio`) end-to-end from a real cached company, with provenance printed.
+Every task names the phase it belongs to. This list and the phase list above are the
+same plan at different granularity and must stay in step — if a phase has no task, the
+list is incomplete.
+
+Task order is not always phase order: Phase 5's composite concepts come before Phase 4's
+integrity checks because the checks depend on them (see Task 9). Where they interleave,
+the task order is the one to follow.
+
+1. (Phase 1) Create the repo, `pyproject.toml`, layout, `.gitignore`, empty `pytest` run.
+2. (Phase 1) Copy the four docs and `CLAUDE.md` in; create `config/*.yaml` with the
+   defaults from the methodology.
+3. (Phase 2) Implement `ingest.fetch_company_tickers()` and `ingest.ticker_to_cik()` with
+   a cached copy of `company_tickers.json`.
+4. (Phase 2) Implement `ingest.fetch_companyfacts(cik)` with User-Agent, rate limiting,
+   raw cache, `--force`, and a `credit-risk fetch <ticker>` CLI command wired to it.
+   Tests with mocked requests.
+5. (Phase 3) Build `tests/fixtures/companyfacts_minimal.json` by hand: two fiscal years,
+   one restated value, one concept only available under a fallback tag, one quarterly
+   fact that must be excluded.
+6. (Phase 3) Implement fact selection (`normalise.select_annual_facts`) against that
+   fixture until every expected row matches.
+7. (Phase 3) Implement tag mapping with `source_tag` recording; test the fallback case.
+8. (Phase 3) Design and create the SQLite schema (`companies`, `filings`, `facts`,
+   `concepts`, `metrics`, `assumptions`, `overrides`, `scores`, `warnings`) — write the
+   DDL, review it, then implement. Stress tables are deferred to Phase 8 (DECISIONS D20).
+9. (Phase 5) Implement composite concepts (`total_debt`, `net_debt`, `ebitda`, `fcf`)
+   with every rule in the methodology and a test per rule. **Before Task 10:** the
+   `Debt ⊆ liabilities` check tests `total_debt_ex_leases`, and the abnormal-movement
+   check covers composite concepts as well as reported ones, so the integrity checks
+   cannot be completed until the composites exist.
+10. (Phase 4) Implement the integrity checks from the methodology and the per-period
+    data-quality summary: a period with a failing check is stored but marked
+    `integrity = FAIL` and excluded from scoring. Each check needs a passing and a
+    failing fixture. The completeness and fallback-count half of the summary is already
+    queryable (`store.queries.data_quality_by_period`).
+11. (Phase 5) Implement the first three ratios (`net_debt_to_ebitda`,
+    `ebit_interest_cover`, `current_ratio`) end-to-end from a real cached company, with
+    provenance printed.
 
 ## Testing strategy
 

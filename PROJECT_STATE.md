@@ -3,8 +3,9 @@
 _Update at the end of every working session._
 
 ## Phase
-Phases 1-2 complete. Phase 3 complete — Tasks 5-8 done. Phase 4 (integrity + data
-quality) / Task 9 (composite concepts) next.
+Phases 1-3 complete — Tasks 1-8 done. Task 9 (composite concepts, Phase 5) next, then
+Task 10 (integrity + data quality, Phase 4): task order interleaves the phases there
+because the integrity checks depend on the composites. See docs/build-plan.md.
 
 ## Completed
 - Specification: CLAUDE.md, docs/, DECISIONS.md D1-D10
