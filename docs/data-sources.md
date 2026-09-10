@@ -13,7 +13,7 @@
 - Every request must send a `User-Agent` header of the form `"Project name contact@email"`.
   The SEC blocks requests without one.
 - Stay under 10 requests/second. Add a small sleep between calls.
-- Cache the raw JSON to `data/raw/{cik}.json` with a `fetched_at` timestamp. Do not
+- Cache the raw JSON to `data/raw/CIK{cik:010d}.json` with a `fetched_at` timestamp. Do not
   re-fetch within 24 hours unless `--force` is passed. Raw files are never edited.
 
 **Licensing:** SEC data is US public domain. No restrictions on this use.

@@ -3,7 +3,7 @@
 _Update at the end of every working session._
 
 ## Phase
-Phase 1 complete. Phase 2 (SEC ingestion) in progress — Task 3 done, Task 4 next.
+Phase 1 complete. Phase 2 (SEC ingestion) complete — Task 4 done. Phase 3 next.
 
 ## Completed
 - Specification: CLAUDE.md, docs/, DECISIONS.md D1-D10
@@ -16,7 +16,6 @@ Phase 1 complete. Phase 2 (SEC ingestion) in progress — Task 3 done, Task 4 ne
   fetched_at, 24h staleness, reused by Task 4), credit_risk/ingest/tickers.py
   (fetch_company_tickers, ticker_to_cik). Verified against the real SEC endpoint
   (AAPL -> 320193, MSFT -> 789019); cache written to data/raw/company_tickers.json.
-- 15 tests passing (6 setup + 3 env + 6 ingest/tickers (HTTP-mocked))
 - Project review (2026-09-09): git repo initialized and initial commit made (Task 1's
   "repo" item was checked off but never actually done until now); config/ingestion.yaml
   added so the 24h cache staleness window is no longer hardcoded in cache.py (CLAUDE.md
@@ -25,7 +24,23 @@ Phase 1 complete. Phase 2 (SEC ingestion) in progress — Task 3 done, Task 4 ne
   table no longer restates margin_shock values that had drifted out of sync with
   config/stress.yaml (DECISIONS D12); TODO.md Task 4 and build-plan.md's task list now
   explicitly include wiring a `credit-risk fetch <ticker>` CLI command; two tests
-  strengthened to assert exact values instead of just structure.
+  strengthened to assert exact values instead of just structure. Fixes committed
+  separately from the skeleton (commit 5c6b706).
+- Task 4 (2026-09-10) — credit_risk/ingest/companyfacts.py: `fetch_companyfacts(cik)`,
+  caches raw JSON to `data/raw/CIK{cik:010d}.json` (doc updated to match), reuses
+  `ingest/cache.py` + `config/ingestion.yaml` staleness exactly as Task 3; `timeout=30`
+  on the request; non-200 responses wrapped in a clear `RuntimeError` instead of a bare
+  HTTPError; `time.sleep(0.12)` after every live (non-cached) request to stay under the
+  10 req/s ceiling. CLI: `credit-risk fetch <ticker> [--force]`, wiring
+  `ticker_to_cik` -> `fetch_companyfacts`. Verified live against three real companies
+  (chosen for sector + credit-profile spread): **F** (Ford Motor Co, CIK 37996 — leveraged
+  industrial, the user's pick), **JNJ** (Johnson & Johnson, CIK 200406 — Health Care,
+  strong/low-leverage anchor case), **LUMN** (Lumen Technologies, CIK 18926 —
+  Communication Services, heavily leveraged/weak case). All three fetched real SEC data
+  (589-666 us-gaap concepts each) and a repeat fetch confirmed the cache hit path
+  (0.014s, no network round trip).
+- 27 tests passing (6 setup + 3 env + 6 ingest/tickers + 9 ingest/companyfacts (all
+  HTTP-mocked) + 3 cli wiring)
 
 ## In progress
 - nothing
@@ -35,9 +50,7 @@ Phase 1 complete. Phase 2 (SEC ingestion) in progress — Task 3 done, Task 4 ne
 
 ## Open questions
 - Which 25-50 companies form the v1 universe? (US-listed, non-financial, 3+ years of 10-K data)
-- Keep operating leases in total debt by default? (currently yes, config-toggled)
-- Default `fixed_cost_share` for stress mode B - keep 0.3 or vary by sector?
 
 ## Next priorities
-- Task 4 — companyfacts fetcher with User-Agent, rate limit, raw cache (--force),
-  reusing credit_risk/ingest/cache.py from Task 3
+- Task 5 — hand-build tests/fixtures/companyfacts_minimal.json (2 fiscal years, one
+  restated value, one fallback tag, one quarterly fact that must be excluded)

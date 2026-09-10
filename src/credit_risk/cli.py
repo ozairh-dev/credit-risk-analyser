@@ -1,12 +1,11 @@
 """Command-line interface.
 
-Commands are added phase by phase — see TODO.md. Nothing here does real
-work yet beyond confirming the project and its configuration load.
+Commands are added phase by phase — see TODO.md.
 """
 
 import typer
 
-from credit_risk import __version__, config
+from credit_risk import __version__, config, ingest
 
 app = typer.Typer(help="Credit risk analyser", no_args_is_help=True)
 
@@ -23,6 +22,17 @@ def version() -> None:
     weights = config.thresholds()["weights"]
     typer.echo(f"scoring categories loaded: {', '.join(weights)}")
     typer.echo(f"tag map concepts loaded: {len(config.tag_map())}")
+
+
+@app.command()
+def fetch(
+    ticker: str,
+    force: bool = typer.Option(False, "--force", help="Bypass the cache and re-fetch."),
+) -> None:
+    """Fetch SEC companyfacts for TICKER and cache the raw JSON to data/raw/."""
+    cik = ingest.ticker_to_cik(ticker)
+    ingest.fetch_companyfacts(cik, force=force)
+    typer.echo(f"{ticker.upper()} (CIK {cik}): cached to {ingest.default_cache_path(cik)}")
 
 
 if __name__ == "__main__":

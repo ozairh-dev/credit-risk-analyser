@@ -6,7 +6,7 @@ Ordered. Top unchecked item is next.
 - [ ] Read docs/credit-methodology.md end to end; be able to explain every formula
       and the stress propagation rules
 - [ ] Choose the v1 company universe (25-50 names)
-- [ ] Settle the two open questions in PROJECT_STATE.md
+- [ ] Settle the remaining open question in PROJECT_STATE.md (company universe)
 
 ## Phase 1 - foundation
 - [x] Task 1: repo, pyproject.toml, layout, .gitignore, passing pytest run
@@ -14,7 +14,7 @@ Ordered. Top unchecked item is next.
 
 ## Phase 2 - ingestion
 - [x] Task 3: fetch company_tickers.json, cache it, ticker -> CIK lookup
-- [ ] Task 4: fetch_companyfacts(cik) with User-Agent from .env, rate limiting,
+- [x] Task 4: fetch_companyfacts(cik) with User-Agent from .env, rate limiting,
       raw cache to data/raw/, --force flag; wire a `credit-risk fetch <ticker>` CLI
       command that calls it; tests with mocked HTTP
 
