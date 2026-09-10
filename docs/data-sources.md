@@ -28,9 +28,18 @@ has to be explicit or you get duplicates and wrong periods.
 2. **Duration facts** (income statement, cash flow): keep only where `end − start` is
    between 350 and 380 days. This drops cumulative and partial-year values.
 3. **Instant facts** (balance sheet): keep where `end` equals the fiscal year end.
+   The fiscal year end is **derived** — companyfacts has no per-company FYE field: it is
+   the `end` date of the duration facts accepted by rules 1–2 for that fiscal year. If
+   accepted duration facts disagree on `end`, use the most common date and flag the
+   period. If a year has no accepted duration facts, its instant facts are
+   `UNAVAILABLE`, reason `NO_FYE_ANCHOR` — never accepted unvalidated. (DECISIONS D13)
 4. **Restatements:** for the same `(concept, period end)` there will often be several
-   values from different filings. The **most recently filed** is current. Earlier values
-   are kept and marked `superseded_by = <accession>`. Never delete.
+   values from different filings. When the values **differ**, the most recently filed is
+   current; earlier values are kept and marked `superseded_by = <accession>`. Never
+   delete. When a later filing repeats an **identical** value (routine comparative
+   reporting), the earliest filing remains the source and no supersession is recorded —
+   supersession marks changed values only. (DECISIONS D15)
+   Rules apply in order: 1–3 filter, then this rule dedups the survivors. (DECISIONS D14)
 5. **Units:** USD for monetary items. Any other unit → `UNAVAILABLE`, reason `FOREIGN_UNIT`.
    `shares` and `pure` units are ignored for financial items.
 6. Store on every fact: `fy`, `fp`, `form`, `filed`, `accn`, `frame`, `start`, `end`.

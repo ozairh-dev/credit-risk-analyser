@@ -65,16 +65,9 @@ verification), Task 6 next.
 
 ## Open questions
 - Which 25-50 companies form the v1 universe? (US-listed, non-financial, 3+ years of 10-K data)
-- Task 5 interpretation flags (details in tests/fixtures/companyfacts_minimal_expected.md),
-  owner to settle before/during Task 6; record outcomes in DECISIONS.md:
-  - A: how selection derives "the fiscal year end" for rule 3 — companyfacts JSON has
-    no per-company FYE field
-  - B: confirm rule ordering (1-3 filter, then 4 dedups survivors) — the fixture's R4/R3
-    pair shows any other order is indeterminate
-  - C: equal-value duplicates — rule 4 as written shifts provenance to the later
-    (comparative) filing even when the value is unchanged; confirm or amend
 
 ## Next priorities
-- Owner verifies the expected answers in tests/fixtures/companyfacts_minimal_expected.md
-  and settles flags A-C
-- Task 6 — select_annual_facts passes the fixture, value by value
+- Task 6 — select_annual_facts passes the fixture, value by value (flags A-C settled
+  by the owner 2026-09-10 as DECISIONS D13-D15; expected answers in
+  tests/fixtures/companyfacts_minimal_expected.md updated to match; not started yet
+  at the owner's request)

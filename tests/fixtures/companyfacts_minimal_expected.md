@@ -48,7 +48,7 @@ fact's period. Selection must key periods on `start`/`end`, never on `fy`.
 
 | Concept | Period end | Value | From accession | Notes |
 |---|---|---|---|---|
-| revenue | 2022-12-31 | 1000 | 0000999999-24-000001 | R2 wins over R1 per rule 4 (most recently filed); values equal, provenance shifts — see flag C |
+| revenue | 2022-12-31 | 1000 | 0000999999-23-000001 | R1 stays current per DECISIONS D15 — R2 repeats an identical value, so the earliest filing keeps provenance and no supersession is recorded |
 | revenue | 2023-12-31 | 1200 | 0000999999-24-000001 | R3 |
 | net_income | 2022-12-31 | **90** | 0000999999-24-000001 | N2, the restated value |
 | net_income | 2023-12-31 | 110 | 0000999999-24-000001 | N3 |
@@ -61,7 +61,10 @@ fact's period. Selection must key periods on `start`/`end`, never on `fy`.
 | Fact | Value | Marked |
 |---|---|---|
 | N1 (net income FY2022 original) | 100 | superseded_by = 0000999999-24-000001 |
-| R1 (revenue FY2022 original copy) | 1000 | superseded_by = 0000999999-24-000001 |
+
+R1 is **not** superseded: per DECISIONS D15, supersession fires only when the value
+changed. R2 (the later, identical comparative copy) is a recorded duplicate with no
+supersession; R1 remains the source.
 
 `superseded_by` is an **output annotation produced by our selection**, not a field in
 SEC's JSON — the fixture must never contain that string (a test enforces this).
@@ -75,21 +78,16 @@ SEC's JSON — the fixture must never contain that string (a test enforces this)
 | K3 | Rule 3 | instant end 2023-06-30 ≠ fiscal year end 2023-12-31 |
 | dei fact | out of scope | non-us-gaap taxonomy, `shares` unit (rule 5: shares/pure ignored) |
 
-## Interpretation flags — owner to settle before/during Task 6
+## Interpretation flags — RESOLVED by the owner, 2026-09-10
 
-Flagged, not decided; nothing added to DECISIONS.md yet.
-
-- **A. Source of "fiscal year end" for rule 3.** Real companyfacts JSON has no
-  per-company FYE field. Here it is Dec 31 by construction, but Task 6 must derive it
-  (plausibly from accepted duration facts' `end` dates). Docs don't specify how.
-- **B. Rule ordering.** Answers are determinate only if rules 1–3 filter first and
-  rule 4 dedups survivors. Proof in this fixture: R4 and R3 share (Revenues,
-  end 2023-12-31) *within the same filing* — dedup-before-filter would be an
-  unresolvable tie. Confirm, then record in DECISIONS.md.
-- **C. Equal-value duplicates.** Rule 4 read literally makes the later (comparative)
-  filing the current provenance for FY2022 revenue even though the value is unchanged.
-  If original-filing provenance is preferred when values are equal, amend the rule now.
-- **Minor.** 350–380 treated as inclusive; boundary values not tested here.
+- **A. Source of "fiscal year end" for rule 3** → derive from accepted duration facts'
+  `end` dates; disagreement → most common + flag; none → `NO_FYE_ANCHOR`. DECISIONS D13,
+  rule written into docs/data-sources.md.
+- **B. Rule ordering** → confirmed: filter (1–3), then dedup (4). DECISIONS D14.
+- **C. Equal-value duplicates** → original-filing provenance; supersession only on
+  changed values. DECISIONS D15. The expected tables above reflect this.
+- **Minor (still open, low stakes).** 350–380 treated as inclusive; boundary values not
+  tested here.
 
 ## Deliberately not covered (candidates for later fixture additions)
 

@@ -88,3 +88,40 @@ Consequences: the Inputs table now points to the presets table instead of restat
 numbers, so there is one place to get this wrong instead of two. config/stress.yaml was
 already correct and is unchanged. `test_stress_presets_present` now asserts the exact
 moderate/severe values so a future edit can't silently reintroduce a sign error.
+
+## D13 — Fiscal year end for instant-fact selection is derived from accepted duration facts
+Decision: rule 3's "fiscal year end" is the `end` date of the duration facts accepted by
+rules 1–2 for that fiscal year. If accepted duration facts disagree on `end`, use the
+most common date and flag the period. If a year has no accepted duration facts, its
+instant facts are `UNAVAILABLE` with reason `NO_FYE_ANCHOR` — never accepted unvalidated.
+Reason: companyfacts JSON has no per-company fiscal-year-end field, so rule 3 as
+originally written had no defined anchor (flag A from the Task 5 fixture).
+Alternatives: fetch the SEC submissions API for the registrant's FYE (extra endpoint and
+coupling for one date); majority vote over instant facts' own end dates (circular —
+validates instants against themselves).
+Consequences: rule written into docs/data-sources.md. A period with only balance-sheet
+data cannot pass selection — fail-safe (CLAUDE.md rule 9) rather than guessed.
+
+## D14 — Selection rules apply in order: filter (rules 1–3), then dedup (rule 4)
+Decision: rules 1–3 filter the raw facts; rule 4's supersession pass runs on the
+survivors only.
+Reason: deduping first could pick a "most recently filed" fact that a later filter then
+removes, silently discarding a valid earlier-filed fact. The fixture proves the point:
+R4 and R3 share (Revenues, end 2023-12-31) within the same filing — dedup-before-filter
+is an unresolvable tie (flag B from the Task 5 fixture).
+Alternatives: dedup first; interleave per rule.
+Consequences: Task 6 is a filter pipeline followed by a supersession pass; the fixture's
+expected answers assume this order.
+
+## D15 — Supersession only on changed values; equal values keep original-filing provenance
+Decision: rule 4's "most recently filed is current" applies only when values for the
+same (concept, period end) differ. When a later filing repeats an identical value
+(routine comparative reporting), the earliest filing remains the source and no
+`superseded_by` is recorded.
+Reason: provenance answers "where was this first reported"; a comparative repeat of an
+unchanged number is not a new report, and this keeps `superseded_by` meaningful instead
+of firing on no-ops (flag C from the Task 5 fixture).
+Alternatives: literal rule 4 — latest filing always current regardless of value.
+Consequences: docs/data-sources.md rule 4 amended; fixture expectations updated — FY2022
+revenue provenance is now the original 10-K (R1), and only the restated net income pair
+produces a supersession record.
