@@ -202,6 +202,23 @@ def test_fye_tie_is_ambiguous_and_fail_safe():
     assert all(f.start is not None for f in res.selected)  # durations still selected
 
 
+def test_same_day_refiling_tiebreak_warns():
+    """D16(4): same filed date, different accessions — the accession-order
+    heuristic must be visible, not silent. Higher accession wins, lower is
+    superseded, and a SAME_DAY_REFILING_TIEBREAK warning names both."""
+    cf = wrap({"Revenues": {"USD": [
+        duration("Revenues", "2022-01-01", "2022-12-31", 100, accn="s-1"),
+        duration("Revenues", "2022-01-01", "2022-12-31", 90, accn="s-2"),
+    ]}})
+    res = select_annual_facts(cf)
+    assert [(f.val, f.accn) for f in res.selected] == [(90, "s-2")]
+    assert [(s.val, s.superseded_by) for s in res.superseded] == [(100, "s-2")]
+    tiebreaks = [w for w in res.warnings if w.startswith("SAME_DAY_REFILING_TIEBREAK")]
+    assert len(tiebreaks) == 1
+    assert "Revenues" in tiebreaks[0] and "2022-12-31" in tiebreaks[0]
+    assert "s-1" in tiebreaks[0] and "s-2" in tiebreaks[0]
+
+
 def test_10ka_form_accepted():
     """Rule 1 accepts 10-K/A — the branch the fixture leaves uncovered."""
     cf = wrap({"Revenues": {"USD": [

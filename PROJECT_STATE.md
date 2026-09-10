@@ -66,9 +66,9 @@ Phases 1-2 complete. Phase 3 in progress — Tasks 5-6 done, Task 7 (tag mapping
   synthetically tested.
 
 ## Tests
-- 45 passing (6 setup + 3 env + 6 ingest/tickers + 9 ingest/companyfacts (all
-  HTTP-mocked) + 3 cli wiring + 3 fixture guards + 15 selection: 10 fixture-driven
-  + 5 synthetic edge cases)
+- 46 passing (6 setup + 3 env + 6 ingest/tickers + 9 ingest/companyfacts (all
+  HTTP-mocked) + 3 cli wiring + 3 fixture guards + 16 selection: 10 fixture-driven
+  + 6 synthetic edge cases)
 
 ## In progress
 - nothing

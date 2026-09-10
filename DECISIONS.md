@@ -138,7 +138,11 @@ Task 5 fixture and each with its own unit test:
    UNAVAILABLE with NO_FYE_ANCHOR only when its filing contributed none. Keyed per
    filing (accession), never per fy stamp.
 4. Same-day refilings — filed-date ties in the rule 4 supersession pass are broken by
-   accession order.
+   accession order, and every invocation of that tiebreak emits a
+   SAME_DAY_REFILING_TIEBREAK warning naming the tag, period end and both accessions
+   (owner amendment, 2026-09-10): accession order is a plausible proxy for filing
+   sequence, not a guarantee, so the heuristic must be visible whenever it decides an
+   outcome rather than silent.
 Reason: D13-D15 do not determine these; each default follows the fail-safe principle
 (CLAUDE.md rules 3 and 9) rather than guessing, and (1) keeps 52/53-week filers whose
 year end drifts across the calendar boundary in one fiscal year.

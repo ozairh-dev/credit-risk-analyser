@@ -203,6 +203,14 @@ def select_annual_facts(companyfacts: dict) -> SelectionResult:
     duplicates: list[SelectedFact] = []
     for facts in groups.values():
         facts.sort(key=lambda s: (s.filed or "", s.accn or ""))  # D16(4) tiebreak
+        # D16(4): accession order is a plausible proxy for filing sequence, not a
+        # guarantee — make the heuristic visible whenever it is actually invoked
+        for a, b in zip(facts, facts[1:]):
+            if a.filed == b.filed and a.accn != b.accn:
+                warnings.append(
+                    f"SAME_DAY_REFILING_TIEBREAK: {a.tag} {a.end}: accession order "
+                    f"used to sequence {a.accn} and {b.accn}, both filed {a.filed}"
+                )
         current = facts[0]
         for later in facts[1:]:
             if later.val == current.val:
