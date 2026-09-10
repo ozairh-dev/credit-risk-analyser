@@ -84,6 +84,8 @@ credit-risk-platform/
 8. Don't refactor working code without a stated reason.
 9. Don't add abstractions for problems we don't have yet.
 10. Explain what you're doing in plain language — the owner is learning as this is built.
+11. Commit completed work before starting a new task. Don't leave changes uncommitted
+    across task boundaries.
 
 ## Model protocol
 
