@@ -8,9 +8,27 @@ correctly and forwards --force.
 
 from typer.testing import CliRunner
 
-from credit_risk import cli
+from credit_risk import __version__, cli, config
 
 runner = CliRunner()
+
+
+def test_version_command_prints_version_and_proves_config_loads():
+    """`credit-risk version` had no test at all (audit finding 14).
+
+    The command is the project's smoke test — it fails if either config file is
+    missing or malformed — so its own output is worth asserting. The concept
+    count is compared against config rather than a literal on purpose: the
+    literal lives in test_project_setup (finding 13), and what this test checks
+    is that the CLI reports what config holds, not what that number is.
+    """
+    result = runner.invoke(cli.app, ["version"])
+
+    assert result.exit_code == 0
+    assert f"credit-risk {__version__}" in result.output
+    for category in config.thresholds()["weights"]:
+        assert category in result.output
+    assert f"tag map concepts loaded: {len(config.tag_map())}" in result.output
 
 
 def test_fetch_resolves_ticker_then_fetches_companyfacts(monkeypatch):

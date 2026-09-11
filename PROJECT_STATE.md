@@ -143,8 +143,8 @@ v1 universe of 25-50 names and are not reported on:
   Branch coverage 95% -> 98%; store/writer.py 85% -> 99%.
 
 ## Tests
-- 169 passing (6 setup + 3 env + 6 ingest/tickers + 9 ingest/companyfacts (all
-  HTTP-mocked) + 3 cli wiring + 3 fixture guards + 31 selection + 10 mapping +
+- 174 passing (7 setup + 3 env + 6 ingest/tickers + 12 ingest/companyfacts (all
+  HTTP-mocked) + 4 cli wiring + 3 fixture guards + 31 selection + 10 mapping +
   45 real-data (9 invariants x 5 cached companies) + 53 store:
   constraint-rejection tests for every CHECK, the six-value
   data_status constraint, FK enforcement, STRICT + fallback, the circular-FK
@@ -154,6 +154,27 @@ v1 universe of 25-50 names and are not reported on:
   ISO-4217 non-USD currencies. Measured on the three cached companies, spurious
   markers went from 3,845 to 1 (JNJ's single real EUR fact); selected facts and
   all mapped values unchanged.
+
+## Non-blocking audit cleanup (2026-09-11)
+- Findings 8, 9, 10-12, 13, 14 from docs/audits/2026-09-10-pre-task-9-audit.md
+  cleared. Two decisions written down that had only ever been made in
+  conversation (D30: no currency column, no source_url column) and one that had
+  never been made at all (D31: the cache window is exclusive — nothing chose the
+  original `>`). D2 amended: "migration is mechanical via SQLAlchemy" predated
+  D22 removing SQLAlchemy from the stack.
+- docs/data-sources.md gained a `## Codes` section documenting both vocabularies
+  separately — 4 data-quality event codes and 6 UNAVAILABLE reason codes. The
+  audit had listed AMBIGUOUS_FYE and NO_FYE_ANCHOR as event codes; they are fact
+  reason codes and never become data_quality_events rows.
+- Measured across all five cached companies: CANDIDATE_TAG_DISAGREEMENT 82 events
+  (LUMN 15, F 32, JNJ 16, KHC 19, CCL 0) and 2 FOREIGN_UNIT facts (JNJ, KHC).
+  Every other code is synthetic-only.
+- Both new config tests were verified by sabotage: re-hardcoding 24h into cache.py
+  fails test_max_age_hours_is_config_driven and nothing else; reverting `>=` to `>`
+  fails test_cache_at_exactly_max_age_is_stale and nothing else.
+- Finding 14's dead FileNotFoundError fallback in fingerprint.py needed no work —
+  the D28 rewrite had already removed it. Finding 15 left alone by decision (Phase
+  10's job; several assumptions need more companies before they can be exercised).
 
 ## In progress
 - nothing
@@ -166,8 +187,8 @@ v1 universe of 25-50 names and are not reported on:
 
 ## Next priorities
 - Task 9 — composite concepts (total_debt / net_debt / ebitda / fcf) with a test per
-  rule in the methodology. Carries two open items: the short_term_debt/DebtCurrent
-  double-count risk flagged in Task 7, and creating config/composites.yaml with
-  include_operating_leases / include_st_investments (the fingerprint allowlist in
-  store/fingerprint.py already expects that file and falls back to the methodology
-  defaults until it exists).
+  rule in the methodology. One open item carries in: the short_term_debt/DebtCurrent
+  double-count risk flagged in Task 7. (config/composites.yaml now exists and holds
+  both toggles, and store/fingerprint.py reads them from it and raises on a missing
+  key — D28. Task 9 must add component_aggregate_tolerance to that allowlist, since
+  it changes whether total_debt computes at all.)

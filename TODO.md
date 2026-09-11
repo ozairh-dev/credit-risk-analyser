@@ -34,8 +34,11 @@ checks (Phase 4) because the checks depend on them. See docs/build-plan.md.
 
 - [x] Pre-Task-9 audit fixes: config toggles (D28), fact identity incl. period type
       (D29), methodology ex-leases contradiction, real-data regression net.
-      Report: docs/audits/2026-09-10-pre-task-9-audit.md — findings 6-15 remain open
-      and are safe to carry into Task 9
+      Report: docs/audits/2026-09-10-pre-task-9-audit.md
+- [x] Non-blocking audit cleanup: findings 8, 9, 10-12, 13, 14. Findings 6 and 7 were
+      already covered by the real-data regression net. Finding 15 (unvalidated spec
+      assumptions) is deliberately left for Phase 10 — several of its rows cannot be
+      exercised until the universe has more companies
 - [ ] Task 9 (Phase 5): total_debt / net_debt / ebitda / fcf with a test per rule in the
       methodology — four branches (plain components, debt_from_aggregate,
       debt_from_lease_inclusive_ltd, and the D26/D27 mismatch refusals) plus

@@ -4,11 +4,23 @@ These are deliberately about wiring, not finance. Real calculation tests
 arrive in Phase 5.
 """
 
+import tomllib
+
 from credit_risk import __version__, config
 
 
-def test_package_imports():
-    assert __version__
+def test_version_is_the_expected_value_and_agrees_with_pyproject():
+    """`assert __version__` passed for any non-empty string (audit finding 14).
+
+    Two assertions doing different jobs: the literal pins what the version
+    actually is, and the pyproject comparison catches the real failure mode —
+    bumping one of the two files and forgetting the other.
+    """
+    assert __version__ == "0.1.0"
+    pyproject = tomllib.loads(
+        (config.PROJECT_ROOT / "pyproject.toml").read_text(encoding="utf-8")
+    )
+    assert pyproject["project"]["version"] == __version__
 
 
 def test_thresholds_weights_sum_to_100():
@@ -51,6 +63,22 @@ def test_stress_presets_present():
         "additional_debt": 0,
         "capex_shock": 0.0,
     }
+
+
+def test_tag_map_concept_count_is_written_down():
+    """The literal concept count, deliberately not derived (audit finding 13).
+
+    Six assertions elsewhere size themselves from `len(config.tag_map())`,
+    which is correct for an incidental total but self-referential: a concept
+    accidentally deleted from `config/tag_map.yaml` would shrink the code's
+    expectation and the test's together and still pass. This is the one place
+    the number is written down, so a deletion fails here and only here —
+    one invariant, one layer (CLAUDE.md rule 13).
+
+    Update it deliberately when a concept is added: 31 -> 34 when the
+    lease-inclusive concepts arrived (D27).
+    """
+    assert len(config.tag_map()) == 34
 
 
 def test_tag_map_entries_are_ordered_candidate_lists():

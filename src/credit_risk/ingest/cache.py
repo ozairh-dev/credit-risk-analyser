@@ -24,7 +24,9 @@ def read_cache(path: Path, max_age: timedelta = None):
         max_age = default_max_age()
     cached = json.loads(path.read_text())
     fetched_at = datetime.fromisoformat(cached["fetched_at"])
-    if datetime.now(timezone.utc) - fetched_at > max_age:
+    # Exclusive: at exactly max_age the window has elapsed and the cache is
+    # stale. The comparison is `>=` by decision, not by accident (D31).
+    if datetime.now(timezone.utc) - fetched_at >= max_age:
         return None
     return cached["content"]
 

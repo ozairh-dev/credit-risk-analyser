@@ -14,7 +14,9 @@
   The SEC blocks requests without one.
 - Stay under 10 requests/second. Add a small sleep between calls.
 - Cache the raw JSON to `data/raw/CIK{cik:010d}.json` with a `fetched_at` timestamp. Do not
-  re-fetch within 24 hours unless `--force` is passed. Raw files are never edited.
+  re-fetch within 24 hours unless `--force` is passed. The window is **exclusive** — at
+  exactly the configured age the cache is stale and is re-fetched (D31) — and the value
+  itself lives in `config/ingestion.yaml`, never in code. Raw files are never edited.
 
 **Licensing:** SEC data is US public domain. No restrictions on this use.
 
@@ -111,8 +113,8 @@ Every stored number, reported or calculated, carries:
 ```
 concept            internal name, e.g. net_debt_to_ebitda
 value
-currency           USD
-unit               e.g. USD, ratio, percent
+unit               e.g. USD, ratio, percent — for monetary items this carries the
+                   currency; there is no separate currency column (D30a)
 period_start
 period_end
 fiscal_year
@@ -121,7 +123,6 @@ filing_form        10-K
 filing_date
 accession          SEC accession number
 source_tag         the XBRL tag actually used (REPORTED only)
-source_url         link to the filing index
 data_status        REPORTED | CALCULATED | ESTIMATED | ASSUMED | AI_INTERPRETED | UNAVAILABLE
 method             for CALCULATED: which formula/version
 inputs             for CALCULATED: list of input concept ids
@@ -129,6 +130,53 @@ reason_code        for UNAVAILABLE: why
 fetched_at
 superseded_by      accession of a later restatement, if any
 ```
+
+Two fields that earlier drafts of this list named are deliberately **not** columns
+(DECISIONS D30). `currency` is collapsed into `unit`: v1 is USD-only, so a second column
+could only repeat `unit` or contradict it. `source_url` is **derived from
+`(cik, accession)` when a filing link is needed**, not stored — the link is still
+available, it is computed rather than persisted, because a stored copy can only drift
+from EDGAR's actual URL shape.
+
+## Codes
+
+Two separate vocabularies, both load-bearing (D9). They are not interchangeable: a
+**reason code** explains why one value is `UNAVAILABLE`, and rides on that row. A
+**data-quality event** records that the pipeline made a judgement worth surfacing, and is
+a row in `data_quality_events`, counted per code and read by Phase 4's data-quality panel.
+A value can be present and still generate an event.
+
+### Data-quality event codes
+
+Defined in `normalise/quality.py`. Phase 4 adds `INTEGRITY_*` codes alongside these.
+
+| Code | Emitted when | Decision |
+|------|--------------|----------|
+| `FYE_DISAGREEMENT` | Accepted duration facts for a fiscal year disagree on `end`; the most common date wins and the period is flagged | D13 |
+| `FYE_TIE` | That disagreement has no single most-common date, so no anchor is chosen and nearby instants become `AMBIGUOUS_FYE` | D16(2) |
+| `SAME_DAY_REFILING_TIEBREAK` | Two filings share a `filed` date for the same fact, so accession order sequences them | D16(4) |
+| `CANDIDATE_TAG_DISAGREEMENT` | Two candidate tags for one concept both resolve for a period and disagree on value; the higher-priority tag is used | D17(1) |
+
+### Reason codes on `UNAVAILABLE` rows
+
+| Code | Applies to | Meaning | Decision |
+|------|-----------|---------|----------|
+| `FOREIGN_UNIT` | fact | Monetary fact in a currency other than USD. Never converted | D24 |
+| `AMBIGUOUS_FYE` | fact | Instant fact near a fiscal year end that `FYE_TIE` left unanchored | D16(2) |
+| `NO_FYE_ANCHOR` | fact | Instant fact whose fiscal year has no accepted duration fact to anchor it | D13 |
+| `NO_CANDIDATE_TAG` | concept | No candidate tag in `tag_map.yaml` resolved for the period | D17 |
+| `LEASES_NOT_SEPARABLE` | concept | Filer bundles debt and leases into one figure, so `total_debt_ex_leases` cannot be computed. Task 9 | D27 |
+| `COMPONENT_AGGREGATE_MISMATCH` | concept | Debt components and the reported aggregate disagree beyond tolerance; refuses rather than picking one. Task 9 | D26 |
+
+A refused value is never approximated from a neighbouring period, a related tag, or
+subtraction from another figure (CLAUDE.md rule 11).
+
+**What real data actually produces** (measured across all five cached companies,
+2026-09-11): `CANDIDATE_TAG_DISAGREEMENT` 82 events — LUMN 15, F 32, JNJ 16, KHC 19, CCL
+0 — and 2 `FOREIGN_UNIT` facts (JNJ and KHC, one each). Every other code above is
+exercised only by synthetic fixtures: no cached company has produced an FYE
+disagreement, tie or unanchored instant. Phase 4 should not assume the rarer codes are
+unreachable, but it should expect `CANDIDATE_TAG_DISAGREEMENT` to dominate the panel.
 
 ## Data-quality summary (per company, per period)
 

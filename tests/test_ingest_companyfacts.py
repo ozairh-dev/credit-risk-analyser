@@ -5,8 +5,8 @@ from datetime import datetime, timedelta, timezone
 
 import pytest
 
-from credit_risk import env
-from credit_risk.ingest import companyfacts
+from credit_risk import config, env
+from credit_risk.ingest import cache, companyfacts
 
 CIK = 320193
 URL = companyfacts.COMPANYFACTS_URL.format(cik=CIK)
@@ -121,3 +121,88 @@ def test_missing_user_agent_raises_before_any_request(requests_mock, monkeypatch
 
 def test_default_cache_path_is_zero_padded():
     assert companyfacts.default_cache_path(320193).name == "CIK0000320193.json"
+
+
+# --- config-driven cache staleness (audit finding 8) --------------------------
+
+@pytest.fixture
+def temp_config_dir(tmp_path, monkeypatch):
+    """Point the config loader at a temp directory and clear its cache.
+
+    config.load is lru_cached, so the cache must be cleared on the way in AND
+    out, or a temp config would leak into every later test.
+    """
+    monkeypatch.setattr(config, "CONFIG_DIR", tmp_path)
+    config.load.cache_clear()
+    yield tmp_path
+    config.load.cache_clear()
+
+
+def write_ingestion(directory, max_age_hours):
+    (directory / "ingestion.yaml").write_text(f"max_age_hours: {max_age_hours}\n")
+    config.load.cache_clear()
+
+
+def test_shipped_max_age_matches_the_documented_window():
+    """docs/data-sources.md: "do not re-fetch within 24 hours"."""
+    assert config.ingestion()["max_age_hours"] == 24
+
+
+def test_max_age_hours_is_config_driven(temp_config_dir):
+    """One 2-hour-old cache file, two config values, two different answers.
+
+    This is the test that fails if someone re-hardcodes 24h into cache.py:
+    nothing about the cache file changes between the two assertions, only
+    config/ingestion.yaml (CLAUDE.md rule 6). Same proof style as
+    test_mapping_order_is_config_driven.
+    """
+    cache_path = temp_config_dir / "cache" / "CIK0000320193.json"
+    write_cache(cache_path, SAMPLE,
+                fetched_at=datetime.now(timezone.utc) - timedelta(hours=2))
+
+    write_ingestion(temp_config_dir, 24)
+    assert cache.default_max_age() == timedelta(hours=24)
+    assert cache.read_cache(cache_path) == SAMPLE      # fresh under the shipped window
+
+    write_ingestion(temp_config_dir, 1)
+    assert cache.default_max_age() == timedelta(hours=1)
+    assert cache.read_cache(cache_path) is None        # same file, now stale
+
+
+@pytest.fixture
+def frozen_clock(monkeypatch):
+    """Freeze cache.py's clock so an age can be made exactly equal to max_age.
+
+    Without this the boundary is untestable: read_cache calls datetime.now()
+    itself, so a cache written max_age ago is always max_age plus a few
+    microseconds by the time the comparison runs — which is stale under both
+    `>` and `>=`, and therefore cannot tell the two apart.
+    """
+    fixed = datetime(2026, 9, 11, 12, 0, 0, tzinfo=timezone.utc)
+
+    class FrozenDatetime(datetime):
+        @classmethod
+        def now(cls, tz=None):
+            return fixed
+
+    monkeypatch.setattr(cache, "datetime", FrozenDatetime)
+    return fixed
+
+
+def test_cache_at_exactly_max_age_is_stale(frozen_clock, tmp_path):
+    """The window is exclusive: at exactly max_age the cache is stale (D31).
+
+    One cache file at a fixed age, read three times with three explicit
+    windows — the window moves across the timestamp rather than the timestamp
+    moving under the window. That tests the comparison itself rather than
+    values near it, and removes the clock race instead of stepping around it.
+    """
+    cache_path = tmp_path / "CIK0000320193.json"
+    write_cache(cache_path, SAMPLE, fetched_at=frozen_clock - timedelta(hours=24))
+
+    # window wider than the age: fresh
+    assert cache.read_cache(cache_path, timedelta(hours=24, seconds=1)) == SAMPLE
+    # window exactly the age: stale — this is the boundary D31 decided
+    assert cache.read_cache(cache_path, timedelta(hours=24)) is None
+    # window narrower than the age: stale
+    assert cache.read_cache(cache_path, timedelta(hours=23, minutes=59)) is None

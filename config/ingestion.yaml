@@ -1,2 +1,3 @@
 # Ingestion cache settings (docs/data-sources.md: "do not re-fetch within 24 hours").
+# The window is exclusive: at exactly max_age_hours the cache is stale (D31).
 max_age_hours: 24

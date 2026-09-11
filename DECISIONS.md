@@ -12,7 +12,13 @@ Consequences: v1 output is CLI + exported reports. UI is a v2 decision.
 Reason: 25–50 companies, one user, zero setup. Postgres adds nothing until concurrency
 or scale exist.
 Alternatives: Postgres locally; Supabase free tier.
-Consequences: migration to Postgres later is mechanical via SQLAlchemy if ever needed.
+Consequences: migration to Postgres later is a rewrite of `store/` against a new driver,
+not a configuration change.
+**Amended (pre-Task-9 audit, finding 10):** this originally read "mechanical via
+SQLAlchemy". D22 removed SQLAlchemy from the stack in favour of stdlib `sqlite3`, so there
+is no ORM to repoint — the SQL in `store/` is hand-written and some of it is
+SQLite-specific (the `(period_start IS NULL)` expression index of D29, partial unique
+indexes). Postgres remains reachable, but as deliberate work, not a swapped dialect.
 
 ## D3 — SEC EDGAR only in v1; Companies House deferred
 Reason: companyfacts is a clean JSON API with standardised tags. UK iXBRL is document
@@ -556,3 +562,59 @@ limitation: `total_liabilities` never resolves for it — Carnival reports no `L
 tag — so the "Debt ⊆ liabilities" integrity check will be `UNAVAILABLE` for CCL in every
 period.** That is correct fail-safe behaviour, not a defect, but it means CCL cannot serve
 as the fixture for that particular integrity check.
+
+## D30 — Two provenance fields are deliberately absent: currency and source_url
+Decision (Task 8 design, recorded retrospectively at the pre-Task-9 audit, finding 9):
+the store has no `currency` column and no `source_url` column. Both omissions were
+settled when the schema was designed but never written down, so until now the only record
+was a chat message while `docs/data-sources.md` still listed both as required fields.
+
+(a) **`currency` is collapsed into `unit`.** v1 is USD-only — D3 restricts the universe to
+US-listed filers and D24 makes a non-USD monetary fact `UNAVAILABLE` with `FOREIGN_UNIT`,
+never converted. A separate currency column could therefore only ever hold `USD` beside a
+`unit` that already says `USD`, or disagree with it. `unit` carries the currency for
+monetary items and the dimension (`ratio`, `percent`) for everything else.
+
+(b) **`source_url` is derived at export, not stored.** The SEC filing-index URL is a pure
+function of `(cik, accession)`, both already columns on `facts`. A stored copy can only
+drift: if EDGAR's URL shape changes, every historic row is silently wrong and needs a
+migration, whereas a derived URL is corrected by editing one function.
+
+Reason: both are the same principle — do not store what is already derivable from what is
+stored, because the copy can disagree with its source. That is CLAUDE.md rule 13 (one
+invariant, one layer) applied to columns rather than constraints.
+Alternatives: add both columns as the doc's field list implied (rejected above); keep
+`currency` against a future multi-currency universe (rejected — D3 makes that a v2 schema
+change regardless, and a column that can hold only one value until then is not a head
+start on the migration).
+Consequences: anything needing a filing link builds it from `(cik, accession)`; nothing
+reads a currency column, because there is none. If v1's USD-only assumption is lifted,
+(a) is reopened as a deliberate schema change rather than inherited as a default.
+
+## D31 — The cache window is exclusive: at exactly max_age the cache is stale
+Decision (owner, pre-Task-9 cleanup, audit finding 8, 2026-09-11): `ingest/cache.py`
+refuses a cached copy when `now - fetched_at >= max_age`. At exactly `max_age_hours` the
+cache is stale and is re-fetched.
+Reason: the window is a **staleness window, not a freshness guarantee**. "Do not re-fetch
+within 24 hours" (`docs/data-sources.md`) describes the period during which re-fetching is
+prohibited, and at exactly 24 hours that period has elapsed. Inclusive semantics would
+make the real window 24 hours plus one tick — a value nobody chose. The cost asymmetry
+points the same way: going stale one second early costs one unnecessary HTTP request to an
+endpoint already rate-limited, while staying fresh one second late serves data the config
+has already judged too old.
+**Nothing chose the original `>`.** It fell out of typing rather than a judgment, and was
+never exercised in either direction — the existing tests used 1h and 25h, so the boundary
+itself was untested. This entry exists so the next reader finds a decision rather than an
+accident.
+Alternatives: inclusive (`>`), where exactly-max_age is still fresh. Smaller change,
+rejected above.
+Consequences: one character in `read_cache`, and `test_cache_at_exactly_max_age_is_stale`
+now pins it. That test holds one cache file at a fixed age and moves the **window** across
+it — three explicit `max_age` values — rather than moving the timestamp under a live
+clock. The distinction is load-bearing, not stylistic: `read_cache` calls
+`datetime.now()` itself, so a file written `max_age` ago is always `max_age` plus a few
+microseconds by the time the comparison runs, which is stale under **both** operators and
+cannot tell them apart. Testing values just inside and just outside the boundary would
+have stepped around the race and proved nothing about the comparison; the clock is frozen
+so equality is actually reachable. Verified by reverting to `>` and confirming that this
+test, and only this test, fails.
