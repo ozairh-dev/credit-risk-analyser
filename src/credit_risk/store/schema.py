@@ -5,9 +5,10 @@ unique indexes are the point of this schema, and they read clearly in SQL.
 
 Key structural choices (see DECISIONS D18-D20):
 - data_status is constrained to the six allowed values at the database level.
-- Period identity is always (…, period_end). `fy` is stored for provenance
-  display only: it is in no key, no FK and no index, so the fy-stamp trap is
-  unsupported by the schema rather than merely documented against (D19).
+- Period identity keys on period_end, never on `fy`, which is stored for
+  provenance display only: it is in no key, no FK and no index, so the fy-stamp
+  trap is unsupported by the schema rather than merely documented against (D19).
+  Fact identity also includes period type — see uq_facts_current (D29).
 - Supersession of facts is a relationship (self-FK), never a deletion.
 - concepts and metrics are append-with-history: a partial unique index keeps
   one CURRENT row per identity, and config_fingerprint ties each row to the
@@ -235,8 +236,12 @@ _TABLES = [
 
 _INDEXES = [
     "CREATE INDEX idx_filings_cik ON filings(cik)",
-    # one CURRENT fact per (company, tag, period) — supersession is a relationship
-    "CREATE UNIQUE INDEX uq_facts_current ON facts(cik, tag, period_end)"
+    # One CURRENT fact per (company, tag, period type, period end) — supersession
+    # is a relationship. `period_start IS NULL` is the period-type discriminator:
+    # a duration fact and an instant fact sharing an end date are different facts
+    # and both may be CURRENT (D29).
+    "CREATE UNIQUE INDEX uq_facts_current"
+    " ON facts(cik, tag, period_end, (period_start IS NULL))"
     " WHERE status = 'CURRENT'",
     "CREATE INDEX idx_facts_cik_period ON facts(cik, period_end)",
     "CREATE INDEX idx_facts_accession ON facts(accession)",

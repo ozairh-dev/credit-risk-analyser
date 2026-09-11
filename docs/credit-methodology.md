@@ -28,9 +28,13 @@ That formula is the **plain-components** composition. Two other branches exist a
 defined below: `debt_from_aggregate` and `debt_from_lease_inclusive_ltd`. Exactly one
 branch applies per period, and the method is always recorded.
 
-- Default `include_operating_leases: true`. Post-ASC 842 these are real fixed obligations;
-  credit analysts and rating agencies treat them as debt-like. Always show
-  `total_debt_ex_leases` alongside so the effect is visible.
+- Default `include_operating_leases: true` (set in `config/composites.yaml`, never in
+  code — D28). Post-ASC 842 these are real fixed obligations; credit analysts and rating
+  agencies treat them as debt-like. Show `total_debt_ex_leases` alongside so the effect is
+  visible **wherever it can be computed** — the one exception is the lease-inclusive LTD
+  branch below, where the filer bundles debt and leases into one figure, leases are not
+  separable, and `total_debt_ex_leases` is `UNAVAILABLE` with
+  `reason_code = LEASES_NOT_SEPARABLE` (D27). It is never estimated.
 - Missing components are treated as zero **only** for `short_term_debt`,
   `finance_lease_liab` and `operating_lease_liab`, and only when at least one of
   `current_ltd` / `noncurrent_ltd` is present. Record which components were zero-by-absence.

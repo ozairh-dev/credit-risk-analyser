@@ -1,10 +1,14 @@
 # Composite-concept settings (docs/credit-methodology.md "Composite concepts").
-#
-# Created early, by the methodology fix that introduced
-# COMPONENT_AGGREGATE_MISMATCH. Task 9 adds the remaining composite toggles
-# (include_operating_leases, include_st_investments) when it implements the
-# composites; until then store/fingerprint.py resolves those two from the
-# methodology's documented defaults (both true).
+# This file is the authority for these values — nothing here is defaulted in code
+# (CLAUDE.md rule 6). store/fingerprint.py raises if a key below is missing.
+
+# Total debt composition (D6). Operating leases are debt-like post-ASC 842, so they
+# are included by default; the ex-lease figure is shown alongside wherever it can be
+# computed (on D27's lease-inclusive branch it cannot, and is UNAVAILABLE).
+include_operating_leases: true
+
+# Net debt composition: subtract short-term investments as well as cash.
+include_st_investments: true
 
 # Maximum relative deviation between the long-term-debt components
 # (current_ltd + noncurrent_ltd) and total_ltd_aggregate before total_debt is

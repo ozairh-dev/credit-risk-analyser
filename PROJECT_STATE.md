@@ -129,10 +129,24 @@ v1 universe of 25-50 names and are not reported on:
   (https://data.sec.gov/submissions/CIK{cik:010d}.json) is the likely source; it
   is a scope addition to ingestion. Needed before Phase 10 validation.
 
+- Pre-Task-9 audit (2026-09-10, report in docs/audits/) and its four blocking
+  fixes (2026-09-11): composite toggles moved into config/composites.yaml with a
+  config-driven test and a raise-on-missing guard (D28); fact identity widened to
+  (tag, period type, period end) in selection, schema and writer, which fixed a
+  crash that made KHC unstorable and a latent wrong-shape-wins path (D29);
+  the writer's SUPERSEDED insertion sort now matches D16(4)'s accession tiebreak;
+  the methodology's total_debt_ex_leases contradiction resolved (line 33 qualified,
+  D6 amended to point at D27); and tests/test_real_companies.py added as the
+  regression net — select -> map -> store over every cached filing, asserting
+  against selection's own output rather than pinned counts. Verified the net
+  catches the D29 bug by reverting the fix and watching all nine KHC cases fail.
+  Branch coverage 95% -> 98%; store/writer.py 85% -> 99%.
+
 ## Tests
-- 118 passing (6 setup + 3 env + 6 ingest/tickers + 9 ingest/companyfacts (all
-  HTTP-mocked) + 3 cli wiring + 3 fixture guards + 29 selection + 10 mapping +
-  49 store: constraint-rejection tests for every CHECK, the six-value
+- 169 passing (6 setup + 3 env + 6 ingest/tickers + 9 ingest/companyfacts (all
+  HTTP-mocked) + 3 cli wiring + 3 fixture guards + 31 selection + 10 mapping +
+  45 real-data (9 invariants x 5 cached companies) + 53 store:
+  constraint-rejection tests for every CHECK, the six-value
   data_status constraint, FK enforcement, STRICT + fallback, the circular-FK
   path, the fixture's exact stored rows, the fy-trap at storage, the
   supersession self-join, Q1/Q2 shapes, and append-with-history)

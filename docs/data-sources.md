@@ -33,8 +33,11 @@ has to be explicit or you get duplicates and wrong periods.
    accepted duration facts disagree on `end`, use the most common date and flag the
    period. If a year has no accepted duration facts, its instant facts are
    `UNAVAILABLE`, reason `NO_FYE_ANCHOR` — never accepted unvalidated. (DECISIONS D13)
-4. **Restatements:** for the same `(concept, period end)` there will often be several
-   values from different filings. When the values **differ**, the most recently filed is
+4. **Restatements:** for the same `(concept, period type, period end)` there will often be
+   several values from different filings. **Period type is part of the identity** — a
+   duration fact (a flow) and an instant fact (a stock) sharing an end date are different
+   facts and never supersede each other (DECISIONS D29).
+   When the values **differ**, the most recently filed is
    current; earlier values are kept and marked `superseded_by = <accession>`. Never
    delete. When a later filing repeats an **identical** value (routine comparative
    reporting), the earliest filing remains the source and no supersession is recorded —

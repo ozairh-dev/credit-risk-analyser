@@ -15,7 +15,7 @@ from credit_risk import config
 from credit_risk.normalise import map_concepts, select_annual_facts
 from credit_risk.store import db, queries, schema
 from credit_risk.store.fingerprint import (
-    COMPOSITE_DEFAULTS,
+    FINGERPRINTED_KEYS,
     composite_config_values,
     config_fingerprint,
 )
@@ -178,6 +178,27 @@ def test_unavailable_fact_must_not_carry_a_value(seeded):
 def test_only_one_current_fact_per_identity(seeded):
     with pytest.raises(sqlite3.IntegrityError):
         insert_fact(seeded, tag="Revenues", accession=A22)     # duplicate identity
+
+
+def test_duration_and_instant_may_both_be_current(seeded):
+    """D29: identity includes period type, so a duration fact and an instant fact
+    sharing (cik, tag, period_end) are different facts and both may be CURRENT."""
+    insert_fact(seeded, tag="InventoryNet", period_start="2022-01-01", val=1000)
+    insert_fact(seeded, tag="InventoryNet", val=50)          # same tag+end, instant
+    rows = seeded.execute(
+        """SELECT val, period_start FROM facts
+           WHERE tag='InventoryNet' AND status='CURRENT' ORDER BY val"""
+    ).fetchall()
+    assert [(r["val"], r["period_start"]) for r in rows] == [
+        (50, None), (1000, "2022-01-01"),
+    ]
+
+
+def test_two_current_facts_of_the_same_period_type_still_collide(seeded):
+    """The widened index must not stop enforcing one CURRENT per identity."""
+    insert_fact(seeded, tag="Assets", period_start="2022-01-01", val=1)
+    with pytest.raises(sqlite3.IntegrityError):
+        insert_fact(seeded, tag="Assets", period_start="2022-01-01", val=2)
 
 
 def test_duplicate_status_may_share_identity_with_current(seeded):
@@ -457,7 +478,9 @@ def test_recompute_under_changed_config_appends_a_second_row(stored):
     """A concept recomputed under different config produces a new CURRENT row;
     the earlier row stays queryable as SUPERSEDED with its own fingerprint."""
     base_fp = config_fingerprint()
-    changed_fp = config_fingerprint({**COMPOSITE_DEFAULTS, "include_operating_leases": False})
+    changed_fp = config_fingerprint(
+        {**composite_config_values(), "include_operating_leases": False}
+    )
     assert base_fp != changed_fp
 
     fact_id = stored.execute(
@@ -544,8 +567,60 @@ def test_cross_fetch_restatement_raises_rather_than_guessing(conn):
 
 def test_fingerprint_is_stable_and_covers_only_the_allowlist():
     assert config_fingerprint() == config_fingerprint()          # deterministic
-    assert set(composite_config_values()) == set(COMPOSITE_DEFAULTS)
+    assert set(composite_config_values()) == set(FINGERPRINTED_KEYS)
     assert config_fingerprint({"include_operating_leases": True}) != \
         config_fingerprint({"include_operating_leases": False})
     # key order must not change the hash
     assert config_fingerprint({"a": 1, "b": 2}) == config_fingerprint({"b": 2, "a": 1})
+
+
+@pytest.fixture
+def temp_config_dir(tmp_path, monkeypatch):
+    """Point the config loader at a temp directory and clear its cache.
+
+    config.load is lru_cached, so the cache must be cleared on the way in AND
+    out or a temp config would leak into every later test.
+    """
+    monkeypatch.setattr(config, "CONFIG_DIR", tmp_path)
+    config.load.cache_clear()
+    yield tmp_path
+    config.load.cache_clear()
+
+
+def write_composites(directory, *, leases="true", st_investments="true"):
+    (directory / "composites.yaml").write_text(
+        f"include_operating_leases: {leases}\n"
+        f"include_st_investments: {st_investments}\n"
+        f"component_aggregate_tolerance: 0.05\n"
+    )
+    config.load.cache_clear()
+
+
+def test_fingerprint_is_config_driven(temp_config_dir):
+    """Editing config/composites.yaml changes the fingerprint, so the toggle
+    values really come from the file and not from a constant in code
+    (CLAUDE.md rule 6, D28) — same proof style as
+    test_mapping_order_is_config_driven."""
+    write_composites(temp_config_dir, leases="true")
+    assert composite_config_values()["include_operating_leases"] is True
+    with_leases = config_fingerprint()
+
+    write_composites(temp_config_dir, leases="false")
+    assert composite_config_values()["include_operating_leases"] is False
+    without_leases = config_fingerprint()
+
+    assert with_leases != without_leases
+
+    # the second toggle is load-bearing too
+    write_composites(temp_config_dir, leases="false", st_investments="false")
+    assert config_fingerprint() != without_leases
+
+
+def test_missing_composite_setting_raises(temp_config_dir):
+    """A missing key is refused, never silently defaulted in code (D28)."""
+    (temp_config_dir / "composites.yaml").write_text(
+        "component_aggregate_tolerance: 0.05\n"
+    )
+    config.load.cache_clear()
+    with pytest.raises(KeyError, match="include_operating_leases"):
+        composite_config_values()

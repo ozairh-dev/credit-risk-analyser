@@ -37,8 +37,13 @@ Consequences: no adjusted EBITDA; D&A missing → EBITDA UNAVAILABLE.
 Reason: post-ASC 842 they are fixed obligations; credit analysis and rating agencies
 treat them as debt-like. The original brief did not decide this.
 Alternatives: exclude; include finance leases only.
-Consequences: leverage will be higher for lease-heavy companies; ex-lease figure always
-shown alongside.
+Consequences: leverage will be higher for lease-heavy companies; ex-lease figure shown
+alongside wherever it can be computed.
+**Amended by D27 (2026-09-10):** "always shown alongside" is no longer absolute. On D27's
+lease-inclusive LTD branch the filer reports debt and leases as one bundled figure, so
+leases are not separable, `total_debt_ex_leases` is `UNAVAILABLE` with
+`LEASES_NOT_SEPARABLE`, and `include_operating_leases` is inoperative for that period.
+The toggle itself lives in `config/composites.yaml` (D28).
 
 ## D7 — Stress propagation: constant-margin default, operating-leverage optional
 Reason: the original brief specified shocks but not how revenue shocks reach EBITDA.
@@ -419,6 +424,62 @@ concepts, which grows the fixture's concept-slot count from 62 to 68; six tests 
 asserted those totals now derive them from the tag map, since a concept addition
 legitimately changes them while the load-bearing assertion (exactly 7 resolve, and which
 7) stays exact. Composites themselves are Task 9.
+
+## D28 — Composite toggles live in config only; a missing key raises
+Decision (pre-Task-9 audit finding 3, 2026-09-11): `include_operating_leases` and
+`include_st_investments` are defined in `config/composites.yaml` and read from there.
+`store/fingerprint.py` no longer carries `COMPOSITE_DEFAULTS`; it keeps only
+`FINGERPRINTED_KEYS` — the *names* of the settings that change a computed value, which is
+a code-level judgement — and raises `KeyError` if the config file omits one.
+Reason: the two toggles existed only as Python constants, with `composites.yaml`
+mentioning them in a comment and defining neither. That is a direct CLAUDE.md rule 6
+violation ("thresholds, weights, band edges and stress defaults live in `config/*.yaml`,
+never in code") and it made D18's fingerprint describe a value no config file could
+change. Task 9's `total_debt` and `net_debt` are the first code to read them, so the
+violation had to be fixed before that code was written, not after.
+Alternatives: keep the in-code defaults as a fallback (the thing being fixed); fall back
+silently when a key is absent (rule 3 forbids default values for financial inputs, and a
+silent default would make the fingerprint misdescribe the settings in force).
+Consequences: `test_fingerprint_is_config_driven` proves the values come from the file by
+editing a temp config and asserting the fingerprint changes — the same proof style as
+`test_mapping_order_is_config_driven`, which checks *where a decision lives* rather than
+only what it computes. `test_missing_composite_setting_raises` covers the refusal. The
+`FileNotFoundError` fallback in `composite_config_values` is gone with the defaults.
+
+## D29 — Fact identity includes period type: a duration fact and an instant fact are different facts
+Decision (pre-Task-9 audit findings 1 and 5, 2026-09-11): fact identity widens from
+`(tag, period_end)` to `(tag, period type, period_end)`, where period type is `duration`
+when the fact carries a `start` and `instant` when it does not. Applied in every place
+that encodes identity: the rule-4 group key in `normalise/selection.py`, `uq_facts_current`
+in `store/schema.py` (via a `(period_start IS NULL)` index term), and both the superseder
+lookup and the natural-key idempotency check in `store/writer.py`.
+Reason: grouping a flow and a stock together made them supersede each other. Evidence from
+real data — KHC `GoodwillImpairmentLoss` ending 2018-12-29, where one filing
+(`0001637459-19-000049`) reported both a duration fact of 7,008M and an instant fact of
+6,900M. The duration fact was recorded as **superseded by its own accession**, which is
+meaningless provenance and contradicts D15's intent, and `store_company_data` then raised
+`superseding fact not found`, so **KHC could not be stored at all**. The same company's
+`ImpairmentOfIntangibleAssetsIndefinitelivedExcludingGoodwill` did not crash: there an
+instant fact won and superseded a duration fact silently, so whether the bug crashed or
+quietly picked the wrong-shape value depended on insertion order.
+**No concept value was ever wrong:** no currently-mapped tag is reported as both shapes in
+any cached company (measured across F, JNJ, LUMN, CCL, KHC), so this was a latent hole
+rather than a live error. It was reachable only through tags outside the tag map — until a
+future tag-map addition made it reachable through one inside it.
+Alternatives: refuse mixed-shape groups with a new reason code (rejected — a duration fact
+and an instant fact are both legitimate and differently-meaningful, so refusing would
+discard two true values to avoid a conflict that does not exist); key on exact
+`period_start` rather than period type (would stop a genuine restatement superseding when
+two filings disagree on the start date by a day).
+Consequences: all five cached companies now store, with zero facts superseded by their own
+accession and re-store idempotent. Two facts of the *same* shape still supersede normally
+(tested). Two further fixes came with it: (a) finding 5 — the writer's SUPERSEDED insertion
+sort now includes `accn`, matching D16(4)'s tiebreak, which `selection.py` already applied
+and the writer did not, so the two no longer disagree on same-day refilings; and (b) the
+superseder lookup now requires exactly one match and raises otherwise, and the
+concept->fact provenance lookup in `_store_concepts` also matches on period type, since
+with identity widened both shapes can be CURRENT and provenance must point at the fact the
+value actually came from.
 
 ## D24 — Rule 5 classifies units three ways; FOREIGN_UNIT is for currencies only
 Decision (owner call, 2026-09-10, after measuring the three cached companies): rule 5

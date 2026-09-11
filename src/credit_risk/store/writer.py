@@ -10,7 +10,7 @@ leaves both rows queryable (D18).
 from datetime import datetime, timezone
 
 from credit_risk.normalise.mapping import MappingResult
-from credit_risk.normalise.selection import SelectionResult
+from credit_risk.normalise.selection import SelectionResult, period_type
 from credit_risk.store.fingerprint import config_fingerprint
 
 FACT_COLUMNS = (
@@ -63,23 +63,37 @@ def _insert_fact(conn, cik, f, status, superseded_by_id=None, fetched_at=None) -
     return cur.lastrowid
 
 
+def _is_instant(f) -> int:
+    """Period-type discriminator for fact identity, as stored: 1 = instant.
+
+    Matches the `(period_start IS NULL)` term in uq_facts_current (D29).
+    """
+    return 1 if f.start is None else 0
+
+
 def _fact_already_stored(conn, cik, f, status) -> bool:
     """Reported facts are idempotent on their natural key: re-ingesting the same
     filing stores nothing new. A *changed* value for an identity already stored
     as CURRENT is a cross-fetch restatement — nothing drives that flow yet, so
-    it raises rather than guessing (CLAUDE.md rule 9)."""
+    it raises rather than guessing (CLAUDE.md rule 9).
+
+    Identity includes period type (D29): one filing can report the same tag and
+    end date as both a duration and an instant fact, and those are two facts.
+    """
     row = conn.execute(
         """SELECT val, status FROM facts
-           WHERE cik=? AND tag=? AND period_end=? AND accession=?""",
-        (cik, f.tag, f.end, f.accn),
+           WHERE cik=? AND tag=? AND period_end=? AND accession=?
+             AND (period_start IS NULL) = ?""",
+        (cik, f.tag, f.end, f.accn, _is_instant(f)),
     ).fetchone()
     if row is not None:
         return True
     if status == "CURRENT":
         clash = conn.execute(
             """SELECT accession, val FROM facts
-               WHERE cik=? AND tag=? AND period_end=? AND status='CURRENT'""",
-            (cik, f.tag, f.end),
+               WHERE cik=? AND tag=? AND period_end=? AND status='CURRENT'
+                 AND (period_start IS NULL) = ?""",
+            (cik, f.tag, f.end, _is_instant(f)),
         ).fetchone()
         if clash is not None:
             raise ValueError(
@@ -101,20 +115,26 @@ def _store_facts(conn, cik, selection: SelectionResult, fetched_at=None) -> None
             _insert_fact(conn, cik, f, "DUPLICATE", fetched_at=fetched_at)
 
     # SUPERSEDED rows point at the fact that displaced them. Inserting
-    # latest-filed first means a chain's successor always exists already.
-    for f in sorted(selection.superseded, key=lambda s: (s.filed or ""), reverse=True):
+    # latest-filed first means a chain's successor always exists already. The
+    # sort key includes accn so same-day refilings are ordered exactly as
+    # selection ordered them (D16(4)); reverse=True walks that order backwards.
+    for f in sorted(selection.superseded,
+                    key=lambda s: (s.filed or "", s.accn or ""), reverse=True):
         if _fact_already_stored(conn, cik, f, "SUPERSEDED"):
             continue
-        row = conn.execute(
-            "SELECT id FROM facts WHERE cik=? AND tag=? AND period_end=? AND accession=?",
-            (cik, f.tag, f.end, f.superseded_by),
-        ).fetchone()
-        if row is None:
+        rows = conn.execute(
+            """SELECT id FROM facts
+               WHERE cik=? AND tag=? AND period_end=? AND accession=?
+                 AND (period_start IS NULL) = ?""",
+            (cik, f.tag, f.end, f.superseded_by, _is_instant(f)),
+        ).fetchall()
+        if len(rows) != 1:
             raise ValueError(
-                f"superseding fact not found for {f.tag} {f.end} "
-                f"(superseded_by={f.superseded_by})"
+                f"expected exactly one superseding fact for {f.tag} {f.end} "
+                f"({period_type(f)}, superseded_by={f.superseded_by}), "
+                f"found {len(rows)}"
             )
-        _insert_fact(conn, cik, f, "SUPERSEDED", superseded_by_id=row["id"],
+        _insert_fact(conn, cik, f, "SUPERSEDED", superseded_by_id=rows[0]["id"],
                      fetched_at=fetched_at)
 
     for u in selection.unavailable:
@@ -172,10 +192,14 @@ def _store_concepts(conn, cik, mapping: MappingResult, fingerprint, tag_ranks) -
         if _concept_unchanged(conn, cik, c.concept, c.end, c.value,
                               c.data_status, None, fingerprint):
             continue
+        # Match the source fact on period type too: with identity widened (D29)
+        # a duration and an instant fact can both be CURRENT for one (tag, end),
+        # and provenance must point at the one the value actually came from.
         fact = conn.execute(
             """SELECT id FROM facts
-               WHERE cik=? AND tag=? AND period_end=? AND status='CURRENT'""",
-            (cik, c.source_tag, c.end),
+               WHERE cik=? AND tag=? AND period_end=? AND status='CURRENT'
+                 AND (period_start IS NULL) = ?""",
+            (cik, c.source_tag, c.end, _is_instant(c)),
         ).fetchone()
         _supersede_current_concept(conn, cik, c.concept, c.end)
         conn.execute(

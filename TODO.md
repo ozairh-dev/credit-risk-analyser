@@ -32,11 +32,17 @@ Ordered. Top unchecked item is next.
 Task order interleaves the phases here: composites (Phase 5) come before the integrity
 checks (Phase 4) because the checks depend on them. See docs/build-plan.md.
 
+- [x] Pre-Task-9 audit fixes: config toggles (D28), fact identity incl. period type
+      (D29), methodology ex-leases contradiction, real-data regression net.
+      Report: docs/audits/2026-09-10-pre-task-9-audit.md — findings 6-15 remain open
+      and are safe to carry into Task 9
 - [ ] Task 9 (Phase 5): total_debt / net_debt / ebitda / fcf with a test per rule in the
-      methodology, including D26's COMPONENT_AGGREGATE_MISMATCH refusal. config/composites.yaml
-      now exists (holds component_aggregate_tolerance); Task 9 adds include_operating_leases
-      and include_st_investments to it, and must add the tolerance to the fingerprint
-      allowlist in store/fingerprint.py (D18/D26)
+      methodology — four branches (plain components, debt_from_aggregate,
+      debt_from_lease_inclusive_ltd, and the D26/D27 mismatch refusals) plus
+      LEASES_NOT_SEPARABLE. include_operating_leases and include_st_investments are now
+      in config/composites.yaml (D28); Task 9 must add component_aggregate_tolerance to
+      the fingerprint allowlist in store/fingerprint.py, since it changes whether
+      total_debt computes at all (D18/D26)
 - [ ] Task 10 (Phase 4): integrity checks + per-period data-quality summary; a failing
       period is stored, marked integrity = FAIL, and excluded from scoring. Passing and
       failing fixture per check

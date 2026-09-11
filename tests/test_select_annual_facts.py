@@ -249,6 +249,38 @@ def test_fye_tie_is_ambiguous_and_fail_safe():
     assert all(f.start is not None for f in res.selected)  # durations still selected
 
 
+def test_duration_and_instant_sharing_an_end_date_are_separate_facts():
+    """D29: modelled on KHC's GoodwillImpairmentLoss 2018-12-29, where one filing
+    reported the same tag as both a duration and an instant fact. Grouping them
+    together made each supersede the other — one ended up 'superseded by its own
+    accession' — so both must stay CURRENT instead."""
+    cf = wrap({"GoodwillImpairmentLoss": {"USD": [
+        duration("GoodwillImpairmentLoss", "2021-12-31", "2022-12-31", 7008, accn="s-1"),
+        {"end": "2022-12-31", "val": 6900, "accn": "s-1",
+         "fy": 2022, "fp": "FY", "form": "10-K", "filed": "2023-02-15"},
+    ]}})
+    res = select_annual_facts(cf)
+    assert {(f.val, f.start is None) for f in res.selected} == {
+        (7008, False),   # the duration fact
+        (6900, True),    # the instant fact
+    }
+    assert all(f.status == "CURRENT" for f in res.selected)
+    assert res.superseded == [] and res.duplicates == []
+    assert not any(f.superseded_by == f.accn for f in res.superseded)
+
+
+def test_restatement_still_supersedes_within_one_period_type():
+    """Widening identity must not stop same-shape restatements superseding."""
+    cf = wrap({"Revenues": {"USD": [
+        duration("Revenues", "2021-12-31", "2022-12-31", 100, accn="s-1"),
+        duration("Revenues", "2021-12-31", "2022-12-31", 90, accn="s-2",
+                 filed="2024-02-15"),
+    ]}})
+    res = select_annual_facts(cf)
+    assert [(f.val, f.accn) for f in res.selected] == [(90, "s-2")]
+    assert [(s.val, s.superseded_by) for s in res.superseded] == [(100, "s-2")]
+
+
 def test_same_day_refiling_tiebreak_warns():
     """D16(4): same filed date, different accessions — the accession-order
     heuristic must be visible, not silent. Higher accession wins, lower is

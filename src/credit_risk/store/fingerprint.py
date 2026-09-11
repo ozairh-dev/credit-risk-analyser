@@ -17,9 +17,10 @@ rather than calling this one: the two scopes are disjoint by design, and reusing
 this function for scores would fingerprint them against config that cannot
 affect them while ignoring the config that can (D18).
 
-The composites config file does not exist yet (Task 9 creates it); until then
-the methodology's documented defaults are fingerprinted, so the value is
-stable and meaningful from the first stored row.
+The *names* below are an allowlist (which settings affect a value — a code-level
+judgement). The *values* come only from config/composites.yaml: CLAUDE.md rule 6
+puts them in config, so a missing key raises rather than falling back to a
+constant here (D28).
 """
 
 import hashlib
@@ -27,22 +28,27 @@ import json
 
 from credit_risk import config
 
-# Allowlist: (config file stem, key) -> documented default from
-# docs/credit-methodology.md "Composite concepts".
-COMPOSITE_DEFAULTS = {
-    "include_operating_leases": True,   # D6
-    "include_st_investments": True,
-}
+# Config keys whose values change a computed concept or metric value.
+FINGERPRINTED_KEYS = ("include_operating_leases", "include_st_investments")
 COMPOSITE_CONFIG_FILE = "composites"
 
 
 def composite_config_values() -> dict:
-    """Resolved values of the fingerprinted toggles."""
-    try:
-        loaded = config.load(COMPOSITE_CONFIG_FILE) or {}
-    except FileNotFoundError:
-        loaded = {}
-    return {key: loaded.get(key, default) for key, default in COMPOSITE_DEFAULTS.items()}
+    """Resolved values of the fingerprinted toggles, read from config.
+
+    Raises KeyError if the config file omits one: silently substituting a
+    default would make the fingerprint describe settings the file does not
+    contain, and would put a financial-composition default back in code
+    (CLAUDE.md rules 3 and 6).
+    """
+    loaded = config.load(COMPOSITE_CONFIG_FILE) or {}
+    missing = [key for key in FINGERPRINTED_KEYS if key not in loaded]
+    if missing:
+        raise KeyError(
+            f"config/{COMPOSITE_CONFIG_FILE}.yaml is missing required "
+            f"composite settings: {', '.join(missing)}"
+        )
+    return {key: loaded[key] for key in FINGERPRINTED_KEYS}
 
 
 def config_fingerprint(values: dict | None = None) -> str:

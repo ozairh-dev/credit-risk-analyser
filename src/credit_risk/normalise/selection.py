@@ -10,7 +10,9 @@ document disagree, this module is wrong.
 Rule order is load-bearing (D14): rules 1-3 filter, then rule 4 dedups the
 survivors. Facts are never grouped by their `fy` stamp — SEC stamps `fy` with
 the filing's fiscal year, not the fact's period, so two different periods can
-share an `fy`. Period identity is always (tag, end).
+share an `fy`. Fact identity is (tag, period type, end) — period type matters
+because a duration fact and an instant fact sharing an end date are different
+facts (D29).
 """
 
 import re
@@ -34,6 +36,17 @@ CURRENCY_CODE = re.compile(r"^[A-Z]{3}$")
 MONETARY = "monetary"
 FOREIGN = "foreign"
 NON_MONETARY = "non_monetary"
+
+DURATION = "duration"
+INSTANT = "instant"
+
+
+def period_type(fact) -> str:
+    """A duration fact (a flow) and an instant fact (a stock) are different facts
+    even when they share an end date, so period type is part of fact identity
+    (D29). Instant facts carry no `start`, which is how SEC distinguishes them.
+    """
+    return INSTANT if fact.start is None else DURATION
 
 
 def classify_unit(unit: str) -> str:
@@ -240,10 +253,12 @@ def select_annual_facts(companyfacts: dict) -> SelectionResult:
                 )
             )
 
-    # rule 4 (last, per D14), with D15's equal-value handling
+    # rule 4 (last, per D14), with D15's equal-value handling.
+    # Identity includes period type: a duration fact and an instant fact sharing
+    # an end date are different facts and must not supersede each other (D29).
     groups: dict = defaultdict(list)
     for sf in duration_facts + kept_instants:
-        groups[(sf.tag, sf.end)].append(sf)
+        groups[(sf.tag, period_type(sf), sf.end)].append(sf)
 
     selected: list[SelectedFact] = []
     superseded: list[SelectedFact] = []
