@@ -7,7 +7,12 @@ are **project assumptions** — see "Calibration" at the end.
 ## General rules for every calculation
 
 - Inputs must be from the **same fiscal period** and the **same filing**, unless the
-  formula is explicitly a period-over-period comparison.
+  formula is explicitly a period-over-period comparison. "Same filing" means what
+  selection already enforces — no mixing of quarterly and annual data or of different
+  fiscal periods — not literal accession equality: D15 deliberately keeps an
+  equal-value fact at its original filing's provenance, so the CURRENT facts for one
+  period legitimately span accessions after a restatement, and composites accept them
+  (D33).
 - Any input `UNAVAILABLE` → output `UNAVAILABLE`, `reason_code = MISSING_INPUT:<concept>`.
 - Denominator `== 0` → `UNAVAILABLE`, `reason_code = ZERO_DENOMINATOR`.
 - Denominator `< 0` → `UNAVAILABLE`, `reason_code = NEGATIVE_DENOMINATOR`, **and** the
@@ -37,9 +42,31 @@ branch applies per period, and the method is always recorded.
   `reason_code = LEASES_NOT_SEPARABLE` (D27). It is never estimated.
 - Missing components are treated as zero **only** for `short_term_debt`,
   `finance_lease_liab` and `operating_lease_liab`, and only when at least one of
-  `current_ltd` / `noncurrent_ltd` is present. Record which components were zero-by-absence.
+  `current_ltd` / `noncurrent_ltd` is present. Within the `current_ltd` /
+  `noncurrent_ltd` pair itself, the missing member is likewise treated as zero when the
+  other is present — this is the composition D26's consequences were measured under, and
+  the reconciliation rule below is what polices it where an aggregate exists (D33).
+  Record which components were zero-by-absence.
+- The lease composites are sums of their split concepts:
+  `finance_lease_liab = finance_lease_liab_current + finance_lease_liab_noncurrent`,
+  and likewise for `operating_lease_liab`; a missing half counts as zero under the same
+  zero-by-absence recording.
+- `total_debt_ex_leases = short_term_debt + current_ltd + noncurrent_ltd` — it excludes
+  **both** lease kinds, finance and operating (D33). The figure must mean the same thing
+  on every branch, and the lease-inclusive bundle contains finance leases; an
+  operating-only reading would make it change definition by branch.
+- **`DebtCurrent` guard (D32).** When `short_term_debt` resolves via the `DebtCurrent`
+  tag **and** `current_ltd` resolves in the same period, `total_debt` is `UNAVAILABLE`,
+  `reason_code = ST_DEBT_SCOPE_UNCERTAIN`, both values recorded. The taxonomy defines
+  `DebtCurrent` as including current LTD maturities, but filers deviate (JNJ's excludes
+  them), so the overlap with `current_ltd` cannot be verified from the data and the sum
+  may double-count. The reconciliation rule below does **not** police this — its
+  comparison basis is long-term components only. When `current_ltd` does not resolve, no
+  overlap is possible and `DebtCurrent` is usable.
 - If neither `current_ltd` nor `noncurrent_ltd` is present but `total_ltd_aggregate`
-  (`LongTermDebt`) is, use the aggregate and set `method = debt_from_aggregate`.
+  (`LongTermDebt`) is, use the aggregate and set `method = debt_from_aggregate`. The
+  aggregate substitutes for `current_ltd + noncurrent_ltd` in the same formula:
+  `short_term_debt` and the lease components (per the toggle) are still added.
 - **If the aggregate and at least one component are both present, reconcile them before
   using either** (DECISIONS D26):
   - Compare `current_ltd + noncurrent_ltd` against `total_ltd_aggregate`. A missing
@@ -59,7 +86,10 @@ branch applies per period, and the method is always recorded.
     UNAVAILABLE record so the disagreement is reviewable.
 - **Lease-inclusive LTD branch** (DECISIONS D27). Some filers report long-term debt only
   bundled with capital/finance lease obligations, mapped to `ltd_incl_leases_current` and
-  `ltd_incl_leases_noncurrent`. When those resolve:
+  `ltd_incl_leases_noncurrent`. **Both members of the pair must resolve** — a
+  half-resolved pair falls through to `NO_DEBT_DATA`: half of an already-weaker branch,
+  with no reconciliation available on that half, is the least-trustworthy input in the
+  tree (D33). When both resolve:
 
   ```
   total_debt = ltd_incl_leases_current + ltd_incl_leases_noncurrent + short_term_debt
@@ -99,6 +129,13 @@ net_debt = total_debt − cash − short_term_investments   (short_term_investme
 ```
 
 Negative net debt (net cash) is valid and reported as negative.
+
+- `cash` missing → `UNAVAILABLE`, `MISSING_INPUT:cash` — it is the substantive input.
+- `short_term_investments` missing → treated as **zero-by-absence** and recorded as
+  such, like `total_debt`'s optional components (D33). It is a refinement, not the
+  substance: enforcing `MISSING_INPUT` for it would kill `net_debt` in 61 of the 87
+  cash-periods across the five validated companies, including every LUMN and KHC period.
+- `total_debt` `UNAVAILABLE` → `net_debt` `UNAVAILABLE`, `MISSING_INPUT:total_debt`.
 
 ### EBITDA
 

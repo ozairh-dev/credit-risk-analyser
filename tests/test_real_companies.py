@@ -21,6 +21,7 @@ from pathlib import Path
 import pytest
 
 from credit_risk import config
+from credit_risk.metrics.composites import compute_composites
 from credit_risk.normalise import map_concepts, select_annual_facts
 from credit_risk.normalise.selection import period_type
 from credit_risk.store import db, queries
@@ -51,7 +52,7 @@ def stored(company):
     conn = db.create_database(":memory:")
     store_company_data(
         conn, raw["cik"], raw["entityName"], selection, mapping,
-        tag_map=config.tag_map(),
+        tag_map=config.tag_map(), composites=compute_composites(mapping),
     )
     yield conn, raw, selection, mapping
     conn.close()
@@ -88,8 +89,12 @@ def test_stored_facts_match_what_selection_produced(stored):
 
 def test_stored_concepts_and_events_match_mapping(stored):
     conn, cik_raw, selection, mapping = stored
+    comps = compute_composites(mapping)
+    filled = {(c.concept, c.end) for c in comps}
+    unfilled = [u for u in mapping.unavailable
+                if (u.concept, u.period_end) not in filled]
     assert scalar(conn, "SELECT COUNT(*) FROM concepts") == (
-        len(mapping.concepts) + len(mapping.unavailable)
+        len(mapping.concepts) + len(unfilled) + len(comps)
     )
     assert scalar(conn, "SELECT COUNT(*) FROM concepts WHERE data_status='REPORTED'") == (
         len(mapping.concepts)
@@ -145,7 +150,7 @@ def test_restoring_is_idempotent(stored):
     }
     store_company_data(
         conn, raw["cik"], raw["entityName"], selection, mapping,
-        tag_map=config.tag_map(),
+        tag_map=config.tag_map(), composites=compute_composites(mapping),
     )
     after = {
         table: scalar(conn, f"SELECT COUNT(*) FROM {table}")
@@ -159,13 +164,22 @@ def test_application_queries_run_on_real_data(stored):
     """Q1-Q3 from the Task 8 design, exercised against a real filing history."""
     conn, raw, _, mapping = stored
     cik = raw["cik"]
+    comps = compute_composites(mapping)
+    filled = {(c.concept, c.end) for c in comps}
+    unfilled = [u for u in mapping.unavailable
+                if (u.concept, u.period_end) not in filled]
     assert len(queries.concepts_with_provenance(conn, cik)) == (
-        len(mapping.concepts) + len(mapping.unavailable)
+        len(mapping.concepts) + len(unfilled) + len(comps)
     )
     summary = queries.data_quality_by_period(conn, cik)
     assert summary, "every cached company has at least one period"
+    # a period where gross_profit was filled by the calculated fallback has
+    # that concept as CALCULATED — neither "reported" nor "missing"; the
+    # panel's fuller treatment of calculated fallbacks is Task 10's job
+    gp_filled = {c.end for c in comps if c.concept == "gross_profit"}
     for row in summary:
-        assert row["reported"] + row["missing"] == len(config.tag_map())
+        expected = len(config.tag_map()) - (1 if row["period_end"] in gp_filled else 0)
+        assert row["reported"] + row["missing"] == expected
     for row in queries.restatements(conn, cik):
         assert row["original_value"] != row["current_value"]  # D15
 
@@ -181,3 +195,123 @@ def test_fixture_shapes_are_actually_present_somewhere(stored):
         "instants": sum(1 for f in selection.selected if period_type(f) == "instant"),
     }
     assert all(n > 0 for n in observed.values()), observed
+
+
+# ============ Task 9: composite branches on real data ============
+#
+# These figures are pinned, not derived: each was measured on 2026-09-11 and
+# cross-checked against the figures D26 and D27 recorded when those decisions
+# were made. If a tag-map or methodology change legitimately moves one, the
+# decision record is what says whether the move is right.
+
+BRANCHES = {
+    # cik: (methods per branch, refusals per reason)
+    18926: ({"debt_from_lease_inclusive_ltd": 15},
+            {"NO_DEBT_DATA": 2, "COMPONENT_AGGREGATE_MISMATCH": 2}),        # LUMN
+    37996: ({"debt_from_components": 3}, {"NO_DEBT_DATA": 16}),             # F
+    200406: ({"debt_from_components": 18}, {"NO_DEBT_DATA": 1}),            # JNJ
+    815097: ({"debt_from_components": 17},
+             {"NO_DEBT_DATA": 1, "COMPONENT_AGGREGATE_MISMATCH": 1}),       # CCL
+    1637459: ({"debt_from_lease_inclusive_ltd": 12}, {"NO_DEBT_DATA": 1}),  # KHC
+}
+
+MISMATCHES = {
+    # (cik, period_end): fragment the refusal detail must contain — the two
+    # figures and the deviation D26/D27 documented
+    (18926, "2009-12-31"): "93.6%",     # 500M vs 7,754M (D27's LUMN 2009)
+    (18926, "2010-12-31"): "99.8%",     # 12M vs 7,328M
+    (815097, "2010-11-30"): "7.9%",     # 8,624M vs 9,364M (D26's CCL case)
+}
+
+
+def test_total_debt_branch_per_company(stored):
+    conn, raw, _, _ = stored
+    methods = dict(conn.execute(
+        """SELECT method, COUNT(*) FROM concepts
+           WHERE concept='total_debt' AND status='CURRENT'
+             AND data_status='CALCULATED' GROUP BY method"""
+    ).fetchall())
+    refusals = dict(conn.execute(
+        """SELECT reason_code, COUNT(*) FROM concepts
+           WHERE concept='total_debt' AND status='CURRENT'
+             AND data_status='UNAVAILABLE' GROUP BY reason_code"""
+    ).fetchall())
+    want_methods, want_refusals = BRANCHES[raw["cik"]]
+    assert methods == want_methods
+    assert refusals == want_refusals
+
+
+def test_mismatch_refusals_record_the_documented_deviations(stored):
+    conn, raw, _, _ = stored
+    rows = conn.execute(
+        """SELECT period_end, detail FROM concepts
+           WHERE concept='total_debt' AND status='CURRENT'
+             AND reason_code='COMPONENT_AGGREGATE_MISMATCH'"""
+    ).fetchall()
+    expected = {end: frag for (cik, end), frag in MISMATCHES.items()
+                if cik == raw["cik"]}
+    assert {r["period_end"] for r in rows} == set(expected)
+    for r in rows:
+        assert expected[r["period_end"]] in r["detail"]
+
+
+SPOT_VALUES = {
+    # (cik, concept, period_end): value — cross-checked against D27's cited
+    # bundled figure (LUMN 2019: 34,694M) and CCL's D25 debt arc
+    (18926, "total_debt", "2019-12-31"): 34_694_000_000,
+    (815097, "total_debt", "2011-11-30"): 9_353_000_000,
+    (815097, "total_debt", "2025-11-30"): 27_993_000_000,
+    (200406, "total_debt", "2025-12-28"): 49_933_000_000,
+    (18926, "net_debt", "2019-12-31"): 33_004_000_000,
+    (18926, "ebitda", "2019-12-31"): 2_103_000_000,
+}
+
+
+def test_composite_spot_values(stored):
+    conn, raw, _, _ = stored
+    for (cik, concept, end), value in SPOT_VALUES.items():
+        if cik != raw["cik"]:
+            continue
+        row = conn.execute(
+            """SELECT value FROM concepts
+               WHERE concept=? AND period_end=? AND status='CURRENT'""",
+            (concept, end),
+        ).fetchone()
+        assert row is not None and row["value"] == value, (concept, end)
+
+
+def test_lease_inclusive_branch_refuses_ex_leases(stored):
+    """Every lease-inclusive period must pair with LEASES_NOT_SEPARABLE (D27)."""
+    conn, raw, _, _ = stored
+    n_branch = scalar(conn, """SELECT COUNT(*) FROM concepts
+        WHERE concept='total_debt' AND status='CURRENT'
+          AND method='debt_from_lease_inclusive_ltd'""")
+    n_refused = scalar(conn, """SELECT COUNT(*) FROM concepts
+        WHERE concept='total_debt_ex_leases' AND status='CURRENT'
+          AND reason_code='LEASES_NOT_SEPARABLE'""")
+    assert n_branch == n_refused
+
+
+def test_composites_link_their_inputs(stored):
+    """Every CALCULATED composite has concept_inputs provenance and no accession."""
+    conn, raw, _, _ = stored
+    rows = conn.execute(
+        """SELECT c.id, c.accession, COUNT(ci.input_concept_id) AS n_inputs
+           FROM concepts c LEFT JOIN concept_inputs ci ON ci.concept_id = c.id
+           WHERE c.data_status='CALCULATED' AND c.status='CURRENT'
+           GROUP BY c.id"""
+    ).fetchall()
+    assert rows, "no CALCULATED composites stored"
+    for r in rows:
+        assert r["accession"] is None
+        assert r["n_inputs"] >= 1
+
+
+def test_composite_restore_is_idempotent_on_real_data(stored):
+    conn, raw, selection, mapping = stored
+    before = scalar(conn, "SELECT COUNT(*) FROM concepts")
+    store_company_data(
+        conn, raw["cik"], raw["entityName"], selection, mapping,
+        tag_map=config.tag_map(), composites=compute_composites(mapping),
+    )
+    assert scalar(conn, "SELECT COUNT(*) FROM concepts") == before

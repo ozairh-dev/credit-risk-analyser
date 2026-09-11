@@ -39,13 +39,12 @@ checks (Phase 4) because the checks depend on them. See docs/build-plan.md.
       already covered by the real-data regression net. Finding 15 (unvalidated spec
       assumptions) is deliberately left for Phase 10 — several of its rows cannot be
       exercised until the universe has more companies
-- [ ] Task 9 (Phase 5): total_debt / net_debt / ebitda / fcf with a test per rule in the
-      methodology — four branches (plain components, debt_from_aggregate,
-      debt_from_lease_inclusive_ltd, and the D26/D27 mismatch refusals) plus
-      LEASES_NOT_SEPARABLE. include_operating_leases and include_st_investments are now
-      in config/composites.yaml (D28); Task 9 must add component_aggregate_tolerance to
-      the fingerprint allowlist in store/fingerprint.py, since it changes whether
-      total_debt computes at all (D18/D26)
+- [x] Task 9 (Phase 5): metrics/composites.py — total_debt (four mutually exclusive
+      branches incl. the D26/D27 mismatch refusals), total_debt_ex_leases,
+      net_debt, ebitda, fcf, gross_profit calculated fallback. DebtCurrent guard
+      (D32); four spec gaps resolved in the methodology (D33); deviation edge
+      semantics (D34). component_aggregate_tolerance joined the fingerprint
+      allowlist. Branch selection and tolerance both sabotage-verified
 - [ ] Task 10 (Phase 4): integrity checks + per-period data-quality summary; a failing
       period is stored, marked integrity = FAIL, and excluded from scoring. Passing and
       failing fixture per check

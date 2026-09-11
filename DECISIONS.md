@@ -356,6 +356,8 @@ hard-coding 5%. **Open dependency for Task 9:** the tolerance changes whether `t
 computes at all, so it must join D18's fingerprint allowlist in `store/fingerprint.py` when
 the composites are wired. It is deliberately absent from that allowlist for now because
 nothing reads it yet — noted in the YAML comment and here so it is not missed.
+*(Done at Task 9: the tolerance joined the allowlist when metrics/composites.py became
+its first reader.)*
 
 ## D27 — Lease-inclusive LTD is its own branch; plain LTD wins; leases become non-separable
 Decision (owner-approved 2026-09-10): filers who report long-term debt only bundled with
@@ -618,3 +620,102 @@ cannot tell them apart. Testing values just inside and just outside the boundary
 have stepped around the race and proved nothing about the comparison; the clock is frozen
 so equality is actually reachable. Verified by reverting to `>` and confirming that this
 test, and only this test, fails.
+
+## D32 — DebtCurrent's scope is filer-dependent; overlap with current_ltd refuses to compute
+Decision (owner-approved 2026-09-11, Task 9): when `short_term_debt` resolves via the
+`DebtCurrent` tag **and** `current_ltd` resolves in the same period, `total_debt` is
+`UNAVAILABLE` with the new reason code `ST_DEBT_SCOPE_UNCERTAIN`, both values recorded.
+`DebtCurrent` stays in the tag map as last-rank candidate; when `current_ltd` does not
+resolve, no overlap is possible and the tag is usable.
+
+Reason — the decisive finding: the us-gaap taxonomy defines `DebtCurrent` as short-term
+debt **plus current maturities of long-term debt**, but JNJ's usage excludes them —
+measured FY2022: `DebtCurrent` 12,800M is a rounded copy of `ShortTermBorrowings`
+12,756M, with `LongTermDebtCurrent` 1,551M reported separately, and the same shape holds
+in all 16 JNJ periods where the tag appears. So the tag's scope is filer-dependent and
+undetectable from the data. A subtract rule (`DebtCurrent − current_ltd`) and a
+take-it-alone rule each assume a scope that cannot be verified; refusing is the only
+honest option (CLAUDE.md rules 3 and 9, and rule 11 — never approximate a refused value).
+
+**D26 does not already cover this.** Its comparison basis is deliberately long-term
+components only, so an inflated `short_term_debt` is invisible to the aggregate
+reconciliation. The guard is a separate check on a separate component.
+
+Fires zero times on the five cached companies: `ShortTermBorrowings` outranks
+`DebtCurrent` in every JNJ period, and no other cached company reports the tag at all.
+This is a latent-hole guard in the D29 mould — closed because a future tag-map or
+universe change makes it reachable, not because it is live today.
+
+Alternatives: drop `DebtCurrent` from the candidates (loses the only short-term figure
+for filers who report nothing else, and the taxonomy-correct usage is genuinely the
+better figure where `current_ltd` is absent); subtract or use alone (both assume an
+unverifiable scope, above).
+Consequences: a new reason code in the vocabulary (docs/data-sources.md); the guard sits
+in `metrics/composites.py` before branch-1 assembly; unit-tested on synthetic data since
+no cached company exercises it.
+
+## D33 — Four Task 9 spec gaps resolved (owner-approved 2026-09-11)
+The methodology left four points underdetermined; each resolution is also written into
+the docs rather than living only here. In D16's mould: each defaults fail-safe unless
+measurement showed fail-safe was self-defeating.
+
+**1. `short_term_investments` is zero-by-absence for `net_debt`; `cash` stays
+`MISSING_INPUT`.** The general any-input-missing rule would kill `net_debt` in **61 of
+87** cash-periods across the five validated companies — including every LUMN and KHC
+period — for want of a refinement. Cash is the substantive input; STI adjusts it. The
+zero-by-absence is recorded like `total_debt`'s optional components.
+
+**2. "Same filing" means same-period, not same-accession.** The strict reading
+contradicts D15, which deliberately keeps an equal-value fact at its original filing's
+provenance — two decisions cannot both hold if one forbids what the other produces.
+Measured: CURRENT debt inputs legitimately span accessions in 12 periods across the five
+companies. Composites accept CURRENT facts regardless of accession; the rule's real
+content — no mixing of quarters or fiscal periods — is enforced by selection.
+
+**3. `total_debt_ex_leases` excludes both lease kinds:** `short_term_debt + current_ltd
++ noncurrent_ltd`. The figure was used in three places and defined in none. Cross-branch
+comparability decides it: D27's bundle contains finance leases, so an "operating-only"
+reading would make the figure mean different things on different branches — a metric
+that changes definition by branch is worse than one occasionally unavailable.
+
+**4. A half-resolved lease-inclusive pair falls through to `NO_DEBT_DATA`.** Half of an
+already-weaker branch, with no D26-style cross-check available on that half, is the
+least-trustworthy input in the tree. Zero half-resolved pairs exist in-sample (measured
+across all five companies), so this is latent, not live. Also settled in passing, from
+D26's own consequences table rather than as a new call: within the plain
+`current_ltd`/`noncurrent_ltd` pair, the missing member counts as zero when the other is
+present — JNJ's 18-period expectation in that table is only reachable on that reading
+(7 of its periods are noncurrent-only with no aggregate) — and the lease composites sum
+their split halves under the same zero-by-absence recording.
+
+## D34 — Deviation edge semantics: agreement computes, contradiction refuses, bad input refuses
+Decision (owner, Task 9, 2026-09-11): `_deviation(components, aggregate)` in
+`metrics/composites.py` — the single function both D26 reconciliations funnel through —
+resolves its edge cases as: **both zero → 0.0** (computes); **aggregate zero with
+components non-zero → inf** (refuses); **either value negative → inf** (refuses). The
+ordinary case is fixed by D26's measured figures: absolute difference relative to the
+aggregate (CCL 2010: |8,624−9,364|/9,364 = 7.9%).
+
+Reason — the test applied to each edge: **could this produce a plausible-looking wrong
+number (forbidden), or only an unnecessary refusal (acceptable)?** Aggregate-zero-vs-
+non-zero is a contradiction no percentage can express; proceeding would pick a side with
+no basis. A negative value is a tagging error — debt cannot be negative — and a deviation
+computed from it would launder bad input into a plausible number. Both-zero is the only
+edge where the answer was *neither*: the sources agree ("no long-term debt"), and that
+agreement is detectable directly even though 0/0 has no value — refusing there would cost
+coverage on a case where both sources say the same thing. Hence it is the one edge that
+computes.
+
+Implementation constraint that is part of the decision: **signs are checked before any
+`abs()`, and `abs()` applies only to the difference.** `abs()` on the inputs would turn
+components = −8,624 against aggregate = 8,624 into a deviation of 0.0 — perfect agreement
+manufactured from contradictory data, the worst available outcome. The negative-components
+/ positive-aggregate-of-equal-magnitude case is pinned by a dedicated test, since it is
+the one a misplaced `abs()` silently passes.
+
+Alternatives: refuse on both-zero too (uniform fail-safe; rejected — an unnecessary
+refusal with no protective value); treat aggregate-zero as tolerance-exempt agreement
+(picks a side); clamp negatives to zero (launders the error).
+Consequences: both the plain-components and lease-inclusive reconciliations inherit these
+semantics from the one function (CLAUDE.md rule 13 — one invariant, one layer); a test
+per edge in tests/test_composites.py.

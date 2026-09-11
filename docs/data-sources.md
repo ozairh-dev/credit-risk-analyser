@@ -165,8 +165,11 @@ Defined in `normalise/quality.py`. Phase 4 adds `INTEGRITY_*` codes alongside th
 | `AMBIGUOUS_FYE` | fact | Instant fact near a fiscal year end that `FYE_TIE` left unanchored | D16(2) |
 | `NO_FYE_ANCHOR` | fact | Instant fact whose fiscal year has no accepted duration fact to anchor it | D13 |
 | `NO_CANDIDATE_TAG` | concept | No candidate tag in `tag_map.yaml` resolved for the period | D17 |
-| `LEASES_NOT_SEPARABLE` | concept | Filer bundles debt and leases into one figure, so `total_debt_ex_leases` cannot be computed. Task 9 | D27 |
-| `COMPONENT_AGGREGATE_MISMATCH` | concept | Debt components and the reported aggregate disagree beyond tolerance; refuses rather than picking one. Task 9 | D26 |
+| `LEASES_NOT_SEPARABLE` | concept | Filer bundles debt and leases into one figure, so `total_debt_ex_leases` cannot be computed | D27 |
+| `COMPONENT_AGGREGATE_MISMATCH` | concept | Debt components and the reported aggregate disagree beyond tolerance; refuses rather than picking one. Both figures recorded | D26 |
+| `ST_DEBT_SCOPE_UNCERTAIN` | concept | `short_term_debt` resolved via `DebtCurrent` while `current_ltd` also resolves; the tag's filer-dependent scope makes double-counting unverifiable | D32 |
+| `NO_DEBT_DATA` | concept | No LTD-family concept resolves for the period; zero debt is never assumed | — |
+| `MISSING_INPUT:<concept>` | concept | A composite's required input is `UNAVAILABLE`; the refusal names which one | — |
 
 A refused value is never approximated from a neighbouring period, a related tag, or
 subtraction from another figure (CLAUDE.md rule 11).

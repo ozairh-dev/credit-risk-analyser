@@ -587,11 +587,12 @@ def temp_config_dir(tmp_path, monkeypatch):
     config.load.cache_clear()
 
 
-def write_composites(directory, *, leases="true", st_investments="true"):
+def write_composites(directory, *, leases="true", st_investments="true",
+                     tolerance="0.05"):
     (directory / "composites.yaml").write_text(
         f"include_operating_leases: {leases}\n"
         f"include_st_investments: {st_investments}\n"
-        f"component_aggregate_tolerance: 0.05\n"
+        f"component_aggregate_tolerance: {tolerance}\n"
     )
     config.load.cache_clear()
 
@@ -613,7 +614,14 @@ def test_fingerprint_is_config_driven(temp_config_dir):
 
     # the second toggle is load-bearing too
     write_composites(temp_config_dir, leases="false", st_investments="false")
-    assert config_fingerprint() != without_leases
+    both_false = config_fingerprint()
+    assert both_false != without_leases
+
+    # and the tolerance (Task 9, D26): it changes whether total_debt computes
+    # at all, so it must move the fingerprint
+    write_composites(temp_config_dir, leases="false", st_investments="false",
+                     tolerance="0.10")
+    assert config_fingerprint() != both_false
 
 
 def test_missing_composite_setting_raises(temp_config_dir):

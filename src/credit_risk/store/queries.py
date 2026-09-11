@@ -14,10 +14,14 @@ WHERE c.cik = ? AND c.status = 'CURRENT'
 ORDER BY c.concept, c.period_end
 """
 
+# `missing` counts tag-map gaps only (mapping's NO_CANDIDATE_TAG marker), so
+# reported + missing stays the tag-map concept count per period. Composite
+# refusals (NO_DEBT_DATA, COMPONENT_AGGREGATE_MISMATCH, MISSING_INPUT:*, ...)
+# are a different kind of gap; surfacing them in this panel is Task 10's job.
 Q_DATA_QUALITY_BY_PERIOD = """
 SELECT period_end,
        SUM(data_status = 'REPORTED')    AS reported,
-       SUM(data_status = 'UNAVAILABLE') AS missing,
+       SUM(reason_code = 'NO_CANDIDATE_TAG') AS missing,
        SUM(COALESCE(source_tag_rank, 0) > 0) AS fallbacks_used
 FROM concepts
 WHERE cik = ? AND status = 'CURRENT'

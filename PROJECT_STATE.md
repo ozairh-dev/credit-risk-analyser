@@ -78,8 +78,8 @@ because the integrity checks depend on the composites. See docs/build-plan.md.
   of 62 slots); differing candidate values -> CANDIDATE_TAG_DISAGREEMENT warning
   (owner call), equal-value co-tagging silent (D17). Composites and the
   gross_profit CALCULATED fallback deferred to Task 9 as scoped. Tag-map review
-  flagged for Phase 9/10: short_term_debt candidates overlap current_ltd
-  (DebtCurrent includes current LTD -> double-count risk in total_debt); equity
+  flagged for Phase 9/10: short_term_debt/DebtCurrent overlap — resolved at
+  Task 9 by D32's ST_DEBT_SCOPE_UNCERTAIN guard; equity
   disagreement warnings will be routine for NCI companies; pretax_income likely
   needs tag variants added.
 
@@ -142,10 +142,32 @@ v1 universe of 25-50 names and are not reported on:
   catches the D29 bug by reverting the fix and watching all nine KHC cases fail.
   Branch coverage 95% -> 98%; store/writer.py 85% -> 99%.
 
+- Task 9 (2026-09-11, on Opus — owner approved proceeding after a Fable
+  handoff was offered) — composite concepts. metrics/composites.py:
+  total_debt with four mutually exclusive branches (plain components with the
+  D26 reconciliation, aggregate-only, lease-inclusive per D27, NO_DEBT_DATA),
+  total_debt_ex_leases (both lease kinds excluded, D33), net_debt (STI
+  zero-by-absence, D33), ebitda (labelled, never falls back to EBIT), fcf, and
+  gross_profit's calculated fallback. DebtCurrent guard added as D32
+  (ST_DEBT_SCOPE_UNCERTAIN; fires zero times in-sample — latent-hole guard).
+  Four methodology gaps resolved and written into the doc (D33); deviation
+  edge semantics owner-decided (D34: both-zero computes, contradiction and
+  negative input refuse; abs() only on the difference). Store: concepts.detail
+  column added (zero-by-absence + refusal figures), composites stored with
+  concept_inputs provenance and no accession, gross_profit fill skips
+  mapping's UNAVAILABLE row to keep re-store idempotent. Branch counts on real
+  data match D26/D27's tables exactly: LUMN 15 lease-incl + 2 mismatch (93.6%,
+  99.8%), CCL 17 components + 1 mismatch (2010-11-30, 7.9%), JNJ 18
+  components, KHC 12 lease-incl, F 3 components. Sabotage-verified: flipping
+  branch precedence emits LUMN 2009's 14,507M double-count and fails exactly
+  the expected 3 tests; hardcoding the tolerance fails exactly the
+  mismatch-related 8.
+
 ## Tests
-- 174 passing (7 setup + 3 env + 6 ingest/tickers + 12 ingest/companyfacts (all
+- 246 passing (7 setup + 3 env + 6 ingest/tickers + 12 ingest/companyfacts (all
   HTTP-mocked) + 4 cli wiring + 3 fixture guards + 31 selection + 10 mapping +
-  45 real-data (9 invariants x 5 cached companies) + 53 store:
+  42 composites (deviation edges, all four branches, guards, toggles, storage) +
+  75 real-data (15 invariants x 5 cached companies) + 53 store:
   constraint-rejection tests for every CHECK, the six-value
   data_status constraint, FK enforcement, STRICT + fallback, the circular-FK
   path, the fixture's exact stored rows, the fy-trap at storage, the
@@ -186,9 +208,10 @@ v1 universe of 25-50 names and are not reported on:
 - Which 25-50 companies form the v1 universe? (US-listed, non-financial, 3+ years of 10-K data)
 
 ## Next priorities
-- Task 9 — composite concepts (total_debt / net_debt / ebitda / fcf) with a test per
-  rule in the methodology. One open item carries in: the short_term_debt/DebtCurrent
-  double-count risk flagged in Task 7. (config/composites.yaml now exists and holds
-  both toggles, and store/fingerprint.py reads them from it and raises on a missing
-  key — D28. Task 9 must add component_aggregate_tolerance to that allowlist, since
-  it changes whether total_debt computes at all.)
+- Task 10 (Phase 4) — integrity checks + per-period data-quality summary. Two notes
+  from Task 9: the summary query's `missing` now counts only NO_CANDIDATE_TAG, so
+  composite refusals and calculated fallbacks need their own presentation (deferred
+  to this task by design); and the Debt <= liabilities check reads
+  total_debt_ex_leases, which is UNAVAILABLE on every lease-inclusive period (LUMN,
+  KHC) and every CCL period lacks total_liabilities — JNJ is the only cached company
+  that can exercise it end to end (noted at D25).

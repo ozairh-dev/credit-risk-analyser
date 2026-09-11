@@ -29,7 +29,14 @@ import json
 from credit_risk import config
 
 # Config keys whose values change a computed concept or metric value.
-FINGERPRINTED_KEYS = ("include_operating_leases", "include_st_investments")
+# component_aggregate_tolerance joined at Task 9 (D26's noted dependency): it
+# changes whether total_debt computes at all, so a row computed under one
+# tolerance is not comparable to one computed under another.
+FINGERPRINTED_KEYS = (
+    "include_operating_leases",
+    "include_st_investments",
+    "component_aggregate_tolerance",
+)
 COMPOSITE_CONFIG_FILE = "composites"
 
 

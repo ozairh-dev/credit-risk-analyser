@@ -157,7 +157,7 @@ def _store_facts(conn, cik, selection: SelectionResult, fetched_at=None) -> None
 
 
 def _concept_unchanged(conn, cik, concept, period_end, value, data_status,
-                       reason_code, fingerprint) -> bool:
+                       reason_code, detail, fingerprint) -> bool:
     """True when the CURRENT row already says exactly this.
 
     Append-with-history exists to preserve the evidence that a value MOVED
@@ -165,7 +165,7 @@ def _concept_unchanged(conn, cik, concept, period_end, value, data_status,
     it is a no-op rather than a new history entry.
     """
     row = conn.execute(
-        """SELECT value, data_status, reason_code, config_fingerprint
+        """SELECT value, data_status, reason_code, detail, config_fingerprint
            FROM concepts
            WHERE cik=? AND concept=? AND period_end=? AND status='CURRENT'""",
         (cik, concept, period_end),
@@ -174,6 +174,7 @@ def _concept_unchanged(conn, cik, concept, period_end, value, data_status,
         row["value"] == value
         and row["data_status"] == data_status
         and row["reason_code"] == reason_code
+        and row["detail"] == detail
         and row["config_fingerprint"] == fingerprint
     )
 
@@ -186,11 +187,12 @@ def _supersede_current_concept(conn, cik, concept, period_end) -> None:
     )
 
 
-def _store_concepts(conn, cik, mapping: MappingResult, fingerprint, tag_ranks) -> None:
+def _store_concepts(conn, cik, mapping: MappingResult, fingerprint, tag_ranks,
+                    filled=frozenset()) -> None:
     created_at = _now()
     for c in mapping.concepts:
         if _concept_unchanged(conn, cik, c.concept, c.end, c.value,
-                              c.data_status, None, fingerprint):
+                              c.data_status, None, None, fingerprint):
             continue
         # Match the source fact on period type too: with identity widened (D29)
         # a duration and an instant fact can both be CURRENT for one (tag, end),
@@ -218,8 +220,13 @@ def _store_concepts(conn, cik, mapping: MappingResult, fingerprint, tag_ranks) -
             ),
         )
     for u in mapping.unavailable:
+        # a composite fills this (concept, period) — e.g. gross_profit's
+        # calculated fallback — so mapping's NO_CANDIDATE_TAG row must not
+        # supersede it on every re-store
+        if (u.concept, u.period_end) in filled:
+            continue
         if _concept_unchanged(conn, cik, u.concept, u.period_end, None,
-                              "UNAVAILABLE", u.reason_code, fingerprint):
+                              "UNAVAILABLE", u.reason_code, None, fingerprint):
             continue
         _supersede_current_concept(conn, cik, u.concept, u.period_end)
         conn.execute(
@@ -229,6 +236,54 @@ def _store_concepts(conn, cik, mapping: MappingResult, fingerprint, tag_ranks) -
                VALUES (?,?,?,'UNAVAILABLE',?, 'CURRENT',?,?)""",
             (cik, u.concept, u.period_end, u.reason_code, fingerprint, created_at),
         )
+
+
+def _store_composites(conn, cik, composites, fingerprint) -> None:
+    """Store CALCULATED composites and their refusals (Task 9).
+
+    Composite rows carry no accession: their provenance is the input concepts,
+    linked through concept_inputs, and pinning a multi-input composite to one
+    filing would be arbitrary. Input references are (concept, period_end)
+    pairs resolved against CURRENT concept rows — which exist by the time this
+    runs, because composites are stored after mapping's concepts.
+    """
+    created_at = _now()
+    for comp in composites:
+        if _concept_unchanged(conn, cik, comp.concept, comp.end, comp.value,
+                              comp.data_status, comp.reason_code, comp.detail,
+                              fingerprint):
+            continue
+        _supersede_current_concept(conn, cik, comp.concept, comp.end)
+        cur = conn.execute(
+            """INSERT INTO concepts
+               (cik, concept, period_end, value, unit, fy, fp, data_status,
+                label, method, reason_code, detail, status,
+                config_fingerprint, created_at)
+               VALUES (?,?,?,?,?,?,?,?,?,?,?,?,'CURRENT',?,?)""",
+            (
+                cik, comp.concept, comp.end, comp.value,
+                comp.unit if comp.data_status == "CALCULATED" else None,
+                comp.fy, comp.fp, comp.data_status, comp.label, comp.method,
+                comp.reason_code, comp.detail, fingerprint, created_at,
+            ),
+        )
+        composite_id = cur.lastrowid
+        for input_concept, input_end in comp.inputs:
+            row = conn.execute(
+                """SELECT id FROM concepts
+                   WHERE cik=? AND concept=? AND period_end=? AND status='CURRENT'""",
+                (cik, input_concept, input_end),
+            ).fetchone()
+            if row is None:
+                raise ValueError(
+                    f"composite {comp.concept} {comp.end} names input "
+                    f"{input_concept} {input_end} but no CURRENT concept row exists"
+                )
+            conn.execute(
+                """INSERT OR IGNORE INTO concept_inputs
+                   (concept_id, input_concept_id) VALUES (?,?)""",
+                (composite_id, row["id"]),
+            )
 
 
 def _store_events(conn, cik, events) -> None:
@@ -273,13 +328,18 @@ def store_company_data(
     tag_map: dict | None = None,
     fingerprint: str | None = None,
     fetched_at: str | None = None,
+    composites: list | None = None,
 ) -> None:
-    """Store one company's selected facts, mapped concepts and quality events."""
+    """Store one company's selected facts, mapped concepts, composite
+    concepts and quality events."""
     if fingerprint is None:
         fingerprint = config_fingerprint()
+    composites = composites or []
+    filled = frozenset((c.concept, c.end) for c in composites)
     _upsert_company(conn, cik, name, ticker, sic)
     _insert_filings(conn, cik, selection)
     _store_facts(conn, cik, selection, fetched_at=fetched_at)
-    _store_concepts(conn, cik, mapping, fingerprint, _tag_ranks(tag_map))
+    _store_concepts(conn, cik, mapping, fingerprint, _tag_ranks(tag_map), filled)
+    _store_composites(conn, cik, composites, fingerprint)
     _store_events(conn, cik, list(selection.warnings) + list(mapping.warnings))
     conn.commit()

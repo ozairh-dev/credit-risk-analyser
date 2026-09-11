@@ -86,6 +86,7 @@ _TABLES = [
       accession    TEXT REFERENCES filings(accession),
       method       TEXT,
       reason_code  TEXT,
+      detail       TEXT,
       override_id  INTEGER REFERENCES overrides(id),
       status       TEXT NOT NULL DEFAULT 'CURRENT'
                    CHECK (status IN ('CURRENT','SUPERSEDED')),
