@@ -150,7 +150,13 @@ A value can be present and still generate an event.
 
 ### Data-quality event codes
 
-Defined in `normalise/quality.py`. Phase 4 adds `INTEGRITY_*` codes alongside these.
+Defined in `normalise/quality.py` and `metrics/integrity.py`.
+
+Integrity **check** outcomes are **not** event codes: they are rows in the
+`integrity_results` table, because a pass/fail plus two figures has nowhere structured to
+live here and a scoring gate must not be read out of free text (D37). The abnormal-movement
+check is the exception — it is per-concept and warn-only, so it stays here under D23's
+three codes.
 
 | Code | Emitted when | Decision |
 |------|--------------|----------|
@@ -158,6 +164,9 @@ Defined in `normalise/quality.py`. Phase 4 adds `INTEGRITY_*` codes alongside th
 | `FYE_TIE` | That disagreement has no single most-common date, so no anchor is chosen and nearby instants become `AMBIGUOUS_FYE` | D16(2) |
 | `SAME_DAY_REFILING_TIEBREAK` | Two filings share a `filed` date for the same fact, so accession order sequences them | D16(4) |
 | `CANDIDATE_TAG_DISAGREEMENT` | Two candidate tags for one concept both resolve for a period and disagree on value; the higher-priority tag is used | D17(1) |
+| `ABNORMAL_MOVEMENT` | A core concept moves more than `abnormal_movement_threshold` year-on-year | D23 |
+| `ABNORMAL_SIGN_CHANGE` | A core concept changes sign between periods — flagged regardless of magnitude | D23 |
+| `ABNORMAL_FROM_ZERO` | A core concept's prior-period value is zero, so no percentage is defined | D23 |
 
 ### Reason codes on `UNAVAILABLE` rows
 

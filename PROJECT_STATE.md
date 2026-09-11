@@ -86,7 +86,8 @@ because the integrity checks depend on the composites. See docs/build-plan.md.
 - Task 8 (2026-09-10, on Opus per the model protocol) — SQLite schema, designed
   and approved before implementation per build-plan's two-stage requirement,
   then built with four owner amendments. src/credit_risk/store/: schema.py (raw
-  DDL, 14 tables, 12 indexes, STRICT where supported with a tested fallback),
+  DDL, 14 tables, 12 indexes, STRICT where supported with a tested fallback
+  — 15 tables since Task 10 added integrity_results, D37),
   db.py (connections with PRAGMA foreign_keys=ON), fingerprint.py (config
   fingerprints, documented allowlist), writer.py (stores selection + mapping
   output), queries.py (the five queries the app runs). data_status constrained
@@ -163,11 +164,67 @@ v1 universe of 25-50 names and are not reported on:
   the expected 3 tests; hardcoding the tolerance fails exactly the
   mismatch-related 8.
 
+- Task 10 (2026-09-11, Opus) — integrity checks + data-quality summary.
+  metrics/integrity.py: eight stored checks over four outcomes
+  (PASS/WARN/FAIL/SKIP), plus abnormal movement as D23 events. New
+  integrity_results table keyed (cik, period_end, check_name); the period
+  verdict is derived in a query, never stored (D37). New config/integrity.yaml,
+  deliberately outside D18's fingerprint (D38). Summary now separates four
+  kinds of absence — reported / calculated / missing_tags / refused_composites
+  — so a refused composite no longer inflates the tag-gap count.
+  Five decisions: D36 day-gap continuity, D37 own table, D38 config home,
+  D39 zero-denominator SKIP + two-row split, D40 phantom-period exclusion.
+  Real data: zero FAILs anywhere; the only warnings are KHC 2014-12-28
+  (23.4%) and 2016-01-03 (7.0%) balance-sheet, both genuine merger-era
+  presentation gaps. Sabotage-verified: subset `<=` -> `<` fails exactly the
+  equality test; disabling D40 fails exactly LUMN's and KHC's continuity
+  tests.
+
+## Integrity witness coverage (Phase 10 input, measured 2026-09-11)
+
+How many of the five cached companies can actually exercise each check
+end-to-end. A check with one usable witness is validated by one filer's
+conventions, so Phase 10's universe selection should deliberately cover the
+thin rows.
+
+| Check | Witnesses | Periods | Companies |
+|---|---|---|---|
+| cash_subset | 5 | 76 | JNJ 18, CCL 18, LUMN 17, KHC 12, F 11 |
+| current_assets_subset | 5 | 76 | JNJ 18, CCL 18, LUMN 17, KHC 12, F 11 |
+| period_continuity | 5 | 82 | F 18, JNJ 18, CCL 18, LUMN 17, KHC 11 |
+| revenue_non_negative | 4 | 62 | F 19, LUMN 18, CCL 15, JNJ 10 |
+| balance_sheet_balances | 3 | 48 | F 18, JNJ 18, KHC 12 |
+| current_liabilities_subset | 3 | 41 | JNJ 18, KHC 12, F 11 |
+| **debt_subset** | **2** | **21** | JNJ 18, F 3 |
+
+**`debt_subset` effectively has one usable witness.** Its second is Ford's 3
+periods — from the company D25 retired as unusable — so Phase 10's selection
+**must deliberately include filers reporting a `Liabilities` tag alongside
+plain (non-lease-bundled) debt**. LUMN and KHC contribute zero periods because
+every lease-inclusive period has `total_debt_ex_leases` UNAVAILABLE under D27,
+and CCL contributes zero because Carnival reports no `Liabilities` tag at all
+(D25's known limitation). This is the thinnest coverage in the check set and
+the one most likely to ship untested behaviour.
+
+Two figures corrected against the Task 10 proposal, both from measurement:
+`debt_subset` has two witnesses rather than one (Ford's 3 periods qualify),
+and splitting "current subset of total" into two checks (D39b) showed the
+asset comparison has 5 witnesses while the liability comparison has 3 — the
+combined row had hidden that asymmetry.
+
+**Separate tag-map gap for Phase 9/10, not a witness question:** KHC resolves
+`revenue` in **zero of its 12 periods**. No candidate in `tag_map.yaml`
+matches how Kraft Heinz tags revenue, so the non-negative-revenue check can
+never run for it and no revenue-based metric will ever compute. Worth a tag
+investigation before KHC is relied on for anything revenue-derived.
+
 ## Tests
-- 246 passing (7 setup + 3 env + 6 ingest/tickers + 12 ingest/companyfacts (all
+- 258 passing (7 setup + 3 env + 6 ingest/tickers + 12 ingest/companyfacts (all
   HTTP-mocked) + 4 cli wiring + 3 fixture guards + 31 selection + 10 mapping +
   42 composites (deviation edges, all four branches, guards, toggles, storage) +
-  75 real-data (15 invariants x 5 cached companies) + 53 store:
+  28 integrity (every check pass/fail/skip, the 1% boundary, D23's three codes,
+  a real 52/53-week sequence, phantom periods) +
+  110 real-data (22 invariants x 5 cached companies) + 53 store:
   constraint-rejection tests for every CHECK, the six-value
   data_status constraint, FK enforcement, STRICT + fallback, the circular-FK
   path, the fixture's exact stored rows, the fy-trap at storage, the
@@ -208,10 +265,10 @@ v1 universe of 25-50 names and are not reported on:
 - Which 25-50 companies form the v1 universe? (US-listed, non-financial, 3+ years of 10-K data)
 
 ## Next priorities
-- Task 10 (Phase 4) — integrity checks + per-period data-quality summary. Two notes
-  from Task 9: the summary query's `missing` now counts only NO_CANDIDATE_TAG, so
-  composite refusals and calculated fallbacks need their own presentation (deferred
-  to this task by design); and the Debt <= liabilities check reads
-  total_debt_ex_leases, which is UNAVAILABLE on every lease-inclusive period (LUMN,
-  KHC) and every CCL period lacks total_liabilities — JNJ is the only cached company
-  that can exercise it end to end (noted at D25).
+- Task 11 (Phase 5) — net_debt_to_ebitda, ebit_interest_cover, current_ratio end to
+  end on a real cached company, with provenance printed. Note CCL and LUMN are the
+  natural demonstration companies for leverage; JNJ resolves `revenue` in only 10 of
+  19 periods and KHC in none, so pick the company per metric rather than assuming one
+  covers all three.
+- Phase 6 must resolve the "excluded from scoring until reviewed" gap — see the open
+  question in DECISIONS.md. Task 10 stores the verdict and stops there by design.

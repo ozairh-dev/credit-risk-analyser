@@ -748,3 +748,162 @@ Alternatives: free text in `reason_code` (breaks counting); overload `method` (b
 equality); a parallel events row (detaches evidence from the value). Consequences:
 `detail` is display/audit text, never parsed by code — anything the engine must act on
 belongs in a typed column or a reason code, not in `detail`.
+
+## D36 — Period continuity is a day-gap between period ends, not a calendar-year step
+Decision (owner-approved 2026-09-11, Task 10): two periods are consecutive when the gap
+between their `period_end` dates falls in selection rule 2's existing 350-380 day window,
+not when their calendar years differ by one.
+
+Reason, measured: keying on `int(period_end[:4])` produces **8 false continuity warnings**
+across the cached companies — JNJ at 2008->2010, 2012->2012, 2014->2016, 2017->2017,
+2019->2021 and 2023->2023, plus two in KHC — every one a 52/53-week fiscal-calendar
+artefact rather than a real gap. JNJ's FY2009 ends **2010-01-03**, so calendar 2009
+contains no JNJ period end at all while calendar 2012 contains two. On the day-gap
+reading: **zero false positives across all 82 consecutive pairs**, observed gaps 363-371
+days, comfortably inside the window. Reusing rule 2's window also avoids inventing a
+second definition of "a year" (CLAUDE.md rule 13).
+
+**This is D19's fy-stamp trap reappearing in a new place — the third occurrence.** D19
+removed the `fy` index because SEC stamps `fy` with the filing's fiscal year rather than
+the fact's period; D13 derived fiscal year ends from duration facts for the same reason;
+and continuity would have reintroduced the identical error through calendar arithmetic on
+a date. Stated plainly for the next reader: **a fiscal-year label is not a date, and a
+date's calendar year is not a fiscal year.** Treat it as a known hazard of this data
+source rather than rediscovering it a fourth time.
+
+Alternatives: calendar-year step (8 false warnings, above); the `fy` stamp itself (the
+trap directly); a fixed 365-day tolerance of a few days (a bespoke window where an
+agreed one already exists).
+Consequences: `config/integrity.yaml` carries `continuity_window_days: [350, 380]`,
+duplicating rule 2's window as a value rather than importing it — the two are
+conceptually the same question asked of different objects (a fact's duration, a gap
+between periods) and may legitimately diverge. A test pins a real 52/53-week sequence so
+the finding is defended by test rather than by argument.
+
+## D37 — Integrity results get their own table, not data_quality_events
+Decision (owner-approved 2026-09-11): integrity check outcomes are rows in a new
+`integrity_results` table — `(cik, period_end, check, outcome, detail, lhs, rhs,
+deviation, config_fingerprint, created_at)` with a unique index on
+`(cik, period_end, check)`. The per-period verdict is **derived in a query, never
+stored** (rule 13: storing it would encode the same invariant twice, and the derivation —
+FAIL if any check failed, else WARN if any warned, else PASS — is trivial). Task 8's
+design note said these would be `data_quality_events` rows; that note is superseded.
+Abnormal movement **stays** in `data_quality_events` under D23's three existing codes:
+those are genuinely per-concept events, already specified that way, and warn-only.
+
+Reason 1 is decisive: **scoring must read the verdict programmatically, and the events
+table has nowhere structured to put it.** It has no outcome column and no numeric
+columns; the only home for a pass/fail plus two figures would be `detail` — which D35
+fixed, one week earlier, as display text *never parsed by code*. Routing the scoring gate
+through free text would break that boundary immediately after drawing it.
+Reason 2: PASS rows would be non-events — seven checks across ~88 periods is ~600 rows of
+"nothing happened" in a table whose purpose is surfacing judgements, which is exactly the
+failure CLAUDE.md rule 12 names (the unit fix cured the same shape at 3,845 markers).
+Reason 3: idempotency has no key — events dedupe by whole-row match, while an integrity
+result needs the natural key `(cik, period_end, check)` so a re-run updates rather than
+accumulates.
+
+Alternatives: force it into `data_quality_events` (all three reasons above); store the
+period verdict as a column (rule 13); put only failures in events and drop passes
+(loses the evidence-versus-gap distinction that makes witness coverage measurable).
+Consequences: `store/queries.py` gains the verdict derivation; Phase 6 reads the table,
+not free text.
+
+## D38 — Integrity thresholds live in config/integrity.yaml, outside the D18 fingerprint
+Decision (owner-approved 2026-09-11): `balance_sheet_tolerance` (0.01),
+`abnormal_movement_threshold` (3.0) and `continuity_window_days` ([350, 380]) live in a
+new `config/integrity.yaml`, not in `config/composites.yaml`.
+
+Reason: `composites.yaml` is fingerprinted under D18 because its keys change **concept
+values** — `include_operating_leases` moves `total_debt`, `component_aggregate_tolerance`
+decides whether it computes at all. Integrity thresholds change **verdicts, not values**.
+Folding them into the fingerprinted file would move every concept row's fingerprint
+whenever a tolerance changed, falsely implying the stored value should have moved — the
+precise misreading D18's scope note exists to prevent, and the same disjointness argument
+it makes for Phase 6's score fingerprint.
+Alternatives: add to composites.yaml (above); hard-code (CLAUDE.md rule 6).
+Consequences: integrity rows carry the config fingerprint in force when written, but that
+fingerprint covers the composites config, not these thresholds — a Phase 6 integrity
+fingerprint, if one is ever needed, is its own function over this file.
+
+## D39 — Two small integrity-check specifics: zero denominator skips, and current-subset splits
+Decision (owner-approved 2026-09-11):
+
+**(a) Zero or negative `total_assets` skips the balance-sheet check** rather than dividing.
+The methodology's rule divides by `total_assets`, and the general rules already say a zero
+denominator yields `UNAVAILABLE`/`ZERO_DENOMINATOR` rather than a misleading number
+(CLAUDE.md rule 4). The outcome is SKIP with that reason — the check could not run, which
+is a data gap, not a violation.
+
+**(b) "Current subset of total" is two checks, not one.** The methodology's single table
+row covers `current_assets <= total_assets` and `current_liabilities <= total_liabilities`
+— independent comparisons whose inputs resolve independently, so one can pass while the
+other skips. Stored as `current_assets_subset` and `current_liabilities_subset` so an
+outcome is never ambiguous about which comparison produced it. A cosmetic departure from
+the table's seven rows, making eight stored checks; the methodology's table is amended to
+show both.
+
+Consequences: SKIP is a first-class outcome alongside PASS/WARN/FAIL precisely so these
+cases are distinguishable — a company whose inputs never resolved must not look as clean
+as one that genuinely passed (the evidence-versus-gap split of D9).
+
+## Open question for Phase 6 — "excluded from scoring until reviewed" has no review mechanism
+Raised at Task 10, deliberately not resolved there. The methodology says a period failing
+an integrity check is stored, marked `integrity = FAIL` and "excluded from scoring until
+reviewed". There is no review mechanism anywhere in v1: no reviewed flag, no integrity
+override path (the `overrides` table covers values, not verdicts), and nothing that can
+move a period from FAIL back into scoring. Task 10 therefore stores the verdict and
+stops; the exclusion itself belongs to Phase 6, where scoring exists.
+
+**Phase 6 must choose:** build a review mechanism, or amend the methodology to say the
+exclusion is permanent absent a manual data fix and re-ingest. Inventing one at Task 10
+would have been a scoring decision made in the wrong task.
+
+## D40 — Continuity iterates over trend-eligible periods only; phantom periods still get every other check
+Decision (owner-approved 2026-09-11, Task 10): `period_continuity` runs over periods with
+**at least one resolved concept**. A period where nothing resolved is SKIP with
+"not a trend period" and is not a link in the chain. Every other check still runs on it,
+all skipping, so the period is recorded rather than hidden.
+
+**The methodology reading that decides it — this is the rule as written, not an exception
+to it.** The check is specified "consecutive fiscal years with no gap **for trend use**".
+Trends operate on concept values. A period with zero resolved concepts therefore cannot be
+a trend period, and asking whether it is contiguous with its neighbours is asking a
+question the rule does not pose.
+
+Measured: **3 false warnings removed, 0 true ones** — LUMN `2013-12-31 -> 2014-02-20`
+(51 days) and `2014-02-20 -> 2014-12-31` (314 days), KHC `2013-04-28 -> 2014-12-28`
+(609 days). These were the **only** continuity warnings in the entire cached set, so the
+check went from 100% false-positive to silent on data that is in fact continuous: LUMN's
+2013 and 2014 fiscal years are 365 days apart.
+
+**Why the phantom periods exist, and why D17 stays intact.** Each comes from a single tag
+*outside* `tag_map.yaml` that happens to carry an annual-length duration — LUMN's
+`StockRepurchasedDuringPeriodValue` (2013-02-13 to 2014-02-20, 372 days) and KHC's
+`TreasuryStockValueAcquiredCostMethod`. Mapping enumerates the period deliberately, under
+D17's rule that an odd-period fact is never dropped silently, and produces 34 UNAVAILABLE
+rows. That rule is left untouched: **the right place to decide a period is irrelevant to
+trends is the check that cares about trends, not the layer that records what was filed.**
+
+**Topology worth carrying forward:** continuity is the first check whose inputs are *other
+periods* rather than values within a period, which is why one junk period does
+disproportionate damage here and nowhere else — sitting between two real periods, it
+breaks the chain twice. **Checks over sequences amplify bad members; checks over single
+rows contain them.** This applies directly to Phase 7 (trends and early warnings), which
+is entirely sequence-based: every rule there should be asked which periods it treats as
+links before it is implemented.
+
+**Fourth appearance of one shape:** trusting an enumeration rather than asking what each
+element represents. D19 (the `fy` stamp is the filing's year, not the fact's), D13 (fiscal
+year ends derived from duration facts rather than labels), D36 (a date's calendar year is
+not a fiscal year), and now a period end that is not a reporting period at all. Treat
+"what does this element actually represent?" as the standing question for any enumeration
+in this data source.
+
+Alternatives: keep the warnings (100% false, above); drop zero-value periods at mapping
+(contradicts D17's no-silent-drop and would hide them from every other check too); exclude
+phantom periods from all checks (loses the honest record that a period exists about which
+nothing is known).
+Consequences: abnormal movement also iterates trend-eligible periods, for the same reason
+— a phantom period between two real ones would otherwise suppress every year-on-year
+comparison across it. Tests pin both the exclusion and the non-hiding.

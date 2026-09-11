@@ -286,6 +286,27 @@ def _store_composites(conn, cik, composites, fingerprint) -> None:
             )
 
 
+def _store_integrity(conn, cik, report, fingerprint) -> None:
+    """Integrity results keyed by (cik, period_end, check_name) — a re-run
+    updates rather than accumulates (D37). The period verdict is not stored:
+    store/queries.py derives it."""
+    created_at = _now()
+    for r in report.results:
+        conn.execute(
+            """INSERT INTO integrity_results
+               (cik, period_end, check_name, outcome, detail, lhs, rhs,
+                deviation, config_fingerprint, created_at)
+               VALUES (?,?,?,?,?,?,?,?,?,?)
+               ON CONFLICT(cik, period_end, check_name) DO UPDATE SET
+                 outcome=excluded.outcome, detail=excluded.detail,
+                 lhs=excluded.lhs, rhs=excluded.rhs,
+                 deviation=excluded.deviation,
+                 config_fingerprint=excluded.config_fingerprint""",
+            (cik, r.period_end, r.check_name, r.outcome, r.detail, r.lhs,
+             r.rhs, r.deviation, fingerprint, created_at),
+        )
+
+
 def _store_events(conn, cik, events) -> None:
     created_at = _now()
     for e in events:
@@ -329,6 +350,7 @@ def store_company_data(
     fingerprint: str | None = None,
     fetched_at: str | None = None,
     composites: list | None = None,
+    integrity=None,
 ) -> None:
     """Store one company's selected facts, mapped concepts, composite
     concepts and quality events."""
@@ -341,5 +363,9 @@ def store_company_data(
     _store_facts(conn, cik, selection, fetched_at=fetched_at)
     _store_concepts(conn, cik, mapping, fingerprint, _tag_ranks(tag_map), filled)
     _store_composites(conn, cik, composites, fingerprint)
-    _store_events(conn, cik, list(selection.warnings) + list(mapping.warnings))
+    events = list(selection.warnings) + list(mapping.warnings)
+    if integrity is not None:
+        _store_integrity(conn, cik, integrity, fingerprint)
+        events += list(integrity.events)
+    _store_events(conn, cik, events)
     conn.commit()

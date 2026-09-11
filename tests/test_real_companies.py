@@ -22,6 +22,7 @@ import pytest
 
 from credit_risk import config
 from credit_risk.metrics.composites import compute_composites
+from credit_risk.metrics.integrity import run_integrity_checks
 from credit_risk.normalise import map_concepts, select_annual_facts
 from credit_risk.normalise.selection import period_type
 from credit_risk.store import db, queries
@@ -50,9 +51,11 @@ def company(request):
 def stored(company):
     raw, selection, mapping = company
     conn = db.create_database(":memory:")
+    composites = compute_composites(mapping)
     store_company_data(
         conn, raw["cik"], raw["entityName"], selection, mapping,
-        tag_map=config.tag_map(), composites=compute_composites(mapping),
+        tag_map=config.tag_map(), composites=composites,
+        integrity=run_integrity_checks(mapping, composites),
     )
     yield conn, raw, selection, mapping
     conn.close()
@@ -99,7 +102,11 @@ def test_stored_concepts_and_events_match_mapping(stored):
     assert scalar(conn, "SELECT COUNT(*) FROM concepts WHERE data_status='REPORTED'") == (
         len(mapping.concepts)
     )
-    expected_events = len(selection.warnings) + len(mapping.warnings)
+    # abnormal-movement flags are events too (D23/D37), so the expectation
+    # includes them now that integrity runs in the stored fixture
+    integrity = run_integrity_checks(mapping, comps)
+    expected_events = (len(selection.warnings) + len(mapping.warnings)
+                       + len(integrity.events))
     assert scalar(conn, "SELECT COUNT(*) FROM data_quality_events") == expected_events
 
 
@@ -315,3 +322,134 @@ def test_composite_restore_is_idempotent_on_real_data(stored):
         tag_map=config.tag_map(), composites=compute_composites(mapping),
     )
     assert scalar(conn, "SELECT COUNT(*) FROM concepts") == before
+
+
+# ============ Task 10: integrity checks on real data ============
+#
+# Measured 2026-09-11. Outcome counts are pinned because they are the witness
+# evidence: a SKIP count is how thin a check's real-data coverage is, and a
+# silent change in it would be a coverage regression no other test would see.
+
+INTEGRITY_OUTCOMES = {
+    # cik: {outcome: count} across all checks and periods
+    18926: {"PASS": 69, "SKIP": 64},                       # LUMN
+    37996: {"PASS": 91, "SKIP": 42},                       # F
+    200406: {"PASS": 118, "SKIP": 15},                     # JNJ
+    815097: {"PASS": 69, "SKIP": 64},                      # CCL
+    1637459: {"PASS": 57, "SKIP": 32, "WARN": 2},          # KHC
+}
+
+# The only non-PASS outcomes in the entire cached set, and both are genuine:
+# Kraft Heinz's pre-merger (2014) and merger-year (2015) balance sheets do not
+# close against the mapped `equity` tag. The methodology warns rather than
+# rejects here precisely because minority-interest presentation varies.
+INTEGRITY_WARNINGS = {
+    (1637459, "2014-12-28", "balance_sheet_balances"): 0.2343,
+    (1637459, "2016-01-03", "balance_sheet_balances"): 0.0695,
+}
+
+
+def test_integrity_outcome_counts(stored):
+    conn, raw, _, _ = stored
+    counts = dict(conn.execute(
+        """SELECT outcome, COUNT(*) FROM integrity_results
+           WHERE cik = ? GROUP BY outcome""", (raw["cik"],)
+    ).fetchall())
+    assert counts == INTEGRITY_OUTCOMES[raw["cik"]]
+
+
+def test_no_cached_company_fails_an_integrity_check(stored):
+    """No FAIL anywhere in the cached set — asserted so a future tag-map or
+    methodology change that starts failing real filings is loud, not silent."""
+    conn, raw, _, _ = stored
+    assert scalar(conn, """SELECT COUNT(*) FROM integrity_results
+        WHERE cik = ? AND outcome = 'FAIL'""", (raw["cik"],)) == 0
+
+
+def test_integrity_warnings_are_the_documented_ones(stored):
+    conn, raw, _, _ = stored
+    rows = conn.execute(
+        """SELECT period_end, check_name, deviation FROM integrity_results
+           WHERE cik = ? AND outcome = 'WARN'""", (raw["cik"],)
+    ).fetchall()
+    expected = {(e, c): d for (cik, e, c), d in INTEGRITY_WARNINGS.items()
+                if cik == raw["cik"]}
+    assert {(r["period_end"], r["check_name"]) for r in rows} == set(expected)
+    for r in rows:
+        assert r["deviation"] == pytest.approx(
+            expected[(r["period_end"], r["check_name"])], abs=0.0001)
+
+
+def test_continuity_never_warns_on_any_cached_company(stored):
+    """D36 and D40 together, on real data: 52/53-week fiscal calendars and
+    phantom periods each used to produce false gaps. Every cached company's
+    filing history is in fact continuous."""
+    conn, raw, _, _ = stored
+    assert scalar(conn, """SELECT COUNT(*) FROM integrity_results
+        WHERE cik = ? AND check_name = 'period_continuity'
+          AND outcome = 'WARN'""", (raw["cik"],)) == 0
+
+
+def test_phantom_periods_are_recorded_not_hidden(stored):
+    """LUMN 2014-02-20 and KHC 2013-04-28 (D40): every check skips, and the
+    continuity skip says why."""
+    conn, raw, _, mapping = stored
+    with_values = {c.end for c in mapping.concepts}
+    phantoms = {u.period_end for u in mapping.unavailable} - with_values
+    for end in phantoms:
+        outcomes = {r["outcome"] for r in conn.execute(
+            """SELECT outcome FROM integrity_results
+               WHERE cik = ? AND period_end = ?""", (raw["cik"], end))}
+        assert outcomes == {"SKIP"}
+        detail = conn.execute(
+            """SELECT detail FROM integrity_results WHERE cik = ? AND period_end = ?
+               AND check_name = 'period_continuity'""", (raw["cik"], end)
+        ).fetchone()["detail"]
+        assert "not a trend period" in detail
+
+
+def test_period_verdict_is_derived_consistently(stored):
+    """The query derivation (D37) must agree with the module's function."""
+    conn, raw, _, _ = stored
+    from collections import defaultdict
+    by_period = defaultdict(list)
+    for r in conn.execute(
+        """SELECT period_end, outcome FROM integrity_results WHERE cik = ?""",
+        (raw["cik"],)
+    ):
+        by_period[r["period_end"]].append(r["outcome"])
+    derived = {r["period_end"]: r["verdict"]
+               for r in queries.integrity_verdict_by_period(conn, raw["cik"])}
+    for end, outcomes in by_period.items():
+        want = ("FAIL" if "FAIL" in outcomes
+                else "WARN" if "WARN" in outcomes else "PASS")
+        assert derived[end] == want
+
+
+def test_data_quality_summary_separates_the_four_kinds_of_absence(stored):
+    """A refused composite and a never-resolved concept are different things
+    and must not be summed together (Task 10)."""
+    conn, raw, _, _ = stored
+    rows = queries.data_quality_by_period(conn, raw["cik"])
+    assert rows
+    for row in rows:
+        total = (row["reported"] + row["calculated"] + row["missing"]
+                 + row["refused_composites"])
+        stored_here = scalar(conn, """SELECT COUNT(*) FROM concepts
+            WHERE cik = ? AND period_end = ? AND status = 'CURRENT'""",
+            (raw["cik"], row["period_end"]))
+        assert total == stored_here
+        assert row["fallbacks_used"] <= row["reported"]
+
+
+def test_integrity_restore_is_idempotent(stored):
+    """The (cik, period_end, check) key means a re-run updates (D37)."""
+    conn, raw, selection, mapping = stored
+    before = scalar(conn, "SELECT COUNT(*) FROM integrity_results")
+    composites = compute_composites(mapping)
+    store_company_data(
+        conn, raw["cik"], raw["entityName"], selection, mapping,
+        tag_map=config.tag_map(), composites=composites,
+        integrity=run_integrity_checks(mapping, composites),
+    )
+    assert scalar(conn, "SELECT COUNT(*) FROM integrity_results") == before

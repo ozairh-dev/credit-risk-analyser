@@ -1,0 +1,20 @@
+# Integrity-check thresholds (docs/credit-methodology.md "Integrity checks").
+# Deliberately NOT in composites.yaml: these change verdicts, not values, so they
+# stay outside D18's fingerprint allowlist — folding them in would move every
+# concept row's fingerprint when a tolerance changed, falsely implying the stored
+# value should have moved (D38).
+
+# Balance sheet balances: abs(total_assets - (total_liabilities + equity))
+# / total_assets. Warn-only — minority-interest presentation varies legitimately.
+balance_sheet_tolerance: 0.01
+
+# Abnormal movement: abs(value_t / value_(t-1) - 1) > this, over D23's 16 core
+# concepts only. Warn-only, surfaced for review.
+abnormal_movement_threshold: 3.0
+
+# Period continuity: two periods are consecutive when the gap between their
+# period_end dates falls in this window. NOT a calendar-year step — that reading
+# produces 8 false warnings on 52/53-week filers (D36, the fy-stamp trap again).
+# Mirrors selection rule 2's duration window as a value, not an import: the two
+# ask the same question of different objects and may legitimately diverge.
+continuity_window_days: [350, 380]

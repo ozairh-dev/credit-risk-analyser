@@ -45,11 +45,22 @@ checks (Phase 4) because the checks depend on them. See docs/build-plan.md.
       (D32); four spec gaps resolved in the methodology (D33); deviation edge
       semantics (D34). component_aggregate_tolerance joined the fingerprint
       allowlist. Branch selection and tolerance both sabotage-verified
-- [ ] Task 10 (Phase 4): integrity checks + per-period data-quality summary; a failing
-      period is stored, marked integrity = FAIL, and excluded from scoring. Passing and
-      failing fixture per check
+- [x] Task 10 (Phase 4): metrics/integrity.py — eight checks over PASS/WARN/FAIL/SKIP,
+      abnormal movement as D23 events, integrity_results table with a derived verdict,
+      config/integrity.yaml, summary split into four kinds of absence. D36-D40.
+      Witness coverage measured and recorded in PROJECT_STATE.md as a Phase 10 input
 - [ ] Task 11 (Phase 5): net_debt_to_ebitda, ebit_interest_cover, current_ratio end to
       end on a real cached company, with provenance printed
+
+## Phase 9/10 inputs raised by Task 10
+- [ ] Phase 10 universe selection must cover `debt_subset`: it has one usable witness
+      (JNJ), since lease-inclusive filers have total_debt_ex_leases UNAVAILABLE and CCL
+      reports no `Liabilities` tag. Needs filers with plain debt AND a Liabilities tag
+- [ ] Tag-map gap: KHC resolves `revenue` in zero of 12 periods — no candidate matches
+      how Kraft Heinz tags it. Investigate before relying on KHC for anything
+      revenue-derived
+- [ ] Phase 6: resolve "excluded from scoring until reviewed" — build a review
+      mechanism or amend the methodology (open question in DECISIONS.md)
 
 ## Later
 - See docs/build-plan.md

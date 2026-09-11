@@ -38,3 +38,7 @@ def tag_map() -> dict:
 
 def ingestion() -> dict:
     return load("ingestion")
+
+
+def integrity() -> dict:
+    return load("integrity")

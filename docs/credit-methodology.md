@@ -400,18 +400,61 @@ in each cell. Nothing more elaborate in v1.
 
 ## Integrity checks (run on every ingested period)
 
-| Check | Rule | On failure |
+| Check (stored name) | Rule | On failure |
 |---|---|---|
-| Balance sheet balances | abs(total_assets − (total_liabilities + equity)) / total_assets ≤ 1% | warn (minority-interest presentation differs; don't reject) |
-| Current ⊆ total | current_assets ≤ total_assets; current_liabilities ≤ total_liabilities | fail |
-| Cash ⊆ current assets | cash ≤ current_assets | fail |
-| Debt ⊆ liabilities | total_debt_ex_leases ≤ total_liabilities | fail |
-| Non-negative revenue | revenue ≥ 0 | fail |
-| Period continuity | consecutive fiscal years with no gap for trend use | warn, trend INSUFFICIENT_DATA |
+| `balance_sheet_balances` | abs(total_assets − (total_liabilities + equity)) / total_assets ≤ 1% | warn (minority-interest presentation differs; don't reject) |
+| `current_assets_subset` | current_assets ≤ total_assets | fail |
+| `current_liabilities_subset` | current_liabilities ≤ total_liabilities | fail |
+| `cash_subset` | cash ≤ current_assets | fail |
+| `debt_subset` | total_debt_ex_leases ≤ total_liabilities | fail |
+| `revenue_non_negative` | revenue ≥ 0 | fail |
+| `period_continuity` | consecutive periods with no gap for trend use | warn, trend INSUFFICIENT_DATA |
 | Abnormal movement | any **core concept** (defined below) moves > 300% year-on-year | warn, surface for review |
 
+"Current ⊆ total" is **two** stored checks, not one (D39b): the asset and liability
+comparisons have independent inputs, so one can run while the other skips, and a single
+row could not say which produced the outcome.
+
+Thresholds come from `config/integrity.yaml`, never from code — deliberately a separate
+file from the D18-fingerprinted `config/composites.yaml`, because these change verdicts
+rather than values (D38).
+
+### Outcomes
+
+Every check yields exactly one of four outcomes per period:
+
+| Outcome | Meaning |
+|---|---|
+| `PASS` | the comparison ran and held |
+| `WARN` | it ran and did not hold, but the rule says don't reject |
+| `FAIL` | it ran and did not hold; the period is excluded from scoring |
+| `SKIP` | an input was `UNAVAILABLE`, so the comparison could not run |
+
+**`SKIP` is not a pass.** A missing input is a data gap, not a violation — the same
+evidence-versus-gap split as D9 — so a company whose inputs never resolved must not read
+as clean as one that genuinely passed. The per-period verdict is FAIL if any check
+failed, else WARN if any warned, else PASS; it is **derived, never stored** (D37), and
+the summary reports how many checks actually ran so a period that passed on zero evidence
+is visible as such.
+
+A zero or negative `total_assets` makes the balance-sheet check `SKIP`, not a division
+(D39a; general rule 4).
+
 "Fail" means the period is stored but marked `integrity = FAIL` and excluded from scoring
-until reviewed. Never silently accepted.
+until reviewed. Never silently accepted. *(Open: v1 has no review mechanism — see the
+Phase 6 open question in `DECISIONS.md`.)*
+
+### What counts as consecutive
+
+Two periods are consecutive when the **gap between their `period_end` dates** falls in
+`config/integrity.yaml: continuity_window_days` (350–380), matching selection rule 2's
+duration window. It is **never** a calendar-year step: a 52/53-week filer's FY2009 can end
+2010-01-03, so calendar arithmetic invents gaps that do not exist (D36).
+
+Continuity runs over **trend-eligible periods only** — those with at least one resolved
+concept. A period where nothing resolved is not a trend period, so it is not a link in the
+chain; it still receives every other check, all skipping, so it is recorded rather than
+hidden (D40).
 
 ### Core concepts (abnormal-movement scope)
 

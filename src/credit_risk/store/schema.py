@@ -221,6 +221,24 @@ _TABLES = [
     """,
     # ---------------- data quality ----------------
     """
+    CREATE TABLE integrity_results (
+      id           INTEGER PRIMARY KEY,
+      cik          INTEGER NOT NULL REFERENCES companies(cik),
+      period_end   TEXT NOT NULL,
+      check_name   TEXT NOT NULL,
+      outcome      TEXT NOT NULL CHECK (outcome IN ('PASS','WARN','FAIL','SKIP')),
+      detail       TEXT,
+      lhs          REAL,
+      rhs          REAL,
+      deviation    REAL,
+      config_fingerprint TEXT NOT NULL,
+      created_at   TEXT NOT NULL,
+      -- SKIP means an input was UNAVAILABLE: the check could not run, which is a
+      -- data gap, not a violation. A skipped check therefore carries no figures.
+      CHECK (outcome <> 'SKIP' OR (lhs IS NULL AND rhs IS NULL))
+    ){strict}
+    """,
+    """
     CREATE TABLE data_quality_events (
       id         INTEGER PRIMARY KEY,
       cik        INTEGER NOT NULL REFERENCES companies(cik),
@@ -236,6 +254,11 @@ _TABLES = [
 ]
 
 _INDEXES = [
+    # One result per (company, period, check): a re-run updates rather than
+    # accumulates (D37). data_quality_events has no such key, which is one of
+    # the three reasons integrity results are not stored there.
+    "CREATE UNIQUE INDEX uq_integrity_result"
+    " ON integrity_results(cik, period_end, check_name)",
     "CREATE INDEX idx_filings_cik ON filings(cik)",
     # One CURRENT fact per (company, tag, period type, period end) — supersession
     # is a relationship. `period_start IS NULL` is the period-type discriminator:

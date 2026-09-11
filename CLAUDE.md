@@ -78,7 +78,7 @@ credit-risk-platform/
 ├── src/credit_risk/
 │   ├── ingest/             SEC fetch + raw cache
 │   ├── normalise/          tag mapping, period selection, provenance
-│   ├── metrics/            ratio calculations
+│   ├── metrics/            composites, integrity checks, ratio calculations
 │   ├── scoring/            bands, weights, grades, explanations
 │   ├── trends/             trend classification + early warnings
 │   ├── stress/             scenario engine
