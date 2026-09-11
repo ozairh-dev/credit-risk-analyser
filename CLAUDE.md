@@ -116,6 +116,12 @@ credit-risk-platform/
     the expectation.
     *Why: D27's cross-check-only restriction was proved by measuring that Ford resolves
     only the aggregate — 13 periods — and the pair in zero.*
+14. Measure before pinning. When writing real-data assertions, examine the output first
+    and confirm each value is correct before making it an expected value. Pinning
+    unexamined output turns a test suite into a bug preservative — it defends whatever
+    the code currently does, correct or not.
+    *Why: D40's three false continuity warnings would have become the expected baseline
+    had assertions been pinned before the phantom-period finding.*
 
 ## Model protocol
 
