@@ -86,6 +86,10 @@ credit-risk-platform/
 10. Explain what you're doing in plain language — the owner is learning as this is built.
 11. Commit completed work before starting a new task. Don't leave changes uncommitted
     across task boundaries.
+12. Before declaring a task done, check backwards: does this task's work contradict any
+    decision in `DECISIONS.md`, or leave any doc asserting something the code no longer
+    does? Name what you checked and what you found, even if the answer is nothing.
+    Recording a new decision is not the same as checking it doesn't break an existing one.
 
 ## Model protocol
 
