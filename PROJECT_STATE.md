@@ -180,6 +180,46 @@ v1 universe of 25-50 names and are not reported on:
   equality test; disabling D40 fails exactly LUMN's and KHC's continuity
   tests.
 
+- Task 11 (2026-09-11, Opus) — the first three ratios end to end.
+  metrics/ratios.py: net_debt_to_ebitda, ebit_interest_cover, current_ratio,
+  with every coverage edge case and a REASON_KIND mapping splitting reasons
+  into EVIDENCE / GAP / NEITHER (D9, D41a) — three kinds, not two, because an
+  unlevered company must not cap the grade. New pipeline.py assembles the
+  stages in their one correct order; new `credit-risk metrics <TICKER>` prints
+  each ratio with its full provenance chain read back from the database —
+  ratio -> composite -> composite -> tag -> filing. Metrics are
+  append-with-history with metric_inputs provenance and no accession.
+  D41 records six calls. Measured: CCL 2019 recomputed by hand end to end
+  (ebitda 3,276+2,160=5,436; net_debt 11,502-518=10,984; ratio 2.0206).
+  Sabotage-verified: letting NEGATIVE_EBITDA fall through to a value fails the
+  evidence-distinction test plus exactly the three companies that have such a
+  period.
+
+## Metric coverage (Phase 10 input, measured 2026-09-11)
+
+Values produced per company, out of that company's period count. Coverage is
+per metric, not per company — assuming one policy covers all three is how a
+metric ends up looking healthy because nobody checked who could produce it.
+
+| Company | net_debt_to_ebitda | ebit_interest_cover | current_ratio |
+|---|---|---|---|
+| LUMN (19) | 14 | 15 | 17 |
+| F (19) | **3** | 7 | 11 |
+| JNJ (19) | **6** | **6** | 18 |
+| CCL (19) | 14 | 16 | 18 |
+| KHC (13) | 10 | 10 | 12 |
+
+All five companies witness all three metrics, but the two headline metrics are
+far thinner than `current_ratio` (76 of 89 periods).
+
+**Five of the seven coverage edge cases have zero real-data witnesses** and are
+synthetic-only: `NO_INTEREST_NO_DEBT`, `INTEREST_MISSING_WITH_DEBT` in both its
+forms (interest missing, and interest zero), `ZERO_DENOMINATOR`,
+`NEGATIVE_DENOMINATOR`. Measured across all 89 cached company-periods:
+`interest_expense` resolves positively in every one, `total_debt` is never
+exactly zero, and `current_liabilities` is never zero or negative. Only
+`NEGATIVE_EBITDA` (6 periods) and `NEGATIVE_EARNINGS` (10) have real witnesses.
+
 ## Integrity witness coverage (Phase 10 input, measured 2026-09-11)
 
 How many of the five cached companies can actually exercise each check
@@ -212,19 +252,27 @@ and splitting "current subset of total" into two checks (D39b) showed the
 asset comparison has 5 witnesses while the liability comparison has 3 — the
 combined row had hidden that asymmetry.
 
-**Separate tag-map gap for Phase 9/10, not a witness question:** KHC resolves
-`revenue` in **zero of its 12 periods**. No candidate in `tag_map.yaml`
+**Two tag-map gaps for Phase 9/10, not witness questions.** JNJ resolves
+`OperatingIncomeLoss` in only **6 of 19 periods**, so the designated *strong*
+reference company is the thinnest evidence for both headline metrics. That is
+**two of five demonstration companies with a tag-map hole in a headline
+metric** — KHC's revenue being the other. Phase 10's company selection must
+treat headline-metric coverage as a **selection criterion**, not a property
+discovered after adoption.
+
+KHC resolves `revenue` in **zero of its 12 periods**. No candidate in `tag_map.yaml`
 matches how Kraft Heinz tags revenue, so the non-negative-revenue check can
 never run for it and no revenue-based metric will ever compute. Worth a tag
 investigation before KHC is relied on for anything revenue-derived.
 
 ## Tests
-- 258 passing (7 setup + 3 env + 6 ingest/tickers + 12 ingest/companyfacts (all
+- 374 passing (7 setup + 3 env + 6 ingest/tickers + 12 ingest/companyfacts (all
   HTTP-mocked) + 4 cli wiring + 3 fixture guards + 31 selection + 10 mapping +
   42 composites (deviation edges, all four branches, guards, toggles, storage) +
   28 integrity (every check pass/fail/skip, the 1% boundary, D23's three codes,
   a real 52/53-week sequence, phantom periods) +
-  110 real-data (22 invariants x 5 cached companies) + 53 store:
+  25 ratios (three formulas, all seven coverage edge cases, the three reason
+  kinds) + 145 real-data (29 invariants x 5 cached companies) + 53 store:
   constraint-rejection tests for every CHECK, the six-value
   data_status constraint, FK enforcement, STRICT + fallback, the circular-FK
   path, the fixture's exact stored rows, the fy-trap at storage, the
@@ -265,10 +313,10 @@ investigation before KHC is relied on for anything revenue-derived.
 - Which 25-50 companies form the v1 universe? (US-listed, non-financial, 3+ years of 10-K data)
 
 ## Next priorities
-- Task 11 (Phase 5) — net_debt_to_ebitda, ebit_interest_cover, current_ratio end to
-  end on a real cached company, with provenance printed. Note CCL and LUMN are the
-  natural demonstration companies for leverage; JNJ resolves `revenue` in only 10 of
-  19 periods and KHC in none, so pick the company per metric rather than assuming one
-  covers all three.
+- The remaining ~14 ratios (rest of Phase 5). The pattern is now proven end to end;
+  Task 11 deliberately did three so the shape could be reviewed before replication.
+- Phase 6 (scoring) reads REASON_KIND to apply D9: EVIDENCE scores 0, GAP drops and
+  caps, NEITHER redistributes weight. It must also resolve the "excluded until
+  reviewed" open question in DECISIONS.md.
 - Phase 6 must resolve the "excluded from scoring until reviewed" gap — see the open
   question in DECISIONS.md. Task 10 stores the verdict and stops there by design.

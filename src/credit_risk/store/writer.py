@@ -286,6 +286,68 @@ def _store_composites(conn, cik, composites, fingerprint) -> None:
             )
 
 
+def _metric_unchanged(conn, cik, metric, period_end, value, data_status,
+                      reason_code, fingerprint) -> bool:
+    row = conn.execute(
+        """SELECT value, data_status, reason_code, config_fingerprint
+           FROM metrics
+           WHERE cik=? AND metric=? AND period_end=? AND status='CURRENT'""",
+        (cik, metric, period_end),
+    ).fetchone()
+    return row is not None and (
+        row["value"] == value
+        and row["data_status"] == data_status
+        and row["reason_code"] == reason_code
+        and row["config_fingerprint"] == fingerprint
+    )
+
+
+def _store_metrics(conn, cik, report, fingerprint) -> None:
+    """Metrics are append-with-history like concepts (D18): one CURRENT row
+    per (cik, metric, period_end), earlier ones SUPERSEDED.
+
+    No accession on a metric row — its provenance is the input concepts,
+    linked through metric_inputs, and pinning a multi-input ratio to one
+    filing would be arbitrary (same reasoning as composites).
+    """
+    created_at = _now()
+    for m in report.metrics:
+        if _metric_unchanged(conn, cik, m.metric, m.end, m.value,
+                             m.data_status, m.reason_code, fingerprint):
+            continue
+        conn.execute(
+            """UPDATE metrics SET status='SUPERSEDED'
+               WHERE cik=? AND metric=? AND period_end=? AND status='CURRENT'""",
+            (cik, m.metric, m.end),
+        )
+        cur = conn.execute(
+            """INSERT INTO metrics
+               (cik, metric, period_end, value, unit, data_status, method,
+                reason_code, status, config_fingerprint, created_at)
+               VALUES (?,?,?,?,?,?,?,?,'CURRENT',?,?)""",
+            (cik, m.metric, m.end, m.value,
+             m.unit if m.data_status == "CALCULATED" else None,
+             m.data_status, m.method, m.reason_code, fingerprint, created_at),
+        )
+        metric_id = cur.lastrowid
+        for input_concept, input_end in m.inputs:
+            row = conn.execute(
+                """SELECT id FROM concepts
+                   WHERE cik=? AND concept=? AND period_end=? AND status='CURRENT'""",
+                (cik, input_concept, input_end),
+            ).fetchone()
+            if row is None:
+                raise ValueError(
+                    f"metric {m.metric} {m.end} names input {input_concept} "
+                    f"{input_end} but no CURRENT concept row exists"
+                )
+            conn.execute(
+                """INSERT OR IGNORE INTO metric_inputs (metric_id, concept_id)
+                   VALUES (?,?)""",
+                (metric_id, row["id"]),
+            )
+
+
 def _store_integrity(conn, cik, report, fingerprint) -> None:
     """Integrity results keyed by (cik, period_end, check_name) — a re-run
     updates rather than accumulates (D37). The period verdict is not stored:
@@ -351,6 +413,7 @@ def store_company_data(
     fetched_at: str | None = None,
     composites: list | None = None,
     integrity=None,
+    metrics=None,
 ) -> None:
     """Store one company's selected facts, mapped concepts, composite
     concepts and quality events."""
@@ -367,5 +430,8 @@ def store_company_data(
     if integrity is not None:
         _store_integrity(conn, cik, integrity, fingerprint)
         events += list(integrity.events)
+    if metrics is not None:
+        _store_metrics(conn, cik, metrics, fingerprint)
+        events += list(metrics.events)
     _store_events(conn, cik, events)
     conn.commit()

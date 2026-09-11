@@ -116,6 +116,66 @@ ORDER BY created_at, id
 """
 
 
+Q_METRICS_WITH_PROVENANCE = """
+SELECT m.metric, m.period_end, m.value, m.unit, m.data_status, m.method,
+       m.reason_code
+FROM metrics m
+WHERE m.cik = ? AND m.status = 'CURRENT'
+ORDER BY m.period_end, m.metric
+"""
+
+# The provenance chain, one row per (metric, input concept, source fact):
+# metric_inputs -> concepts -> concept_inputs -> concepts -> facts -> filings.
+# A composite input has no source_tag of its own, so its own inputs are
+# followed one level down — that is where the tag and filing live.
+Q_METRIC_PROVENANCE = """
+SELECT m.metric, m.period_end, m.value AS metric_value, m.data_status,
+       m.method, m.reason_code,
+       c.concept AS input_concept, c.value AS input_value,
+       c.data_status AS input_status, c.method AS input_method,
+       c.reason_code AS input_reason, c.source_tag AS input_tag,
+       src.concept AS source_concept, src.value AS source_value,
+       src.source_tag, src.data_status AS source_status,
+       f.accession, f.form, f.filed
+FROM metrics m
+JOIN metric_inputs mi ON mi.metric_id = m.id
+JOIN concepts c ON c.id = mi.concept_id
+LEFT JOIN concept_inputs ci ON ci.concept_id = c.id
+LEFT JOIN concepts src ON src.id = ci.input_concept_id
+LEFT JOIN facts fa ON fa.id = COALESCE(src.fact_id, c.fact_id)
+LEFT JOIN filings f ON f.accession = fa.accession
+WHERE m.cik = ? AND m.period_end = ? AND m.status = 'CURRENT'
+ORDER BY m.metric, c.concept, src.concept
+"""
+
+
+def metrics_with_provenance(conn, cik):
+    return conn.execute(Q_METRICS_WITH_PROVENANCE, (cik,)).fetchall()
+
+
+def metric_provenance(conn, cik, period_end):
+    return conn.execute(Q_METRIC_PROVENANCE, (cik, period_end)).fetchall()
+
+
+def concept_chain(conn, cik, concept, period_end):
+    """One concept with its direct inputs and their source tags/filings."""
+    return conn.execute("""
+        SELECT c.concept, c.value, c.data_status, c.method, c.reason_code,
+               c.source_tag, c.detail,
+               i.concept AS input_concept, i.value AS input_value,
+               i.data_status AS input_status, i.source_tag AS input_tag,
+               f.accession, f.form, f.filed
+        FROM concepts c
+        LEFT JOIN concept_inputs ci ON ci.concept_id = c.id
+        LEFT JOIN concepts i ON i.id = ci.input_concept_id
+        LEFT JOIN facts fa ON fa.id = COALESCE(i.fact_id, c.fact_id)
+        LEFT JOIN filings f ON f.accession = fa.accession
+        WHERE c.cik = ? AND c.concept = ? AND c.period_end = ?
+          AND c.status = 'CURRENT'
+        ORDER BY i.concept
+    """, (cik, concept, period_end)).fetchall()
+
+
 def missing_concepts(conn, cik):
     return conn.execute(Q_MISSING_CONCEPTS, (cik,)).fetchall()
 

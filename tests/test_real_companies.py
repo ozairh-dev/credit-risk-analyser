@@ -23,6 +23,7 @@ import pytest
 from credit_risk import config
 from credit_risk.metrics.composites import compute_composites
 from credit_risk.metrics.integrity import run_integrity_checks
+from credit_risk.metrics.ratios import EVIDENCE, GAP, compute_metrics, reason_kind
 from credit_risk.normalise import map_concepts, select_annual_facts
 from credit_risk.normalise.selection import period_type
 from credit_risk.store import db, queries
@@ -56,6 +57,7 @@ def stored(company):
         conn, raw["cik"], raw["entityName"], selection, mapping,
         tag_map=config.tag_map(), composites=composites,
         integrity=run_integrity_checks(mapping, composites),
+        metrics=compute_metrics(mapping, composites),
     )
     yield conn, raw, selection, mapping
     conn.close()
@@ -453,3 +455,148 @@ def test_integrity_restore_is_idempotent(stored):
         integrity=run_integrity_checks(mapping, composites),
     )
     assert scalar(conn, "SELECT COUNT(*) FROM integrity_results") == before
+
+
+# ============ Task 11: the three ratios on real data ============
+#
+# Every count below was measured, reconciled against the company's period
+# count, and spot-checked by hand before being pinned (CLAUDE.md rule 14).
+# CCL 2019 was recomputed manually end to end: ebitda 3,276 + 2,160 = 5,436;
+# net_debt 11,502 - 518 = 10,984; 10,984 / 5,436 = 2.0206.
+
+METRIC_OUTCOMES = {
+    (18926, "net_debt_to_ebitda"): {"value": 14, "MISSING_INPUT:net_debt": 4,
+                                    "NEGATIVE_EBITDA": 1},
+    (18926, "ebit_interest_cover"): {"value": 15, "NEGATIVE_EARNINGS": 3,
+                                     "MISSING_INPUT:total_debt": 1},
+    (18926, "current_ratio"): {"value": 17, "MISSING_INPUT:current_assets": 2},
+
+    (37996, "net_debt_to_ebitda"): {"value": 3, "MISSING_INPUT:net_debt": 16},
+    (37996, "ebit_interest_cover"): {"value": 7, "MISSING_INPUT:ebit": 10,
+                                     "NEGATIVE_EARNINGS": 2},
+    (37996, "current_ratio"): {"value": 11, "MISSING_INPUT:current_assets": 8},
+
+    (200406, "net_debt_to_ebitda"): {"value": 6, "MISSING_INPUT:ebitda": 12,
+                                     "MISSING_INPUT:net_debt": 1},
+    (200406, "ebit_interest_cover"): {"value": 6, "MISSING_INPUT:ebit": 13},
+    (200406, "current_ratio"): {"value": 18, "MISSING_INPUT:current_assets": 1},
+
+    (815097, "net_debt_to_ebitda"): {"value": 14, "NEGATIVE_EBITDA": 3,
+                                     "MISSING_INPUT:net_debt": 2},
+    (815097, "ebit_interest_cover"): {"value": 16, "NEGATIVE_EARNINGS": 3},
+    (815097, "current_ratio"): {"value": 18, "MISSING_INPUT:current_assets": 1},
+
+    (1637459, "net_debt_to_ebitda"): {"value": 10, "NEGATIVE_EBITDA": 2,
+                                      "MISSING_INPUT:net_debt": 1},
+    (1637459, "ebit_interest_cover"): {"value": 10, "NEGATIVE_EARNINGS": 2,
+                                       "MISSING_INPUT:total_debt": 1},
+    (1637459, "current_ratio"): {"value": 12, "MISSING_INPUT:current_assets": 1},
+}
+
+METRIC_SPOT_VALUES = {
+    (815097, "net_debt_to_ebitda", "2019-11-30"): 2.0206,
+    (815097, "ebit_interest_cover", "2019-11-30"): 15.9029,
+    (815097, "current_ratio", "2019-11-30"): 0.2256,
+    (18926, "net_debt_to_ebitda", "2019-12-31"): 15.6938,   # 33,004 / 2,103
+}
+
+
+def test_metric_outcome_counts(stored):
+    conn, raw, _, _ = stored
+    for (cik, metric), expected in METRIC_OUTCOMES.items():
+        if cik != raw["cik"]:
+            continue
+        rows = conn.execute(
+            """SELECT data_status, reason_code, COUNT(*) AS n FROM metrics
+               WHERE cik = ? AND metric = ? AND status = 'CURRENT'
+               GROUP BY data_status, reason_code""", (cik, metric)
+        ).fetchall()
+        got = {("value" if r["data_status"] == "CALCULATED" else r["reason_code"]):
+               r["n"] for r in rows}
+        assert got == expected, metric
+
+
+def test_every_period_has_a_row_for_every_metric(stored):
+    """The counts above must reconcile: no period silently skipped."""
+    conn, raw, _, _ = stored
+    periods = scalar(conn, """SELECT COUNT(DISTINCT period_end) FROM concepts
+        WHERE cik = ? AND status = 'CURRENT'""", (raw["cik"],))
+    for metric in ("net_debt_to_ebitda", "ebit_interest_cover", "current_ratio"):
+        n = scalar(conn, """SELECT COUNT(*) FROM metrics
+            WHERE cik = ? AND metric = ? AND status = 'CURRENT'""",
+            (raw["cik"], metric))
+        assert n == periods, metric
+
+
+def test_metric_spot_values(stored):
+    conn, raw, _, _ = stored
+    for (cik, metric, end), value in METRIC_SPOT_VALUES.items():
+        if cik != raw["cik"]:
+            continue
+        row = conn.execute(
+            """SELECT value FROM metrics WHERE cik = ? AND metric = ?
+               AND period_end = ? AND status = 'CURRENT'""", (cik, metric, end)
+        ).fetchone()
+        assert row is not None and row["value"] == pytest.approx(value, abs=0.0001)
+
+
+def test_evidence_reasons_are_only_the_two_expected_codes(stored):
+    """D9's split on real data: every EVIDENCE refusal is a real loss, never a
+    data gap dressed up as one."""
+    conn, raw, _, _ = stored
+    rows = conn.execute(
+        """SELECT DISTINCT reason_code FROM metrics
+           WHERE cik = ? AND status = 'CURRENT' AND data_status = 'UNAVAILABLE'""",
+        (raw["cik"],)
+    ).fetchall()
+    for r in rows:
+        kind = reason_kind(r["reason_code"])
+        assert kind in (EVIDENCE, GAP)
+        if kind == EVIDENCE:
+            assert r["reason_code"] in ("NEGATIVE_EBITDA", "NEGATIVE_EARNINGS")
+
+
+def test_calculated_metrics_link_their_inputs(stored):
+    """Every computed ratio has metric_inputs provenance and no accession."""
+    conn, raw, _, _ = stored
+    rows = conn.execute(
+        """SELECT m.id, m.accession, COUNT(mi.concept_id) AS n
+           FROM metrics m LEFT JOIN metric_inputs mi ON mi.metric_id = m.id
+           WHERE m.cik = ? AND m.status = 'CURRENT'
+             AND m.data_status = 'CALCULATED'
+           GROUP BY m.id""", (raw["cik"],)
+    ).fetchall()
+    assert rows
+    for r in rows:
+        assert r["accession"] is None
+        assert r["n"] == 2          # all three ratios take exactly two inputs
+
+
+def test_metric_provenance_reaches_a_filing(stored):
+    """The deliverable: a ratio traces to tags and filings (Task 11)."""
+    conn, raw, _, _ = stored
+    end = conn.execute(
+        """SELECT period_end FROM metrics WHERE cik = ? AND status = 'CURRENT'
+           AND data_status = 'CALCULATED' ORDER BY period_end DESC LIMIT 1""",
+        (raw["cik"],)
+    ).fetchone()["period_end"]
+    rows = queries.metric_provenance(conn, raw["cik"], end)
+    assert rows
+    # the tag may sit on the input concept itself (a REPORTED input) or on a
+    # concept one level down (a composite input) — either reaches a filing
+    assert any(r["accession"] and (r["source_tag"] or r["input_tag"])
+               for r in rows)
+
+
+def test_metrics_restore_is_idempotent(stored):
+    conn, raw, selection, mapping = stored
+    before = scalar(conn, "SELECT COUNT(*) FROM metrics")
+    composites = compute_composites(mapping)
+    store_company_data(
+        conn, raw["cik"], raw["entityName"], selection, mapping,
+        tag_map=config.tag_map(), composites=composites,
+        integrity=run_integrity_checks(mapping, composites),
+        metrics=compute_metrics(mapping, composites),
+    )
+    assert scalar(conn, "SELECT COUNT(*) FROM metrics") == before
+    assert scalar(conn, "SELECT COUNT(*) FROM metrics WHERE status='SUPERSEDED'") == 0

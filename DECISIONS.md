@@ -907,3 +907,55 @@ nothing is known).
 Consequences: abnormal movement also iterates trend-eligible periods, for the same reason
 — a phantom period between two real ones would otherwise suppress every year-on-year
 comparison across it. Tests pin both the exclusion and the non-hiding.
+
+## D41 — Ratio edge specifics, and reason kind stays a Python mapping
+Decision (owner-approved 2026-09-11, Task 11). Six calls, five of them small, one of them
+about where a classification lives.
+
+**(a) `reason_kind` is a Python mapping, not a stored column.** D9 makes the
+evidence-versus-gap split load-bearing for Phase 6: an evidence reason scores 0 in the
+worst band, a gap is dropped and caps the grade. One authoritative `REASON_KIND` mapping
+in `metrics/ratios.py` classifies every reason code; nothing is stored.
+Reason: the kind is fully derivable from `reason_code`, so a column is D30's rejected
+shape — a second copy that can only drift — and CLAUDE.md rule 13. The SQL-consumer
+argument is hypothetical: no such consumer exists. D37 stored a verdict because a
+programmatic gate had genuinely nowhere structured to live; here the structure already
+exists in `reason_code`, and the mapping is a lookup away. If Phase 6 wants it in SQL,
+add it then — the mapping makes that trivial.
+**Three kinds, not two:** EVIDENCE (`NEGATIVE_EBITDA`, `NEGATIVE_EARNINGS`), GAP
+(`MISSING_INPUT:*`, `INTEREST_MISSING_WITH_DEBT`, `ZERO_DENOMINATOR`,
+`NEGATIVE_DENOMINATOR`), and NEITHER — `NO_INTEREST_NO_DEBT`, which the methodology
+treats as an unlevered company whose category weight is redistributed with no grade cap.
+Collapsing that third kind into GAP would cap the grade of a company for being
+debt-free.
+
+**(b) Interest missing while `total_debt` is UNAVAILABLE → `MISSING_INPUT:total_debt`.**
+The coverage table covers `total_debt == 0` and `> 0` only, and neither fits: we cannot
+say "no debt" or "debt present". A gap about the gate, not a claim about the company.
+
+**(c) The interest gate runs before the earnings check — for a substantive reason, not
+table row order.** When `ebit <= 0` and interest is missing or zero with debt present,
+both rules apply. A missing denominator means the ratio was **never computable**;
+negative earnings is a statement **about a ratio you could have computed**. The evidence
+claim presupposes a working comparison, so the gap is reported first.
+
+**(d) `ebitda == 0` keeps `NEGATIVE_EBITDA`.** The rule is `ebitda <= 0`, so zero takes
+this code despite the name. Kept rather than renamed — the code names the **band**
+(worst), not the sign, and zero EBITDA belongs in that band for the same reason negative
+does: a company that cannot cover any debt from earnings. Documented in the methodology
+so the next reader does not read it as a bug.
+
+**(e) `NEGATIVE_DENOMINATOR` is emitted as a `data_quality_events` row.** The general
+rules say the negative denominator is "itself surfaced as a warning" but name no code and
+nothing emitted one. It follows Task 10's split: a per-value warning is an event, while a
+check outcome is an `integrity_results` row (D37).
+
+**(f) Negative `interest_expense` is treated as the zero case.** Not covered anywhere in
+the methodology. A negative interest expense is a tagging artefact, not free money, so it
+takes `INTEREST_MISSING_WITH_DEBT` rather than producing a negative coverage ratio.
+
+Consequences: all six are written into `docs/credit-methodology.md`, not left here.
+Measured witness note: five of the seven coverage edge cases have **zero** real-data
+witnesses and are synthetic-only — `interest_expense` resolves positively in all 87
+cached company-periods, `total_debt` is never exactly zero, and `current_liabilities` is
+never zero or negative. Recorded in PROJECT_STATE.md beside Task 10's witness table.

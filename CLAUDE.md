@@ -83,6 +83,7 @@ credit-risk-platform/
 │   ├── trends/             trend classification + early warnings
 │   ├── stress/             scenario engine
 │   ├── store/              SQLite models and queries
+│   ├── pipeline.py         the stages in their one correct order
 │   └── cli.py
 ├── tests/
 │   ├── fixtures/           hand-built statements with known answers

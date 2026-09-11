@@ -49,13 +49,20 @@ checks (Phase 4) because the checks depend on them. See docs/build-plan.md.
       abnormal movement as D23 events, integrity_results table with a derived verdict,
       config/integrity.yaml, summary split into four kinds of absence. D36-D40.
       Witness coverage measured and recorded in PROJECT_STATE.md as a Phase 10 input
-- [ ] Task 11 (Phase 5): net_debt_to_ebitda, ebit_interest_cover, current_ratio end to
-      end on a real cached company, with provenance printed
+- [x] Task 11 (Phase 5): metrics/ratios.py — three ratios, all seven coverage edge
+      cases, REASON_KIND splitting EVIDENCE/GAP/NEITHER (D41). pipeline.py assembles
+      the stages; `credit-risk metrics <TICKER>` prints each ratio with its full
+      provenance chain down to tags and filings
+- [ ] Rest of Phase 5: the remaining ~14 ratios, following Task 11's proven pattern
 
 ## Phase 9/10 inputs raised by Task 10
 - [ ] Phase 10 universe selection must cover `debt_subset`: it has one usable witness
       (JNJ), since lease-inclusive filers have total_debt_ex_leases UNAVAILABLE and CCL
       reports no `Liabilities` tag. Needs filers with plain debt AND a Liabilities tag
+- [ ] Phase 10 selection must treat headline-metric coverage as a selection criterion:
+      JNJ resolves OperatingIncomeLoss in only 6 of 19 periods, so the designated
+      strong reference company is the thinnest evidence for both headline metrics —
+      two of five demonstration companies now have a tag-map hole in a headline metric
 - [ ] Tag-map gap: KHC resolves `revenue` in zero of 12 periods — no candidate matches
       how Kraft Heinz tags it. Investigate before relying on KHC for anything
       revenue-derived

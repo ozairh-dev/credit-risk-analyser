@@ -191,8 +191,39 @@ Dropped from v1: ROA, ROE (equity-holder metrics, not credit-core).
 | interest_expense missing, total_debt == 0 | coverage `UNAVAILABLE`, reason `NO_INTEREST_NO_DEBT`; coverage category weight is redistributed (see scoring) |
 | interest_expense missing, total_debt > 0 | coverage `UNAVAILABLE`, reason `INTEREST_MISSING_WITH_DEBT`; data-quality flag; category treated as **missing**, not neutral |
 | interest_expense == 0, total_debt > 0 | same as above — almost certainly a tag gap, not free debt |
+| interest_expense < 0, total_debt > 0 | same as above (D41f) — negative interest expense is a tagging artefact, not free money, and never produces a negative coverage ratio |
+| interest_expense missing, total_debt `UNAVAILABLE` | coverage `UNAVAILABLE`, reason `MISSING_INPUT:total_debt` (D41b) — the gate itself could not be evaluated, so this is a gap about the gate, not a claim about the company |
 | ebit ≤ 0, interest_expense > 0 | coverage `UNAVAILABLE`, reason `NEGATIVE_EARNINGS`, **but scored in the worst band** — this is evidence, not a data gap |
 | ebitda ≤ 0 | all EBITDA-based leverage `UNAVAILABLE`, reason `NEGATIVE_EBITDA`, scored in the worst band |
+
+**Rule order: the interest gate runs before the earnings check** (D41c). When `ebit ≤ 0`
+*and* interest is missing or zero with debt present, both rows apply and the interest row
+wins. The reason is substantive, not the order they appear in: a missing denominator means
+the ratio was **never computable**, whereas negative earnings is a statement **about a
+ratio you could have computed**. The evidence claim presupposes a working comparison, so
+the gap is reported first.
+
+**`ebitda == 0` takes `NEGATIVE_EBITDA`** (D41d). The rule is `≤ 0`, so zero takes this
+code despite the name. The code names the **band** — worst — rather than the sign, and a
+company whose EBITDA is exactly zero belongs in that band for the same reason a negative
+one does: it covers none of its debt from earnings. Not a bug.
+
+### Reason kinds
+
+Every `UNAVAILABLE` reason is one of three kinds. The split is what D9 makes load-bearing
+for scoring, and it lives in one place — the `REASON_KIND` mapping in `metrics/ratios.py`
+— rather than in a stored column, because it is fully derivable from the reason code
+(D41a).
+
+| Kind | Reasons | Scoring treatment (Phase 6) |
+|---|---|---|
+| **EVIDENCE** | `NEGATIVE_EBITDA`, `NEGATIVE_EARNINGS` | scores 0, worst band — this is the company's real condition |
+| **GAP** | `MISSING_INPUT:*`, `INTEREST_MISSING_WITH_DEBT`, `ZERO_DENOMINATOR`, `NEGATIVE_DENOMINATOR` | dropped; grade capped (see "Missing data in scoring") |
+| **NEITHER** | `NO_INTEREST_NO_DEBT` | category weight redistributed, **no grade cap** — an unlevered company is not a data gap |
+
+A negative denominator additionally emits a `NEGATIVE_DENOMINATOR` row in
+`data_quality_events` (D41e), following the same split as the integrity checks: a
+per-value warning is an event, a check outcome is an `integrity_results` row.
 
 ## Trends
 
