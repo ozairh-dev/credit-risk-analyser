@@ -127,6 +127,8 @@ data_status        REPORTED | CALCULATED | ESTIMATED | ASSUMED | AI_INTERPRETED 
 method             for CALCULATED: which formula/version
 inputs             for CALCULATED: list of input concept ids
 reason_code        for UNAVAILABLE: why
+detail             supporting specifics: which components were zero-by-absence on a
+                   CALCULATED row; both disagreeing figures on a D26/D32 refusal (D35)
 fetched_at
 superseded_by      accession of a later restatement, if any
 ```

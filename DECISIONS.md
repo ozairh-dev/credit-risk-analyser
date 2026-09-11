@@ -719,3 +719,32 @@ refusal with no protective value); treat aggregate-zero as tolerance-exempt agre
 Consequences: both the plain-components and lease-inclusive reconciliations inherit these
 semantics from the one function (CLAUDE.md rule 13 — one invariant, one layer); a test
 per edge in tests/test_composites.py.
+
+## D35 — concepts.detail column, added at Task 9 rather than Task 8
+Decision (2026-09-11): the `concepts` table gains a nullable `detail TEXT` column. It
+holds supporting specifics that belong on the row itself: on a
+`COMPONENT_AGGREGATE_MISMATCH` or `ST_DEBT_SCOPE_UNCERTAIN` refusal, **both disagreeing
+figures and the deviation** (the methodology's "record both figures on the UNAVAILABLE
+record so the disagreement is reviewable"); on a CALCULATED composite, **which components
+were zero-by-absence** (the methodology's mandated recording).
+
+Why no existing column could carry it: `reason_code` is a closed vocabulary keyed for
+counting and querying — free text there would break every GROUP BY over it; `method` names
+the formula, and overloading it would make equal-method rows unequal; `label` is the SEC's
+reported label, reserved for REPORTED provenance; and `data_quality_events` rows are
+pipeline judgements about a period, not attributes of one stored value — putting per-row
+figures there would detach the evidence from the row it explains.
+
+Timing: the need only became concrete when Task 9 implemented the refusal paths — Task 8's
+design predated D26's "record both figures" being exercised by real code. The column
+arrived inside the Task 9 feature commit (`005bb0b`); this entry exists so its origin is
+findable without reading that commit.
+
+**Standing preference going forward: schema changes get their own DECISIONS entry, even
+small ones.** `docs/` describes the schema, and a reader tracing a column should find a
+decision, not have to excavate a feature commit's diff.
+
+Alternatives: free text in `reason_code` (breaks counting); overload `method` (breaks
+equality); a parallel events row (detaches evidence from the value). Consequences:
+`detail` is display/audit text, never parsed by code — anything the engine must act on
+belongs in a typed column or a reason code, not in `detail`.
