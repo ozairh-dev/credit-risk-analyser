@@ -29,6 +29,27 @@ judgement. Say so in any user-facing output.
    `docs/ai-governance.md`.
 9. **Fail safe.** Bad input raises a validation error or produces `UNAVAILABLE`. It never
    produces a plausible-looking wrong number.
+10. **Validate before adopting.** Any company added to the universe or used as a fixture
+    must have the full pipeline run over its entire filing history first, including the
+    components-versus-aggregate audit of `total_debt`. Familiarity is not validation.
+    *Why: Ford was adopted on familiarity and turned out to have no period where both
+    `total_debt` and `ebitda` resolve, so no leverage metric can ever compute for it (D25).*
+11. **Never approximate a refused value.** When a value is `UNAVAILABLE`, do not derive a
+    substitute from adjacent periods, related tags, or subtraction from a different figure.
+    A refusal is an answer.
+    *Why: decided independently three times — `LEASES_NOT_SEPARABLE`,
+    `COMPONENT_AGGREGATE_MISMATCH`, and mapping's `NO_CANDIDATE_TAG`.*
+12. **Signals fire on divergence, not presence.** Before adding any warning, flag or
+    marker, ask whether it would fire on ordinary reporting behaviour. A signal that fires
+    constantly is indistinguishable from no signal.
+    *Why: D15, D17, the same-day tiebreak and the unit fix all resolved this way; the unit
+    rule was producing 3,845 non-events across three companies.*
+13. **One invariant, one layer.** Enforce a rule in exactly one place. Encoding it twice
+    doesn't double the safety — it creates states where the rule cannot be satisfied at
+    all, and makes the layers disagree.
+    *Why: D18(a) — the supersession CHECK and the partial unique index were mutually
+    unsatisfiable. D21 — the form CHECK duplicated a selection rule and rejected valid
+    audit records.*
 
 ## Stack (fixed for v1 — do not add to it)
 
@@ -90,6 +111,11 @@ credit-risk-platform/
     decision in `DECISIONS.md`, or leave any doc asserting something the code no longer
     does? Name what you checked and what you found, even if the answer is nothing.
     Recording a new decision is not the same as checking it doesn't break an existing one.
+13. Verify against real data, don't assert. Where a claim about behaviour can be checked
+    against the cached companies, check it and report the measurement rather than stating
+    the expectation.
+    *Why: D27's cross-check-only restriction was proved by measuring that Ford resolves
+    only the aggregate — 13 periods — and the pair in zero.*
 
 ## Model protocol
 
