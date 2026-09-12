@@ -100,9 +100,13 @@ checks (Phase 4) because the checks depend on them. See docs/build-plan.md.
 - [x] Phase 7 (2026-09-12): trends/engine.py — seven trend rules, eleven warning
       indicators, escalation with recorded cause, trend fingerprint. D49-D52.
       D43 discharged with 7 eligibility + 7 window tests, one per rule
-- [ ] Phase 8 (stress engine) — but first resolve config/stress.yaml's open items:
-      new_debt_rate's fallback and fixed_cost_share (D20 deferred the tables for
-      exactly this reason)
+- [x] Phase 8 step one (2026-09-12): stress config settled without building the
+      engine — fixed_cost_share 0.3 kept with a print-in-output duty; new_debt_rate
+      override -> band [2%,12%] -> default 6%; presets keep additional_debt 0
+      deliberately; ETR missing-inputs rule written in (D53)
+- [ ] Phase 8 step two: the stress engine + D20's deferred tables. Two output duties
+      pre-recorded in D53; JNJ and KHC cannot be stressed at all (no revenue+ebitda
+      overlap) — see PROJECT_STATE's Stress coverage
 
 ## Later
 - See docs/build-plan.md

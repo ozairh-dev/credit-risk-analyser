@@ -93,3 +93,18 @@ def test_tag_map_entries_are_ordered_candidate_lists():
         "SalesRevenueNet",
     ]
     assert tags["ebit"] == ["OperatingIncomeLoss"]
+
+
+def test_stress_config_carries_the_d53_structure():
+    """Phase 8 step one (D53): the keys exist ahead of the engine, like D26's
+    tolerance before Task 9. The engine wires them in step two; this pins that
+    they are present, typed, and ordered sensibly until then."""
+    stress = config.stress()
+    assert stress["fixed_cost_share"] == 0.3
+    assert stress["new_debt_rate"] is None          # explicit override, unset
+    assert stress["new_debt_rate_default"] == 0.06
+    low, high = stress["new_debt_rate_band"]
+    assert 0 < low < stress["new_debt_rate_default"] < high
+    # presets deliberately carry no incremental borrowing (D53c)
+    for name, preset in stress["presets"].items():
+        assert preset["additional_debt"] == 0, name

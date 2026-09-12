@@ -244,6 +244,9 @@ Reason: the stress engine still has unresolved config — new_debt_rate's fallba
 open TODO in config/stress.yaml and fixed_cost_share is an untested assumption — so the
 tables' shape is not yet determined by anything real. Phase 6-7 is fully specified in
 the methodology, so its tables are.
+**Amended by D53 (2026-09-12):** both blockers are resolved — fixed_cost_share is
+measured and kept at 0.3 with output duties, and new_debt_rate has its band structure —
+so the deferral's reason no longer holds and Phase 8 step two builds the tables.
 Alternatives: build all three now from the methodology's stress section.
 Consequences: Phase 8 adds them when it knows what it needs; no columns exist "for
 later".
@@ -1358,3 +1361,76 @@ Consequences: three fingerprints now exist with disjoint scopes — composites
 (`trends/fingerprint.py`). Integrity thresholds deliberately have none (D38): no integrity
 row's value moves with them, only its verdict, and the verdict is recomputed from scratch
 each run.
+
+## D53 — Stress config settled: fixed_cost_share stays 0.3 with visibility duties; new_debt_rate gets a sanity band
+Decision (owner-approved 2026-09-12, Phase 8 step one — design and measurement only; the
+engine and the D20-deferred tables remain unbuilt). Measured across the 42 company-periods
+that can run both EBITDA modes (LUMN 18, CCL 15, F 9), at the Moderate and Severe presets,
+with `fixed_cost_share` swept over {0.2, 0.3, 0.5, 0.7}. The mode-B-at-zero identity
+(B with fcs=0 reduces algebraically to mode A) was asserted per period, so the measurement
+implements the propagation rules faithfully.
+
+**(a) `fixed_cost_share` stays 0.3 globally, overridable per custom scenario, and every
+operating-leverage output must print the value used.**
+
+Measured basis: across the whole plausible range [0.2, 0.7], the stressed grade moves by
+at most **one level** in any period, and by **two or more in zero periods** — so the
+two-level alarm (stress output becoming a statement about the assumption) does not fire,
+and no choice inside the range is materially better-protected than another.
+
+**The honest reason, stated plainly: the grade swing is bounded at one level not because
+the assumption is unimportant but because the grade scale is coarse and stressed grades
+cluster at 5-6.** The sensitivity lives in the stressed figures: CCL 2019 Severe swings
+stressed EBITDA **2.90bn -> 1.36bn** across the range (mode A: 3.52bn), and LUMN 2019
+Severe **flips sign** inside it (+0.05bn at 0.2, -1.89bn at 0.7). Hence the visibility
+duty: the number is printed inline in every operating-leverage output, not only recorded
+in the assumption register.
+
+Also recorded: 0.3 is a **mild** setting — it assumes 70% of costs are variable — and is
+likely conservative-light for the asset-heavy names in this set. Mode B is never milder
+than mode A in any measured cell, and the mode choice alone flips CCL 2019 Severe from
+grade 5 to 6. **Per-sector values join D48's existing sector-thresholds item** rather than
+being invented for a five-company set.
+
+**(b) `new_debt_rate` becomes a three-part structure:** explicit `new_debt_rate` override
+(null by default) -> the implied rate `interest_expense / total_debt` **if it falls inside
+`new_debt_rate_band: [0.02, 0.12]`** -> else `new_debt_rate_default: 0.06`. Every
+substitution is surfaced in the stress output, naming which rate was used and why, and
+recorded in the assumption register.
+
+**Both failure directions occur in-sample, which is what justifies a band — either alone
+would have motivated only a value.** Ford's implied rates are **287-860%** (D25's captive
+finance: enterprise-wide interest over a 2018-2020 sliver of resolvable debt); JNJ's
+2021-2023 implied rates are **0.51-0.67%**, a ZIRP-era legacy average that would price NEW
+stress borrowing at half a percent, understating the cost of exactly the debt a stress
+scenario adds. 59 of 65 measured periods sit comfortably inside the band; 6 fall outside,
+in both directions. The default 0.06 is deliberately above the 4.12% in-sample median:
+debt raised in a stress scenario does not price at the portfolio's calm-times average.
+
+**(c) Presets keep `additional_debt: 0`, deliberately.** Incremental borrowing under
+stress is real but company-specific; a preset carrying it would encode a view about how
+much a given company borrows in a downturn, which a global scenario cannot assert. It
+stays a custom-scenario lever, and the methodology now says so, so the absence reads as a
+design choice rather than an omission. Consequence: the new_debt_rate machinery is
+exercised only by custom scenarios until an owner chooses otherwise.
+
+**(d) Two propagation gaps written into the methodology rather than left to
+implementation:** missing `tax_expense` or `pretax_income` falls back to
+`default_tax_rate`, recorded as ASSUMED — the same treatment as the pretax <= 0 case
+already specified; and both EBITDA modes run correctly from a negative base margin,
+producing deeper-negative stressed EBITDA -> NEGATIVE_EBITDA evidence -> grade 6, so that
+path reads as designed rather than incidental.
+
+**(e) Structural finding for PROJECT_STATE: stress is impossible for JNJ and KHC.** Both
+modes need `revenue` and `ebitda` in the same period; JNJ's never overlap and KHC has no
+revenue. The metric-coverage gap propagates into Phase 8: two of five demonstration
+companies cannot be stress tested at all.
+
+Alternatives: raise fixed_cost_share to 0.5 for conservatism (buys <= 1 grade, measured;
+rejected as tuning without evidence); per-sector fixed_cost_share now (a sector framework
+for five companies); a bare new_debt_rate default without a band (fixes Ford's direction
+or JNJ's, not both); presets with additional_debt > 0 (encodes a company-specific view
+globally).
+Consequences: config keys exist ahead of the engine, like D26's tolerance did — the YAML
+notes Phase 8 wires them. The stress engine's output duties (print fcs; name the rate
+used) are design requirements recorded before the code exists.

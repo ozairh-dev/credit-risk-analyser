@@ -275,6 +275,28 @@ counting* to a **data gap**. Their grades were already capped for other
 reasons, so the change is invisible in the grade and visible only in
 `score_components.treatment`. A change that moves no number is still a change.
 
+- Phase 8 step one (2026-09-12, Fable) — stress config settled, engine NOT
+  built (D20's tables stay deferred until it is). D53: fixed_cost_share stays
+  0.3 with a printed-in-output duty (grade swing across [0.2, 0.7] measured at
+  <= 1 level in all 42 mode-comparable periods, but stressed EBITDA swings
+  2.1x for CCL 2019 Severe and flips sign for LUMN); new_debt_rate becomes
+  override -> implied-if-in-band [2%, 12%] -> default 6%, because both failure
+  directions occur in-sample (Ford 287-860%, JNJ 0.51-0.67%); presets keep
+  additional_debt: 0 deliberately; the ETR missing-inputs rule and the
+  negative-base-margin path are now written in the methodology.
+
+## Stress coverage (Phase 8/10 input, measured 2026-09-12)
+
+**Stress is structurally impossible for JNJ and KHC.** Both EBITDA modes need
+`revenue` and `ebitda` in the same period — the mode-A margin and the mode-B
+cost base are both built from that pair — and JNJ's never overlap while KHC
+has no revenue at all. The metric-coverage gap propagates directly into
+Phase 8: **two of five demonstration companies cannot be stress tested in any
+period.** Mode-comparable coverage: LUMN 18, CCL 15, F 9 periods (42 total).
+Implied new-debt rates are sensible in 59 of 65 measurable periods; the six
+outliers are Ford's three (captive finance, D25) and JNJ's three ZIRP-era
+lows — both directions, which is what made D53's band necessary.
+
 ## Trends and warnings on real data (measured 2026-09-12)
 
 | Company | Warnings | Escalated | Periods with escalation |
@@ -463,11 +485,11 @@ investigation before KHC is relied on for anything revenue-derived.
   demonstrated on this set without the output misleading a reader.
 
 ## Next priorities
-- Phase 8 (stress engine). Both EBITDA modes, presets, custom scenarios, driver
-  attribution. The stress tables were deferred at Task 8 (D20) because the config was
-  unresolved — `new_debt_rate`'s fallback is still an open TODO in config/stress.yaml
-  and `fixed_cost_share` is still an untested assumption, so that design work comes
-  first.
+- Phase 8 step two: the stress engine and the D20-deferred tables (stress_runs,
+  stress_results, stress_drivers). The config is now settled (D53) and the engine
+  carries two output duties recorded before the code exists: print fixed_cost_share in
+  every operating-leverage output, and name which new-debt rate was used and why. Note
+  stress is structurally impossible for JNJ and KHC (see Stress coverage).
 - The company-selection work remains the blocker for *demonstrating* Phase 6: four of
   five companies can never score uncapped. See Open questions.
 

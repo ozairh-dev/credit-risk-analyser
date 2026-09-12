@@ -452,6 +452,11 @@ All stress inputs are `ASSUMED` and go in the assumption register. All stress ou
 Preset scenarios: **Base** (nothing), **Moderate** (rev −10%, margin −2pp, rates +100bps),
 **Severe** (rev −20%, margin −5pp, rates +200bps), **Custom**.
 
+**The presets deliberately do not model incremental borrowing** — `additional_debt` is 0
+in every preset (D53c). How much a company borrows in a downturn is company-specific, and
+a global scenario cannot assert it; incremental debt is a custom-scenario lever. The
+absence is a design choice, not an omission.
+
 ### Propagation rules (the part that must be explicit)
 
 ```
@@ -463,7 +468,12 @@ ebitda_s    = revenue_s × margin_s
 
 # EBITDA — mode B ("operating leverage", config stress.ebitda_mode: operating_leverage):
 costs_base  = revenue − ebitda
-fixed       = fixed_cost_share × costs_base            # fixed_cost_share is ASSUMED, default 0.3
+fixed       = fixed_cost_share × costs_base            # fixed_cost_share is ASSUMED, default 0.3;
+                                                        # overridable per custom scenario, and every
+                                                        # operating-leverage output PRINTS the value
+                                                        # used (D53a) — the grade moves ≤1 level across
+                                                        # [0.2, 0.7] at preset shocks, but the stressed
+                                                        # figures swing widely and can flip sign
 var_ratio   = (1 − fixed_cost_share) × costs_base / revenue
 ebitda_s    = revenue_s − fixed − var_ratio × revenue_s
 ebitda_s    = ebitda_s − margin_shock × revenue_s      # margin shock applied after
@@ -474,9 +484,19 @@ ebit_s      = ebitda_s − d_and_a_s
 debt_s      = total_debt + additional_debt
 interest_s  = interest_expense
             + rate_shock × floating_share × total_debt  # floating_share ASSUMED, default 1.0
-            + new_debt_rate × additional_debt           # new_debt_rate ASSUMED, default = interest_expense / total_debt if > 0 else config default
+            + new_debt_rate × additional_debt           # new_debt_rate ASSUMED (D53b): explicit config
+                                                        # override if set; else the implied rate
+                                                        # interest_expense / total_debt IF it falls inside
+                                                        # config new_debt_rate_band; else
+                                                        # new_debt_rate_default. The band exists because
+                                                        # both failure directions occur in real data —
+                                                        # Ford's captive-finance 287-860% and JNJ's
+                                                        # ZIRP-era 0.51-0.67% — and every substitution is
+                                                        # surfaced in the output: which rate, and why
 
-etr         = tax_expense / pretax_income   if pretax_income > 0, else config default_tax_rate (ASSUMED)
+etr         = tax_expense / pretax_income   if pretax_income > 0, else config default_tax_rate (ASSUMED).
+                                             # Missing tax_expense or pretax_income falls back to the
+                                             # same default_tax_rate, recorded as ASSUMED (D53d)
 tax_s       = max(0, ebit_s − interest_s) × etr
 net_inc_s   = ebit_s − interest_s − tax_s
 
@@ -491,6 +511,11 @@ Then recompute `net_debt_to_ebitda`, `debt_to_ebitda`, `ebit_interest_cover`,
 `ebitda_interest_cover`, `fcf_to_debt`, `fcf_margin`, `ebitda_margin`, and re-score to get
 the **stressed grade**. Liquidity ratios are **not** stressed in v1 (balance-sheet
 liquidity is held at base); say so in the output.
+
+Both EBITDA modes run correctly from a **negative base margin**: a company already at
+negative EBITDA stresses to deeper-negative EBITDA, which carries `NEGATIVE_EBITDA`
+evidence into the stressed metrics and saturates the stressed grade at 6. Designed, not
+incidental (D53d).
 
 Documented simplifications (state them in every stress output): D&A held flat; whole debt
 stack reprices if `floating_share = 1.0`; working capital held flat; no cash sweep; tax

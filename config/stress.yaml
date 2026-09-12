@@ -1,11 +1,39 @@
 # All values here are ASSUMED and go in the assumption register.
 ebitda_mode: constant_margin        # or operating_leverage
-fixed_cost_share: 0.3               # used only in operating_leverage mode
-floating_share: 1.0                 # share of debt that reprices under a rate shock
-default_tax_rate: 0.21              # used when pretax income <= 0
-# TODO Phase 8: implement the else-branch default for new_debt_rate per docs/credit-methodology.md
-new_debt_rate: null                 # null = use current interest_expense / total_debt
 
+# Used only in operating_leverage mode; overridable per custom scenario, and every
+# operating-leverage output must PRINT the value used (D53a). Measured: any value in
+# [0.2, 0.7] moves the stressed grade by at most one level at the preset shocks — but
+# the stressed FIGURES swing widely (CCL 2019 Severe: EBITDA 2.90bn -> 1.36bn across
+# the range; LUMN 2019 flips sign), which is why the visibility duty exists. 0.3 is a
+# mild setting (70% of costs variable), likely conservative-light for asset-heavy
+# names; per-sector values are D48's sector-thresholds item, not this file's job.
+fixed_cost_share: 0.3
+
+floating_share: 1.0                 # share of debt that reprices under a rate shock
+default_tax_rate: 0.21              # used when pretax income <= 0, or when the tax
+                                    # inputs are missing entirely (D53d) — ASSUMED
+
+# New-debt pricing for additional_debt (D53b). Resolution order:
+#   1. new_debt_rate, when set — explicit override wins
+#   2. the implied rate interest_expense / total_debt, IF inside new_debt_rate_band
+#   3. new_debt_rate_default
+# Every substitution is surfaced in the stress output (which rate, and why) and
+# recorded in the assumption register. The band exists because both failure
+# directions occur in-sample: Ford's implied 287-860% (captive finance, D25) and
+# JNJ's 0.51-0.67% ZIRP-era average, which would price NEW stress borrowing at half
+# a percent. The default sits above the 4.12% in-sample median deliberately: debt
+# raised in a stress scenario does not price at the calm-times average.
+# NOTE FOR PHASE 8: nothing reads these yet; the engine wires them (like D26's
+# tolerance before Task 9).
+new_debt_rate: null
+new_debt_rate_default: 0.06
+new_debt_rate_band: [0.02, 0.12]
+
+# Presets deliberately carry additional_debt: 0 (D53c): incremental borrowing under
+# stress is real but company-specific, and a preset carrying it would encode a view
+# about how much a given company borrows in a downturn, which a global scenario
+# cannot assert. Incremental debt is a custom-scenario lever.
 presets:
   base:     {revenue_shock: 0.00, margin_shock: 0.00, rate_shock_bps: 0,   additional_debt: 0, capex_shock: 0.0}
   moderate: {revenue_shock: -0.10, margin_shock: 0.02, rate_shock_bps: 100, additional_debt: 0, capex_shock: 0.0}
