@@ -959,3 +959,59 @@ Measured witness note: five of the seven coverage edge cases have **zero** real-
 witnesses and are synthetic-only — `interest_expense` resolves positively in all 87
 cached company-periods, `total_debt` is never exactly zero, and `current_liabilities` is
 never zero or negative. Recorded in PROJECT_STATE.md beside Task 10's witness table.
+
+## D42 — Five calls completing Phase 5's metric set
+Decision (owner-approved 2026-09-12, Phase 5 completion). The remaining fourteen ratios
+follow Task 11's pattern unchanged; these five points were underdetermined by the
+methodology and are settled here and in the doc.
+
+**(a) `NO_DEBT` is kind NEITHER, the same shape as `NO_INTEREST_NO_DEBT`.** An unlevered
+company cannot have a debt ratio, and that is a good thing, not a shortfall. Classifying
+it GAP would cap the grade of a debt-free company — precisely the bug the three-kind
+split of D41a exists to prevent. Applies to `cash_to_debt`, `fcf_to_debt` and
+`cfo_to_debt`.
+**Open question for Phase 6, deliberately not answered here:** the methodology specifies
+weight redistribution for `NO_INTEREST_NO_DEBT`, a single coverage metric, but says
+nothing about **three separate leverage and cash-flow metrics all returning `NO_DEBT`
+simultaneously**. Whether that redistributes three weights, collapses a category, or means
+something else is a scoring decision; inventing it here would be a Phase 6 rule made in
+the wrong phase.
+
+**(b) `quick_ratio`'s cross-period inventory test uses the resolved-concept reading.**
+"Reports no `InventoryNet` tag in any period" means no `inventory` concept resolves in any
+period — not the tag's presence in the raw companyfacts payload. The payload reading would
+let an unselected quarterly-only fact silently flip a company into "has inventory",
+letting the metric see data that selection deliberately excluded.
+Measured consequence: all five cached companies carry `InventoryNet` in the payload, so
+none is a non-inventory business under either reading; but **LUMN resolves `inventory` in
+only 2 of its 18 periods, so 16 go `UNAVAILABLE`**. That is the correct conservative
+outcome — subtracting an unknown inventory from current assets would fabricate a number —
+even though it makes the metric near-useless for a telco.
+This is the only rule in the metric table whose per-period answer depends on other
+periods. It needs no new pipeline structure: `compute_metrics` already receives the whole
+`MappingResult`, so company-wide knowledge is in hand; it is isolated in one function
+rather than threaded through as a flag.
+
+**(c) `revenue_growth` pairs periods only within `continuity_window_days`, else
+`INSUFFICIENT_DATA`.** Adjacent-in-the-list is not adjacent-in-time: JNJ resolves
+`revenue` in 10 of 19 periods, so naive pairing of consecutive revenue-resolving periods
+would compute a multi-year change and label it one-year growth — a plausible-looking wrong
+number, which rule 9 forbids. D36's window is reused rather than a new threshold invented.
+**This is D40's sequence-topology hazard arriving a phase earlier than expected.** D40
+noted that checks over sequences amplify bad members while checks over single rows contain
+them, and flagged Phase 7 as entirely sequence-based. `revenue_growth` is the first metric
+of that shape, and the same question — *which periods count as links?* — must be asked of
+every trend rule in Phase 7 before it is implemented.
+
+**(d) `ebitda_interest_cover` with `ebitda <= 0` carries `NEGATIVE_EBITDA`, kind
+EVIDENCE.** Neither coverage-table row fits exactly: `NEGATIVE_EARNINGS` is specified for
+`ebit <= 0`, and `NEGATIVE_EBITDA` for EBITDA-based *leverage*, while this is EBITDA-based
+*coverage*. The code that names the input which actually failed is the right record. The
+kind is EVIDENCE under either code, so nothing in scoring turns on the choice.
+
+**(e) A negative-revenue period produces both an integrity `FAIL` and a metric
+`NEGATIVE_DENOMINATOR` refusal, and this is not double-counting.** Stated explicitly so a
+later reader does not try to deduplicate them: **the check asks whether the data is
+possible; the metric asks whether it can be computed.** They are different questions about
+the same fact, and both answers are wanted — one marks the period unfit for scoring, the
+other explains why a particular number is absent. Zero witnesses in the cache.

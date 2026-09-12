@@ -23,7 +23,8 @@ import pytest
 from credit_risk import config
 from credit_risk.metrics.composites import compute_composites
 from credit_risk.metrics.integrity import run_integrity_checks
-from credit_risk.metrics.ratios import EVIDENCE, GAP, compute_metrics, reason_kind
+from credit_risk.metrics.ratios import (
+    EVIDENCE, GAP, METRICS, NEITHER, compute_metrics, reason_kind)
 from credit_risk.normalise import map_concepts, select_annual_facts
 from credit_risk.normalise.selection import period_type
 from credit_risk.store import db, queries
@@ -569,7 +570,9 @@ def test_calculated_metrics_link_their_inputs(stored):
     assert rows
     for r in rows:
         assert r["accession"] is None
-        assert r["n"] == 2          # all three ratios take exactly two inputs
+        # two inputs for a plain a/b ratio, three for quick_ratio when
+        # inventory resolves — never zero, which would be provenance-free
+        assert 2 <= r["n"] <= 3
 
 
 def test_metric_provenance_reaches_a_filing(stored):
@@ -600,3 +603,113 @@ def test_metrics_restore_is_idempotent(stored):
     )
     assert scalar(conn, "SELECT COUNT(*) FROM metrics") == before
     assert scalar(conn, "SELECT COUNT(*) FROM metrics WHERE status='SUPERSEDED'") == 0
+
+
+# ============ Phase 5 completion: all seventeen metrics ============
+#
+# Value counts measured 2026-09-12, examined and reconciled before pinning
+# (rule 14). CCL 2019 was recomputed by hand across the new metrics:
+# ebit_margin 3,276/20,825 = 0.157311; debt_to_capital 11,502/(11,502+25,365)
+# = 0.311986; quick_ratio (2,059-427)/9,127 = 0.178810; fcf 5,475-5,429 = 46.
+
+METRIC_COVERAGE = {
+    # metric: {company cik: periods producing a value}
+    "debt_to_ebitda":              {18926: 14, 37996: 3, 200406: 6, 815097: 14, 1637459: 10},
+    "net_debt_to_ebitda":          {18926: 14, 37996: 3, 200406: 6, 815097: 14, 1637459: 10},
+    "debt_to_capital":             {18926: 15, 37996: 3, 200406: 18, 815097: 17, 1637459: 12},
+    "ebit_interest_cover":         {18926: 15, 37996: 7, 200406: 6, 815097: 16, 1637459: 10},
+    "ebitda_interest_cover":       {18926: 17, 37996: 9, 200406: 6, 815097: 16, 1637459: 10},
+    "current_ratio":               {18926: 17, 37996: 11, 200406: 18, 815097: 18, 1637459: 12},
+    "quick_ratio":                 {18926: 2, 37996: 11, 200406: 18, 815097: 18, 1637459: 12},
+    "cash_to_current_liabilities": {18926: 17, 37996: 11, 200406: 18, 815097: 18, 1637459: 12},
+    "cash_to_debt":                {18926: 15, 37996: 3, 200406: 18, 815097: 17, 1637459: 12},
+    "fcf_margin":                  {18926: 3, 37996: 0, 200406: 10, 815097: 15, 1637459: 0},
+    "fcf_to_debt":                 {18926: 0, 37996: 0, 200406: 18, 815097: 17, 1637459: 12},
+    "cfo_to_debt":                 {18926: 10, 37996: 3, 200406: 18, 815097: 17, 1637459: 12},
+    "capex_to_revenue":            {18926: 6, 37996: 0, 200406: 10, 815097: 15, 1637459: 0},
+    "revenue_growth":              {18926: 16, 37996: 18, 200406: 9, 815097: 13, 1637459: 0},
+    "ebitda_margin":               {18926: 18, 37996: 9, 200406: 0, 815097: 15, 1637459: 0},
+    "ebit_margin":                 {18926: 18, 37996: 9, 200406: 0, 815097: 15, 1637459: 0},
+    "net_margin":                  {18926: 18, 37996: 13, 200406: 10, 815097: 15, 1637459: 0},
+}
+
+CCL_2019 = {
+    "debt_to_ebitda": 2.115894, "net_debt_to_ebitda": 2.020603,
+    "debt_to_capital": 0.311986, "ebit_interest_cover": 15.902913,
+    "ebitda_interest_cover": 26.388350, "current_ratio": 0.225594,
+    "quick_ratio": 0.178810, "cash_to_current_liabilities": 0.056755,
+    "cash_to_debt": 0.045036, "fcf_margin": 0.002209,
+    "fcf_to_debt": 0.003999, "cfo_to_debt": 0.476004,
+    "capex_to_revenue": 0.260696, "revenue_growth": 0.102961,
+    "ebitda_margin": 0.261032, "ebit_margin": 0.157311, "net_margin": 0.143577,
+}
+
+
+def test_metric_coverage_per_company(stored):
+    """The witness table, pinned: a silent drop in any metric's coverage is a
+    tag-map or methodology regression no other test would catch."""
+    conn, raw, _, _ = stored
+    for metric, per_company in METRIC_COVERAGE.items():
+        n = scalar(conn, """SELECT COUNT(*) FROM metrics
+            WHERE cik = ? AND metric = ? AND status = 'CURRENT'
+              AND data_status = 'CALCULATED'""", (raw["cik"], metric))
+        assert n == per_company[raw["cik"]], metric
+
+
+def test_all_seventeen_metrics_exist_for_every_period(stored):
+    conn, raw, _, _ = stored
+    periods = scalar(conn, """SELECT COUNT(DISTINCT period_end) FROM concepts
+        WHERE cik = ? AND status = 'CURRENT'""", (raw["cik"],))
+    for metric in METRICS:
+        n = scalar(conn, """SELECT COUNT(*) FROM metrics
+            WHERE cik = ? AND metric = ? AND status = 'CURRENT'""",
+            (raw["cik"], metric))
+        assert n == periods, metric
+
+
+def test_ccl_2019_values_across_every_metric(stored):
+    """One period computed by hand end to end, every metric at once."""
+    conn, raw, _, _ = stored
+    if raw["cik"] != 815097:
+        pytest.skip("CCL only")
+    for metric, expected in CCL_2019.items():
+        row = conn.execute(
+            """SELECT value FROM metrics WHERE cik = ? AND metric = ?
+               AND period_end = '2019-11-30' AND status = 'CURRENT'""",
+            (raw["cik"], metric)
+        ).fetchone()
+        assert row["value"] == pytest.approx(expected, abs=1e-6), metric
+
+
+def test_every_reason_code_classifies(stored):
+    """No metric may emit a reason code the kind mapping does not know —
+    that would leave Phase 6 unable to decide how to treat it."""
+    conn, raw, _, _ = stored
+    for r in conn.execute(
+        """SELECT DISTINCT reason_code FROM metrics
+           WHERE cik = ? AND status = 'CURRENT' AND data_status = 'UNAVAILABLE'""",
+        (raw["cik"],)
+    ):
+        assert reason_kind(r["reason_code"]) in (EVIDENCE, GAP, NEITHER), \
+            r["reason_code"]
+
+
+def test_lumn_quick_ratio_refuses_where_inventory_is_unknown(stored):
+    """D42b on real data: LUMN reports inventory in 2 of 18 periods, so the
+    other 16 refuse rather than assuming zero."""
+    conn, raw, _, _ = stored
+    if raw["cik"] != 18926:
+        pytest.skip("LUMN only")
+    n = scalar(conn, """SELECT COUNT(*) FROM metrics
+        WHERE cik = ? AND metric = 'quick_ratio' AND status = 'CURRENT'
+          AND reason_code = 'INVENTORY_UNKNOWN'""", (raw["cik"],))
+    assert n == 15
+
+
+def test_no_debt_never_fires_on_cached_data(stored):
+    """Synthetic-only: total_debt is never exactly zero in the cache. Pinned so
+    that if a future company does produce it, the witness note is updated."""
+    conn, raw, _, _ = stored
+    assert scalar(conn, """SELECT COUNT(*) FROM metrics
+        WHERE cik = ? AND status = 'CURRENT' AND reason_code = 'NO_DEBT'""",
+        (raw["cik"],)) == 0

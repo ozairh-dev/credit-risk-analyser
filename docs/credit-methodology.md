@@ -168,16 +168,16 @@ fcf = cfo − capex
 | net_debt_to_ebitda | net_debt / ebitda | primary leverage metric |
 | debt_to_capital | total_debt / (total_debt + equity) | negative equity → capital may be ≤ 0 → UNAVAILABLE + warning |
 | ebit_interest_cover | ebit / interest_expense | primary coverage metric |
-| ebitda_interest_cover | ebitda / interest_expense | secondary; never presented as the same thing |
+| ebitda_interest_cover | ebitda / interest_expense | secondary; never presented as the same thing. Carries every coverage edge case `ebit_interest_cover` does; `ebitda ≤ 0` gives `NEGATIVE_EBITDA`, kind EVIDENCE (D42d) |
 | current_ratio | current_assets / current_liabilities | |
-| quick_ratio | (current_assets − inventory) / current_liabilities | missing inventory → treat as 0 only if the company reports no `InventoryNet` tag in any period (non-inventory business); otherwise UNAVAILABLE |
+| quick_ratio | (current_assets − inventory) / current_liabilities | missing inventory → treat as 0 only if the company reports no `InventoryNet` tag in any period (non-inventory business); otherwise UNAVAILABLE. "In any period" means **no `inventory` concept resolves in any period** (D42b), not the tag's presence in the raw payload |
 | cash_to_current_liabilities | cash / current_liabilities | |
-| cash_to_debt | cash / total_debt | zero debt → UNAVAILABLE, reason NO_DEBT (not infinite) |
+| cash_to_debt | cash / total_debt | zero debt → UNAVAILABLE, reason `NO_DEBT` (not infinite). `NO_DEBT` is kind **NEITHER** — an unlevered company is not a data gap (D42a) |
 | fcf_margin | fcf / revenue | |
 | fcf_to_debt | fcf / total_debt | zero debt → UNAVAILABLE, reason NO_DEBT |
 | cfo_to_debt | cfo / total_debt | zero debt → UNAVAILABLE, reason NO_DEBT |
 | capex_to_revenue | capex / revenue | |
-| revenue_growth | revenue_t / revenue_(t−1) − 1 | needs two consecutive fiscal years |
+| revenue_growth | revenue_t / revenue_(t−1) − 1 | needs two consecutive fiscal years — **consecutive by `continuity_window_days`, not adjacency in the list** (D42c); otherwise `INSUFFICIENT_DATA`. Adjacent-in-the-list is not adjacent-in-time when intervening periods do not resolve revenue |
 | ebitda_margin | ebitda / revenue | |
 | ebit_margin | ebit / revenue | |
 | net_margin | net_income / revenue | |
@@ -219,7 +219,15 @@ for scoring, and it lives in one place — the `REASON_KIND` mapping in `metrics
 |---|---|---|
 | **EVIDENCE** | `NEGATIVE_EBITDA`, `NEGATIVE_EARNINGS` | scores 0, worst band — this is the company's real condition |
 | **GAP** | `MISSING_INPUT:*`, `INTEREST_MISSING_WITH_DEBT`, `ZERO_DENOMINATOR`, `NEGATIVE_DENOMINATOR` | dropped; grade capped (see "Missing data in scoring") |
-| **NEITHER** | `NO_INTEREST_NO_DEBT` | category weight redistributed, **no grade cap** — an unlevered company is not a data gap |
+| **NEITHER** | `NO_INTEREST_NO_DEBT`, `NO_DEBT` | category weight redistributed, **no grade cap** — an unlevered company is not a data gap |
+
+`INSUFFICIENT_DATA` (from `revenue_growth`) is a **GAP**: the prior period was not
+available to compare against.
+
+**A negative-revenue period produces two signals, and that is not double-counting**
+(D42e): the integrity check asks whether the data is *possible*, and the margin metrics
+ask whether they can be *computed*. Both answers are wanted — one marks the period unfit
+for scoring, the other explains why a particular number is absent.
 
 A negative denominator additionally emits a `NEGATIVE_DENOMINATOR` row in
 `data_quality_events` (D41e), following the same split as the integrity checks: a

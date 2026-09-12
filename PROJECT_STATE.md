@@ -195,23 +195,6 @@ v1 universe of 25-50 names and are not reported on:
   evidence-distinction test plus exactly the three companies that have such a
   period.
 
-## Metric coverage (Phase 10 input, measured 2026-09-11)
-
-Values produced per company, out of that company's period count. Coverage is
-per metric, not per company — assuming one policy covers all three is how a
-metric ends up looking healthy because nobody checked who could produce it.
-
-| Company | net_debt_to_ebitda | ebit_interest_cover | current_ratio |
-|---|---|---|---|
-| LUMN (19) | 14 | 15 | 17 |
-| F (19) | **3** | 7 | 11 |
-| JNJ (19) | **6** | **6** | 18 |
-| CCL (19) | 14 | 16 | 18 |
-| KHC (13) | 10 | 10 | 12 |
-
-All five companies witness all three metrics, but the two headline metrics are
-far thinner than `current_ratio` (76 of 89 periods).
-
 **Five of the seven coverage edge cases have zero real-data witnesses** and are
 synthetic-only: `NO_INTEREST_NO_DEBT`, `INTEREST_MISSING_WITH_DEBT` in both its
 forms (interest missing, and interest zero), `ZERO_DENOMINATOR`,
@@ -219,6 +202,66 @@ forms (interest missing, and interest zero), `ZERO_DENOMINATOR`,
 `interest_expense` resolves positively in every one, `total_debt` is never
 exactly zero, and `current_liabilities` is never zero or negative. Only
 `NEGATIVE_EBITDA` (6 periods) and `NEGATIVE_EARNINGS` (10) have real witnesses.
+
+- Phase 5 completed (2026-09-12, Opus) — the remaining fourteen ratios; all
+  seventeen in the metric table now implemented. Shared shapes
+  (_simple_ratio, _ebitda_ratio, _debt_denominated, _interest_cover) write the
+  general denominator rules once; four metrics keep their own functions because
+  their edge cases are genuinely unlike the rest. Four new reason codes, all
+  classified: NO_DEBT (NEITHER, D42a), NON_POSITIVE_CAPITAL, INVENTORY_UNKNOWN,
+  INSUFFICIENT_DATA (GAP). D42 records five calls. CCL 2019 recomputed by hand
+  across all seventeen before pinning. Sabotage-verified: making quick_ratio's
+  cross-period inventory rule per-period fails two unit tests plus exactly
+  LUMN, the only company with partial inventory.
+
+## Metric coverage — all seventeen (Phase 10 input, measured 2026-09-12)
+
+Periods producing a value. Company period counts: LUMN/F/JNJ/CCL 19 each, KHC 13.
+
+| Metric | LUMN | F | JNJ | CCL | KHC | total |
+|---|---|---|---|---|---|---|
+| debt_to_ebitda | 14 | 3 | 6 | 14 | 10 | 47 |
+| net_debt_to_ebitda | 14 | 3 | 6 | 14 | 10 | 47 |
+| debt_to_capital | 15 | 3 | 18 | 17 | 12 | 65 |
+| ebit_interest_cover | 15 | 7 | 6 | 16 | 10 | 54 |
+| ebitda_interest_cover | 17 | 9 | 6 | 16 | 10 | 58 |
+| current_ratio | 17 | 11 | 18 | 18 | 12 | 76 |
+| quick_ratio | **2** | 11 | 18 | 18 | 12 | 61 |
+| cash_to_current_liabilities | 17 | 11 | 18 | 18 | 12 | 76 |
+| cash_to_debt | 15 | 3 | 18 | 17 | 12 | 65 |
+| fcf_margin | 3 | **0** | 10 | 15 | **0** | 28 |
+| fcf_to_debt | **0** | **0** | 18 | 17 | 12 | 47 |
+| cfo_to_debt | 10 | 3 | 18 | 17 | 12 | 60 |
+| capex_to_revenue | 6 | **0** | 10 | 15 | **0** | 31 |
+| revenue_growth | 16 | 18 | 9 | 13 | **0** | 56 |
+| ebitda_margin | 18 | 9 | **0** | 15 | **0** | 42 |
+| ebit_margin | 18 | 9 | **0** | 15 | **0** | 42 |
+| net_margin | 18 | 13 | 10 | 15 | **0** | 56 |
+
+**Three structural gaps, all tag-map problems rather than thin luck:**
+
+1. **Ford reports no `PaymentsToAcquirePropertyPlantAndEquipment` at all** — the
+   tag is absent from its payload entirely, so `capex` never resolves, `fcf`
+   never computes, and `fcf_margin`, `fcf_to_debt` and `capex_to_revenue` are
+   **zero for Ford in every period**. LUMN resolves capex in only 6 of 18.
+2. **JNJ's `revenue` and `ebit` periods do not overlap at all.** `ebit` resolves
+   2010-2014, `revenue` 2017-2025 — the intersection is **empty**, so
+   `ebit_margin` and `ebitda_margin` are not merely thin for JNJ but
+   *structurally impossible*. The designated strong reference company cannot
+   produce either margin in any period.
+3. **KHC's revenue gap costs six of seventeen metrics** — every
+   revenue-denominated ratio plus `revenue_growth`.
+
+**Synthetic-only refusals, confirmed across all 89 company-periods:** `NO_DEBT`
+never fires (`total_debt` is never exactly zero) and `NON_POSITIVE_CAPITAL`
+never fires — negative equity does occur (LUMN 1 period, F 3) but
+`total_debt + equity` stays positive throughout. Both are defended by unit
+tests only.
+
+**What this sharpens for Phase 10 selection:** a candidate must be checked for
+`capex`, `revenue` *and* `ebit` resolving **over the same periods** before
+adoption. Three of five current companies fail at least one, and JNJ's failure
+is an empty intersection that per-concept period counts alone would not reveal.
 
 ## Integrity witness coverage (Phase 10 input, measured 2026-09-11)
 
@@ -266,13 +309,14 @@ never run for it and no revenue-based metric will ever compute. Worth a tag
 investigation before KHC is relied on for anything revenue-derived.
 
 ## Tests
-- 374 passing (7 setup + 3 env + 6 ingest/tickers + 12 ingest/companyfacts (all
+- 424 passing, 8 skipped (7 setup + 3 env + 6 ingest/tickers + 12 ingest/companyfacts (all
   HTTP-mocked) + 4 cli wiring + 3 fixture guards + 31 selection + 10 mapping +
   42 composites (deviation edges, all four branches, guards, toggles, storage) +
   28 integrity (every check pass/fail/skip, the 1% boundary, D23's three codes,
   a real 52/53-week sequence, phantom periods) +
-  25 ratios (three formulas, all seven coverage edge cases, the three reason
-  kinds) + 145 real-data (29 invariants x 5 cached companies) + 53 store:
+  53 ratios (seventeen formulas, every coverage edge case, the three reason
+  kinds, quick_ratio's cross-period rule, revenue_growth's adjacency) +
+  180 real-data (36 invariants x 5 cached companies) + 53 store:
   constraint-rejection tests for every CHECK, the six-value
   data_status constraint, FK enforcement, STRICT + fallback, the circular-FK
   path, the fixture's exact stored rows, the fy-trap at storage, the
@@ -313,10 +357,12 @@ investigation before KHC is relied on for anything revenue-derived.
 - Which 25-50 companies form the v1 universe? (US-listed, non-financial, 3+ years of 10-K data)
 
 ## Next priorities
-- The remaining ~14 ratios (rest of Phase 5). The pattern is now proven end to end;
-  Task 11 deliberately did three so the shape could be reviewed before replication.
-- Phase 6 (scoring) reads REASON_KIND to apply D9: EVIDENCE scores 0, GAP drops and
-  caps, NEITHER redistributes weight. It must also resolve the "excluded until
-  reviewed" open question in DECISIONS.md.
+- Phase 6 (scoring). Reads REASON_KIND to apply D9: EVIDENCE scores 0, GAP drops and
+  caps, NEITHER redistributes weight. Three open questions wait for it, all recorded
+  in DECISIONS.md: the "excluded until reviewed" mechanism; what redistribution means
+  when three leverage and cash-flow metrics all return NO_DEBT (D42a); and whether a
+  score fingerprint over thresholds.yaml is needed (D18's scope note).
+- Phase 7 (trends) inherits D40 and D42c's sequence-topology hazard directly — every
+  trend rule must state which periods it treats as links before it is implemented.
 - Phase 6 must resolve the "excluded from scoring until reviewed" gap — see the open
   question in DECISIONS.md. Task 10 stores the verdict and stops there by design.

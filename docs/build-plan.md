@@ -125,6 +125,8 @@ the task order is the one to follow.
 11. (Phase 5) Implement the first three ratios (`net_debt_to_ebitda`,
     `ebit_interest_cover`, `current_ratio`) end-to-end from a real cached company, with
     provenance printed.
+    **Phase 5 completed 2026-09-12:** the remaining fourteen followed in the same
+    pass, giving all seventeen in the metric table. ROA and ROE stay dropped.
 
 ## Testing strategy
 

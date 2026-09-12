@@ -53,7 +53,9 @@ checks (Phase 4) because the checks depend on them. See docs/build-plan.md.
       cases, REASON_KIND splitting EVIDENCE/GAP/NEITHER (D41). pipeline.py assembles
       the stages; `credit-risk metrics <TICKER>` prints each ratio with its full
       provenance chain down to tags and filings
-- [ ] Rest of Phase 5: the remaining ~14 ratios, following Task 11's proven pattern
+- [x] Rest of Phase 5 (2026-09-12): the remaining fourteen ratios — all seventeen
+      implemented, four new reason codes classified, D42's five calls recorded.
+      Full coverage table in PROJECT_STATE.md as a Phase 10 input
 
 ## Phase 9/10 inputs raised by Task 10
 - [ ] Phase 10 universe selection must cover `debt_subset`: it has one usable witness
@@ -63,6 +65,14 @@ checks (Phase 4) because the checks depend on them. See docs/build-plan.md.
       JNJ resolves OperatingIncomeLoss in only 6 of 19 periods, so the designated
       strong reference company is the thinnest evidence for both headline metrics —
       two of five demonstration companies now have a tag-map hole in a headline metric
+- [ ] Tag-map gap: Ford reports no `PaymentsToAcquirePropertyPlantAndEquipment` at
+      all, so capex never resolves and fcf_margin / fcf_to_debt / capex_to_revenue
+      are zero for it in every period. LUMN resolves capex in 6 of 18
+- [ ] Tag-map gap: JNJ's `revenue` (2017-2025) and `ebit` (2010-2014) periods do not
+      overlap at all, so ebit_margin and ebitda_margin are structurally impossible
+      for it — not thin, empty. Needs tag variants for one or both concepts
+- [ ] Phase 10 selection must check capex, revenue AND ebit resolve over the SAME
+      periods before adopting a company — per-concept counts hide an empty overlap
 - [ ] Tag-map gap: KHC resolves `revenue` in zero of 12 periods — no candidate matches
       how Kraft Heinz tags it. Investigate before relying on KHC for anything
       revenue-derived

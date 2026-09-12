@@ -180,7 +180,17 @@ three codes.
 | `COMPONENT_AGGREGATE_MISMATCH` | concept | Debt components and the reported aggregate disagree beyond tolerance; refuses rather than picking one. Both figures recorded | D26 |
 | `ST_DEBT_SCOPE_UNCERTAIN` | concept | `short_term_debt` resolved via `DebtCurrent` while `current_ltd` also resolves; the tag's filer-dependent scope makes double-counting unverifiable | D32 |
 | `NO_DEBT_DATA` | concept | No LTD-family concept resolves for the period; zero debt is never assumed | — |
-| `MISSING_INPUT:<concept>` | concept | A composite's required input is `UNAVAILABLE`; the refusal names which one | — |
+| `MISSING_INPUT:<concept>` | concept / metric | A composite's or metric's required input is `UNAVAILABLE`; the refusal names which one | — |
+| `ZERO_DENOMINATOR` | metric | Denominator is zero; never an infinite ratio | — |
+| `NEGATIVE_DENOMINATOR` | metric | Denominator is negative; also emits an event of the same name | D41e |
+| `NEGATIVE_EBITDA` | metric | `ebitda <= 0` on an EBITDA-based leverage or coverage ratio. **Kind EVIDENCE** | D41d, D42d |
+| `NEGATIVE_EARNINGS` | metric | `ebit <= 0` with interest present. **Kind EVIDENCE** | — |
+| `NO_INTEREST_NO_DEBT` | metric | Interest missing with zero debt — unlevered. **Kind NEITHER** | — |
+| `INTEREST_MISSING_WITH_DEBT` | metric | Interest missing, zero or negative while debt is present; a tag gap, not free debt | D41f |
+| `NO_DEBT` | metric | `total_debt == 0` on a debt-denominated ratio. **Kind NEITHER** — an unlevered company is not a gap | D42a |
+| `NON_POSITIVE_CAPITAL` | metric | `total_debt + equity <= 0`, so `debt_to_capital` has no meaningful base. Distinct from a bare zero denominator | — |
+| `INVENTORY_UNKNOWN` | metric | `quick_ratio`: the company reports inventory in some period but not this one, so it can be neither subtracted nor assumed zero | D42b |
+| `INSUFFICIENT_DATA` | metric | `revenue_growth`: no prior period within `continuity_window_days` to compare against | D42c |
 
 A refused value is never approximated from a neighbouring period, a related tag, or
 subtraction from another figure (CLAUDE.md rule 11).
