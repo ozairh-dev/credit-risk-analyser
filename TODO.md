@@ -97,8 +97,12 @@ checks (Phase 4) because the checks depend on them. See docs/build-plan.md.
       output with the cap line leading, score fingerprint (D45), schema amendments
       (D47), CCL liquidity sector finding recorded not fixed (D48).
       `credit-risk score <TICKER>`
-- [ ] Phase 7 (trends + early warnings) — fills ebitda_margin_trend and the `trend`
-      field; must assert period eligibility per rule, not cite D40 (see D43)
+- [x] Phase 7 (2026-09-12): trends/engine.py — seven trend rules, eleven warning
+      indicators, escalation with recorded cause, trend fingerprint. D49-D52.
+      D43 discharged with 7 eligibility + 7 window tests, one per rule
+- [ ] Phase 8 (stress engine) — but first resolve config/stress.yaml's open items:
+      new_debt_rate's fallback and fixed_cost_share (D20 deferred the tables for
+      exactly this reason)
 
 ## Later
 - See docs/build-plan.md

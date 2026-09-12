@@ -21,6 +21,7 @@ from pathlib import Path
 import pytest
 
 from credit_risk import config, pipeline
+from credit_risk.trends.fingerprint import trend_fingerprint
 from credit_risk.metrics.composites import compute_composites
 from credit_risk.metrics.integrity import run_integrity_checks
 from credit_risk.metrics.ratios import (
@@ -56,12 +57,13 @@ def company(request):
 
 @pytest.fixture
 def stored(company):
-    raw, selection, mapping, composites, integrity, metrics, scores = company
+    raw, selection, mapping, composites, integrity, metrics, trends, scores = company
     conn = db.create_database(":memory:")
     store_company_data(
         conn, raw["cik"], raw["entityName"], selection, mapping,
         tag_map=config.tag_map(), composites=composites,
-        integrity=integrity, metrics=metrics, scores=scores,
+        integrity=integrity, metrics=metrics, scores=scores, trends=trends,
+        trend_fingerprint=trend_fingerprint(),
     )
     yield conn, raw, selection, mapping
     conn.close()
@@ -784,14 +786,19 @@ def test_pipeline_analyse_and_store_produces_every_stage(stored):
 # are the spine: the arc is the point — moderate pre-COVID, worst band through
 # the distress, one grade per year of recovery.
 
+# Re-baselined at Phase 7 (D50): ebitda_margin_trend became a real scoring
+# component, so business_performance is now a mean of two rather than one.
+# Nine of 85 grades across the five companies moved; CCL 2019 is the clearest
+# case — EBITDA margin fell 2.19pp against a 2pp threshold in the year before
+# COVID, so the trend scores 0 and the grade moves 3 -> 4.
 CCL_SCORES = {
     "2007-11-30": (60.0, 4), "2008-11-30": (54.5, 4), "2009-11-30": (35.5, 5),
     "2010-11-30": (40.0, 4), "2011-11-30": (53.5, 4), "2012-11-30": (44.1, 4),
     "2013-11-30": (41.2, 4), "2014-11-30": (48.8, 4), "2015-11-30": (66.0, 3),
-    "2016-11-30": (65.0, 3), "2017-11-30": (68.0, 3), "2018-11-30": (66.0, 3),
-    "2019-11-30": (56.5, 3), "2020-11-30": (21.0, 6), "2021-11-30": (14.5, 6),
+    "2016-11-30": (68.0, 3), "2017-11-30": (62.0, 3), "2018-11-30": (64.5, 3),
+    "2019-11-30": (49.0, 4), "2020-11-30": (21.0, 6), "2021-11-30": (14.5, 6),
     "2022-11-30": (21.0, 6), "2023-11-30": (25.0, 5), "2024-11-30": (36.0, 5),
-    "2025-11-30": (43.5, 4),
+    "2025-11-30": (45.0, 4),
 }
 
 SCORE_SHAPE = {
@@ -902,12 +909,135 @@ def test_no_score_row_for_an_integrity_fail_period(stored):
 def test_scores_restore_idempotently(stored):
     conn, raw, selection, mapping = stored
     before = scalar(conn, "SELECT COUNT(*) FROM scores")
-    _, _, composites, integrity, metrics, scores = pipeline.analyse(
+    _, _, composites, integrity, metrics, trends, scores = pipeline.analyse(
         pipeline.load_cached(raw["cik"]))
     store_company_data(
         conn, raw["cik"], raw["entityName"], selection, mapping,
         tag_map=config.tag_map(), composites=composites,
-        integrity=integrity, metrics=metrics, scores=scores,
+        integrity=integrity, metrics=metrics, scores=scores, trends=trends,
+        trend_fingerprint=trend_fingerprint(),
     )
     assert scalar(conn, "SELECT COUNT(*) FROM scores") == before
     assert scalar(conn, "SELECT COUNT(*) FROM scores WHERE status='SUPERSEDED'") == 0
+
+
+# ============ Phase 7: trends and warnings on real data ============
+#
+# Measured 2026-09-12 and examined before pinning (rule 14).
+
+TREND_WARNINGS_SHAPE = {
+    # cik: (warnings, escalated warnings, periods containing an escalation)
+    18926: (46, 39, 11), 37996: (19, 3, 1), 200406: (20, 0, 0),
+    815097: (38, 27, 6), 1637459: (16, 6, 2),
+}
+
+
+def test_warning_shape_per_company(stored):
+    conn, raw, _, _ = stored
+    total, escalated, periods = TREND_WARNINGS_SHAPE[raw["cik"]]
+    assert total == scalar(conn,
+        "SELECT COUNT(*) FROM warnings WHERE cik = ?", (raw["cik"],))
+    assert escalated == scalar(conn,
+        "SELECT COUNT(*) FROM warnings WHERE cik = ? AND escalated = 1",
+        (raw["cik"],))
+    assert periods == scalar(conn, """SELECT COUNT(DISTINCT period_end)
+        FROM warnings WHERE cik = ? AND escalated = 1""", (raw["cik"],))
+
+
+def test_jnj_never_escalates(stored):
+    """The negative witness: the strong reference company never reaches three
+    warnings in a period, across 18 periods."""
+    conn, raw, _, _ = stored
+    if raw["cik"] != 200406:
+        pytest.skip("JNJ only")
+    assert scalar(conn,
+        "SELECT COUNT(*) FROM warnings WHERE cik = ? AND escalated = 1",
+        (raw["cik"],)) == 0
+
+
+def test_every_escalated_warning_records_its_cause(stored):
+    """The methodology requires recording that escalation applied AND why."""
+    conn, raw, _, _ = stored
+    for r in conn.execute("""SELECT escalation_reason, warnings_in_period,
+            base_severity, severity FROM warnings
+            WHERE cik = ? AND escalated = 1""", (raw["cik"],)):
+        assert r["escalation_reason"] and "threshold" in r["escalation_reason"]
+        assert r["warnings_in_period"] >= 3
+        assert str(r["warnings_in_period"]) in r["escalation_reason"]
+        # one level up, and High stays High
+        if r["base_severity"] == "High":
+            assert r["severity"] == "High"
+        else:
+            assert r["severity"] != r["base_severity"]
+
+
+def test_unescalated_warnings_carry_no_cause(stored):
+    conn, raw, _, _ = stored
+    for r in conn.execute("""SELECT escalation_reason, severity, base_severity
+            FROM warnings WHERE cik = ? AND escalated = 0""", (raw["cik"],)):
+        assert r["escalation_reason"] is None
+        assert r["severity"] == r["base_severity"]
+
+
+def test_every_warning_carries_the_trend_fingerprint(stored):
+    """D52: a warning that stopped firing because a threshold moved must be
+    distinguishable from one that stopped because the company improved."""
+    conn, raw, _, _ = stored
+    expected = trend_fingerprint()
+    rows = conn.execute("""SELECT DISTINCT config_fingerprint FROM warnings
+        WHERE cik = ?""", (raw["cik"],)).fetchall()
+    assert rows
+    assert {r["config_fingerprint"] for r in rows} == {expected}
+
+
+def test_warning_evidence_reaches_concepts(stored):
+    """Evidence links to concepts, so provenance still bottoms out in facts and
+    filings through the existing chain (D51)."""
+    conn, raw, _, _ = stored
+    n = scalar(conn, """SELECT COUNT(*) FROM warning_evidence we
+        JOIN warnings w ON w.id = we.warning_id WHERE w.cik = ?""",
+        (raw["cik"],))
+    assert n > 0
+    orphans = scalar(conn, """SELECT COUNT(*) FROM warning_evidence we
+        LEFT JOIN concepts c ON c.id = we.concept_id WHERE c.id IS NULL""")
+    assert orphans == 0
+
+
+def test_ccl_2019_margin_deterioration_moved_the_grade(stored):
+    """The re-baseline's clearest case, pinned with its cause: EBITDA margin
+    fell 2.19pp against a 2pp threshold in the year before COVID."""
+    conn, raw, _, _ = stored
+    if raw["cik"] != 815097:
+        pytest.skip("CCL only")
+    row = conn.execute("""SELECT points, treatment, value FROM score_components sc
+        JOIN scores s ON s.id = sc.score_id
+        WHERE s.cik = ? AND s.period_end = '2019-11-30'
+          AND sc.metric = 'ebitda_margin_trend'""", (raw["cik"],)).fetchone()
+    assert row["treatment"] == "scored"
+    assert row["points"] == 0.0            # Deteriorating
+    w = conn.execute("""SELECT severity FROM warnings WHERE cik = ?
+        AND period_end = '2019-11-30' AND indicator = 'margin_deterioration'""",
+        (raw["cik"],)).fetchone()
+    assert w is not None
+
+
+def test_trend_components_are_no_longer_pending_anywhere(stored):
+    """The Phase 6 -> 7 transition, asserted on real data: no stored component
+    still says not_yet_implemented."""
+    conn, raw, _, _ = stored
+    assert scalar(conn, """SELECT COUNT(*) FROM score_components
+        WHERE treatment = 'not_yet_implemented'""") == 0
+
+
+def test_warnings_restore_idempotently(stored):
+    conn, raw, selection, mapping = stored
+    before = scalar(conn, "SELECT COUNT(*) FROM warnings")
+    _, _, composites, integrity, metrics, trends, scores = pipeline.analyse(
+        pipeline.load_cached(raw["cik"]))
+    store_company_data(
+        conn, raw["cik"], raw["entityName"], selection, mapping,
+        tag_map=config.tag_map(), composites=composites,
+        integrity=integrity, metrics=metrics, scores=scores, trends=trends,
+        trend_fingerprint=trend_fingerprint(),
+    )
+    assert scalar(conn, "SELECT COUNT(*) FROM warnings") == before

@@ -57,13 +57,30 @@ bands:
     edges: [-0.10, -0.03, 0.0, 0.05, 0.10]
     points: [0, 2, 4, 6, 8, 10]
 
+# Trend materiality (docs/credit-methodology.md "Trends"). Units are MIXED and the
+# distinction is load-bearing, so it is marked explicitly rather than left to a reader
+# (D49): everything here is an ABSOLUTE change in the metric's own units EXCEPT the
+# entries named under `relative`, which are proportions of the base period's value.
 trend_materiality:
-  net_debt_to_ebitda: 0.5
-  ebit_interest_cover: 1.0
-  ebitda_margin: 0.02
-  revenue_growth_drop: 0.05
-  fcf: 0.20
+  net_debt_to_ebitda: 0.5        # turns of leverage
+  ebit_interest_cover: 1.0       # turns of cover
+  ebitda_margin: 0.02            # 2 percentage points
+  revenue_growth_drop: 0.05      # 5 percentage points of growth
   cash_to_current_liabilities: 0.1
-  total_debt: 0.15
+  fcf: 0.20                      # 20% of the base period  (relative)
+  total_debt: 0.15               # 15% of the base period  (relative)
+  # A relative change needs a non-zero base; a zero base yields INSUFFICIENT_DATA
+  # rather than an undefined proportion, matching D34's refusal shape.
+  relative: [fcf, total_debt]
+
+# Trend verdict -> scoring points, for the ebitda_margin_trend component (D50).
+# Stable sits just ABOVE the midpoint: holding steady is better than drifting, and
+# mid-band values elsewhere are reserved for genuinely middling performance.
+# INSUFFICIENT_DATA is not here — it is a data gap, not a verdict.
+# This key DOES move scores, so it joins the score fingerprint (D45/D50).
+trend_points:
+  Improving: 10
+  Stable: 6
+  Deteriorating: 0
 
 warning_escalation_count: 3

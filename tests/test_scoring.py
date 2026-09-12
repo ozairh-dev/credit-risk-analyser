@@ -156,13 +156,49 @@ def test_unlevered_component_is_dropped_benignly():
     assert cat(s, "cash_flow").absent_cause is None
 
 
-def test_phase_7_trend_component_is_not_a_gap():
-    """Treating an unbuilt feature as a data gap would cap every company in
-    every period. It is recorded and excluded from counting."""
-    s = score_period(END, by(ok("revenue_growth", 0.12)), TH)
+def test_nothing_is_pending_now_that_phase_7_has_landed():
+    """The not_yet_implemented mechanism survives with an empty set: it is what
+    lets a future component join the row shape before it can be scored, and its
+    emptiness is the record that nothing is currently pending."""
+    from credit_risk.scoring.engine import PENDING_COMPONENTS
+    assert PENDING_COMPONENTS == frozenset()
+
+
+def test_trend_component_scores_from_a_verdict(  ):
+    """The transition Phase 6 was designed for: the row shape does not change,
+    only the treatment and the points (D50)."""
+    s = score_period(END, by(ok("revenue_growth", 0.12)), TH,
+                     trends={"ebitda_margin": "Stable"})
     c = comp(s, "business_performance", "ebitda_margin_trend")
-    assert c.treatment == NOT_YET_IMPLEMENTED
-    assert cat(s, "business_performance").points == 10.0   # trend not averaged in
+    assert c.treatment == SCORED
+    assert c.points == 6.0          # Stable, just above the midpoint
+    assert c.trend == "Stable"
+    assert cat(s, "business_performance").points == 8.0     # (10 + 6) / 2
+
+
+@pytest.mark.parametrize("verdict,points", [
+    ("Improving", 10.0), ("Stable", 6.0), ("Deteriorating", 0.0)])
+def test_trend_points_mapping(verdict, points):
+    s = score_period(END, by(ok("revenue_growth", 0.12)), TH,
+                     trends={"ebitda_margin": verdict})
+    assert comp(s, "business_performance", "ebitda_margin_trend").points == points
+
+
+def test_insufficient_trend_data_is_a_gap_not_a_verdict():
+    s = score_period(END, by(ok("revenue_growth", 0.12)), TH,
+                     trends={"ebitda_margin": "INSUFFICIENT_DATA"})
+    c = comp(s, "business_performance", "ebitda_margin_trend")
+    assert c.treatment == DROPPED_GAP
+    assert c.reason_code == "INSUFFICIENT_DATA"
+    assert cat(s, "business_performance").points == 10.0    # scored on growth alone
+
+
+def test_a_company_with_no_trends_at_all_gaps_the_component():
+    """JNJ and KHC's shape: ebitda_margin never resolves, so the trend can
+    never exist — a data gap where Phase 6 previously excluded it entirely."""
+    s = score_period(END, by(ok("revenue_growth", 0.12)), TH, trends={})
+    assert comp(s, "business_performance",
+                "ebitda_margin_trend").treatment == DROPPED_GAP
 
 
 # ============ the category-outcome rule, including the two interactions ============
@@ -321,13 +357,27 @@ def test_explain_top_drivers_are_the_three_costliest():
     assert drivers[0]["points_lost"] >= drivers[-1]["points_lost"]
 
 
-def test_explain_names_trends_as_pending_rather_than_omitting_them():
-    report = explain(full_score())
-    assert report["deteriorating_metrics"] is None
-    assert "Phase 7" in report["trend_note"]
-    for category in report["categories"]:
-        for component in category["components"]:
-            assert component["trend"] is None
+def test_explain_carries_real_trends_per_component():
+    """Phase 6 promised a trend field per component and filled it with null.
+    Phase 7 fills it for real, and the output shape is unchanged."""
+    s = score_period(END, by(
+        ok("net_debt_to_ebitda", 2.5), ok("debt_to_capital", 0.3),
+        ok("ebit_interest_cover", 9.0),
+        ok("current_ratio", 0.5), ok("cash_to_current_liabilities", 0.05),
+        ok("fcf_to_debt", 0.08), ok("fcf_margin", 0.04),
+        ok("revenue_growth", 0.12),
+    ), TH, trends={"net_debt_to_ebitda": "Deteriorating",
+                   "ebit_interest_cover": "Improving",
+                   "ebitda_margin": "Stable"})
+    report = explain(s)
+    assert report["deteriorating_metrics"] == ["net_debt_to_ebitda"]
+    trends = {c["metric"]: c["trend"] for cat_ in report["categories"]
+              for c in cat_["components"]}
+    assert trends["net_debt_to_ebitda"] == "Deteriorating"
+    assert trends["ebit_interest_cover"] == "Improving"
+    assert trends["ebitda_margin_trend"] == "Stable"
+    # a metric with no verdict says nothing rather than claiming stability
+    assert trends["current_ratio"] is None
 
 
 def test_explain_carries_the_disclaimer():
@@ -390,3 +440,20 @@ def test_build_plan_fixture_company_missing_interest_expense():
     assert s.grade_capped and s.cap_binding
     assert s.grade_uncapped == 1 and s.grade == 3
     assert explain(s)["absent_categories"] == {"coverage": CAUSE_GAP}
+
+
+def test_trend_points_is_in_the_score_fingerprint():
+    """D50: the boundary is "does this move a score". trend_points sits beside
+    the trend settings in config but moves scores, so it belongs here — this
+    test exists because the allowlist and the decision drifted apart once."""
+    assert "trend_points" in FINGERPRINTED_KEYS
+    base = dict(score_config_values())
+    moved = {**base, "trend_points": {**base["trend_points"], "Stable": 5}}
+    assert score_fingerprint(base) != score_fingerprint(moved)
+
+
+def test_trend_settings_stay_out_of_the_score_fingerprint():
+    """The other half of the same boundary: these change which warnings fire,
+    not what a score is (D52)."""
+    assert "trend_materiality" not in FINGERPRINTED_KEYS
+    assert "warning_escalation_count" not in FINGERPRINTED_KEYS

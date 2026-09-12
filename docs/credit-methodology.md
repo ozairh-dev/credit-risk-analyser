@@ -237,9 +237,22 @@ per-value warning is an event, a check outcome is an `integrity_results` row.
 
 Requires at least three consecutive fiscal years. Otherwise `INSUFFICIENT_DATA`.
 
+**Consecutive means what D36 and D40 mean by it, applied to the metric being trended
+(D49).** A period is eligible for a trend on metric M when **M itself resolves there** —
+a period that resolves nothing, or resolves other metrics but not M, is not a link in M's
+chain — and a window is valid only when **every** consecutive day-gap in it falls inside
+`continuity_window_days`. Eligibility is per rule, determined by the series that rule
+actually reads; it is not a property of the period in general.
+
 For each trended metric compute:
 - `change_1y` = latest − prior
-- `change_3y` = latest − three years ago
+- `change_over_window` = latest − **earliest of the three-period window**
+
+*(Renamed from `change_3y`, which was wrong: three consecutive years give t, t−1, t−2, so
+the earliest point is **two** intervals back, not three. The label implied three intervals
+where the stated minimum gives two. Requiring a fourth period to match the old name would
+have cost 12% of available windows — measured — to satisfy a name. The name was what was
+wrong, not the arithmetic. D49.)*
 
 Classification, using per-metric materiality thresholds from `config/thresholds.yaml`:
 
@@ -253,10 +266,33 @@ Classification, using per-metric materiality thresholds from `config/thresholds.
 | cash_to_current_liabilities | ≥ 0.1 | falling |
 | total_debt | ≥ 15% | rising |
 
-- **Deteriorating**: `change_1y` material in the bad direction, or `change_3y` material and
-  monotonic (each year worse than the last).
+- **Deteriorating**: `change_1y` material in the bad direction, or `change_over_window`
+  material and monotonic (each year worse than the last).
 - **Improving**: the same, in the good direction.
 - **Stable**: neither.
+
+**Monotonic is strict** (D49): a flat year breaks it. A stalled series is not "each year
+worse than the last".
+
+**Materiality units are mixed**, and `config/thresholds.yaml` marks which is which. Five
+thresholds are absolute changes in the metric's own units; `fcf` and `total_debt` are
+**relative** — proportions of the base period — and are listed under `relative:` in the
+config. A relative change with a **zero base** yields `INSUFFICIENT_DATA` rather than an
+undefined proportion, the same refusal shape as D34.
+
+**`revenue_growth`'s verdict does not mean the same thing as the other six** (D49). Its
+trigger is "growth < 0, **or** growth fell ≥ 5pp" — an absolute level test OR a change
+test, where every other metric uses change alone. And because it trends a growth *rate*,
+its `change_1y` is an **acceleration**, not a change in level. A "Deteriorating"
+`revenue_growth` therefore asserts something different from a "Deteriorating"
+`net_debt_to_ebitda`, and output that presents the seven verdicts together must not imply
+they are the same kind of claim.
+
+**Trend verdicts score** through `config/thresholds.yaml: trend_points`
+(Improving 10, Stable 6, Deteriorating 0) — Stable sits just above the midpoint because
+holding steady is better than drifting, and mid-band values elsewhere are reserved for
+genuinely middling performance. `INSUFFICIENT_DATA` is a data gap, not a verdict, and is
+treated as one in scoring (D50).
 
 ## Early warnings
 
@@ -277,8 +313,16 @@ severity, evidence (input concepts + sources)`.
 | Negative equity | equity ≤ 0 | High |
 | Coverage below 2.0x | ebit_interest_cover < 2.0 | High |
 
-**Escalation:** if three or more warnings fire in the same period, raise every warning
-one severity level (Low→Medium→High). Record that escalation was applied and why.
+**Escalation:** if `config warning_escalation_count` (default 3) or more warnings fire in
+the same period, raise every warning one severity level (Low→Medium→High). High stays
+High. Record that escalation was applied **and why** — the stored reason names the count
+that fired and the threshold that triggered it (D51).
+
+Warning rows carry a fingerprint of the trend and escalation settings in force (D52): a
+warning that stopped firing because a threshold moved must be distinguishable from one
+that stopped because the company improved. That fingerprint is **disjoint from the score
+fingerprint** — these settings change warnings, not scores — with the single exception of
+`trend_points`, which moves scores and belongs to the score fingerprint instead.
 
 ## Scoring
 
@@ -296,9 +340,12 @@ Components within a category are **equally weighted** — the category score is 
 mean. No component is "primary" in any arithmetic sense; the word was removed from this
 table because it implied a weighting the spec never defines (D45a).
 
-`ebitda_margin trend` requires Phase 7 and is **not** a scoring component until then. It is
-recorded on every score with treatment `not_yet_implemented` and excluded from all counting
-— treating an unbuilt feature as a data gap would cap every company in every period.
+`ebitda_margin trend` is scored from a trend verdict rather than a metric value, through
+`config/thresholds.yaml: trend_points` (D50). Before Phase 7 it carried the treatment
+`not_yet_implemented` and was excluded from all counting — treating an unbuilt feature as a
+data gap would have capped every company in every period. That mechanism remains for any
+future component that must join the row shape before it can be scored; nothing uses it
+today.
 
 ### Bands
 
@@ -375,10 +422,7 @@ S&P/Moody's/Fitch letters or to any bank's internal scale.
 - Category breakdown: points, weight, contribution
 - Per component: metric, value, band, points, trend, source
 - Strongest two categories, weakest two categories
-- Deteriorating metrics (from trends) — **until Phase 7 exists**, every component's
-  `trend` field is `null` and the output carries one explicit line, "trend analysis
-  unavailable until Phase 7". Stated rather than omitted, so the output shape does not
-  change when Phase 7 fills it
+- Deteriorating metrics (from trends)
 - Positive mitigants (metrics in top band)
 - Top drivers: the three components that cost the most points versus a perfect score
 - **The cap line, always, when a cap applied**: the final grade, the uncapped grade, how

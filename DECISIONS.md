@@ -1249,3 +1249,112 @@ Alternatives: widen the liquidity bands (rejected — fits one company, unvalida
 rest); exclude liquidity for cruise operators (a sector rule with no sector framework yet).
 Consequences: CCL's scores are pinned in tests **as they are**, including the zero liquidity
 points, so a future sector-threshold change shows up as a deliberate re-baseline.
+
+## D49 — Trend classification: per-rule eligibility, change_over_window, mixed units, strict monotonicity
+Decision (owner-approved 2026-09-12, Phase 7).
+
+**Spec check:** all seven `trend_materiality` values and `warning_escalation_count` match
+the methodology's tables exactly. No disagreement.
+
+**(a) Eligibility is per rule, on that rule's own series.** A period is a link in metric
+M's chain when **M itself resolves there** — a period that resolves nothing, or resolves
+other metrics but not M, is not one — and a window is valid only when **every** consecutive
+day-gap in it sits inside `continuity_window_days`. D40's filter and D36's window, both,
+applied to the series each rule actually reads.
+**This is D43 discharged, not cited.** D43 records that `revenue_growth` referenced D40's
+exclusion without applying it, and that the only artefact distinguishing noticing a
+decision from applying it is a test. So there are **seven eligibility tests and seven
+window tests**, one per trended metric on its own series, parametrised over `TRENDED` with
+a guard test that fails if a metric is added without them. A shared test would prove the
+mechanism works somewhere; it would not prove it is wired to each rule.
+
+**(b) `change_3y` is renamed `change_over_window` and means latest minus the earliest of
+the three-period window.** The old name was wrong: three consecutive years give t, t-1,
+t-2, so the earliest point is **two** intervals back, not three. The label implied three
+intervals where the stated minimum gives two. Measured: requiring a fourth period to match
+the old name would cost **12% of available windows** (309 -> 271). The name was what was
+wrong, not the arithmetic.
+
+**(c) Materiality units are mixed, and the distinction is marked in config.** Five
+thresholds are absolute changes in the metric's own units; `fcf` and `total_debt` are
+proportions of the base period. `config/thresholds.yaml` now lists `relative: [fcf,
+total_debt]` rather than leaving a future editor to infer it from the methodology's prose.
+A relative change with a **zero base** yields `INSUFFICIENT_DATA` rather than an undefined
+proportion — D34's refusal shape.
+
+**(d) Monotonic is strict.** A flat year breaks it: a stalled series is not "each year
+worse than the last".
+
+**(e) `revenue_growth`'s verdict does not mean what the other six mean.** Its trigger is
+"growth < 0, **or** growth fell >= 5pp" — an absolute level test OR a change test, where
+every other metric uses change alone; and because it trends a growth *rate*, its
+`change_1y` is an **acceleration**. Implemented as written (the absolute clause is
+deliberate: negative growth is bad regardless of direction of travel), and documented in
+the methodology so output presenting the seven verdicts together does not imply they are
+the same kind of claim.
+
+## D50 — Trend verdicts score at 10/6/0, and the Phase 6 re-baseline that follows
+Decision (owner call, 2026-09-12): `config/thresholds.yaml: trend_points` maps
+**Improving 10, Stable 6, Deteriorating 0**. `INSUFFICIENT_DATA` is not in the mapping —
+it is a data gap, not a verdict, and scores as `dropped_data_gap`.
+
+Reason for 6 rather than 5: **Stable belongs just above the midpoint.** Holding steady is
+better than drifting, and mid-band values elsewhere are reserved for genuinely middling
+performance.
+`trend_points` joins the **score** fingerprint, not the trend fingerprint: the boundary is
+"does this move a score", and a verdict-to-points mapping does. This corrects the Phase 6
+reasoning, which had assumed everything trend-shaped belonged outside.
+
+**The re-baseline, measured and deliberate.** `ebitda_margin_trend` moved from
+`not_yet_implemented` (excluded from counting) to a real component, so business performance
+became a mean of two rather than one. **Nine of 85 grades moved:**
+
+| Company | Moved | Before -> after |
+|---|---|---|
+| LUMN | 6 | 3x2 4x2 5x8 6x6 -> 3x2 4x3 5x4 6x9 |
+| F | 2 | 4x14 5x2 6x2 -> 4x13 5x2 6x3 |
+| CCL | 1 | 3x5 4x8 5x3 6x3 -> 3x4 4x9 5x3 6x3 |
+| JNJ | 0 | unchanged |
+| KHC | 0 | unchanged |
+
+CCL 2019-11-30 is the clearest case: EBITDA margin fell **2.19pp** against a 2pp threshold
+in the year before COVID, so the trend scores 0 and the grade moves **3 -> 4**. That is the
+component working, not a regression.
+
+**JNJ and KHC show no grade movement but a real behavioural change**, which is why this is
+recorded rather than just re-pinned: `ebitda_margin` never resolves for either, so their
+trend component went from *excluded from counting* to a **data gap**. Their grades were
+already capped for other reasons, so the change is invisible in the grade and visible only
+in `score_components.treatment`. A change that moves no number is still a change.
+
+## D51 — Warnings gain an escalation cause; evidence stays concept-linked
+Decision (2026-09-12, recorded separately per D35's standing rule for schema changes).
+
+`warnings` gains **`escalation_reason TEXT`** and **`warnings_in_period INTEGER`**, with a
+CHECK that `escalated = 1` implies both. The methodology requires recording that escalation
+applied **and why**; the table could record only that it applied. The stored reason names
+the count that fired and the threshold that triggered it. A unique index on
+`(cik, period_end, indicator)` makes a re-run update rather than accumulate.
+
+**Evidence stays linked to `concepts`, and no `warning_metrics` table is added.** A
+metric-triggered warning cites the **concepts that fed the metric**, reachable through
+`metric_inputs`. The property that matters is that provenance bottoms out in facts and
+filings, and it does; a direct warning-to-metric link buys faithfulness already reachable
+by join. Revisit only if Phase 9's evidence export needs it.
+
+## D52 — Warnings carry a trend fingerprint, disjoint from the score fingerprint
+Decision (2026-09-12): `trends/fingerprint.py` covers `trend_materiality` and
+`warning_escalation_count`, and every warning row stores it.
+
+Reason, the same argument D38 makes for integrity thresholds: **a warning that stopped
+firing because a threshold moved must be distinguishable from one that stopped because the
+company improved.** Only a fingerprint on the row can tell them apart.
+It is disjoint from D45's score fingerprint because these settings change *which warnings
+fire*, not what a score is — with the single exception of `trend_points`, which moves
+scores and therefore belongs to the score fingerprint (D50). The boundary is "does this
+move a score", not "does this live in thresholds.yaml".
+Consequences: three fingerprints now exist with disjoint scopes — composites
+(`store/fingerprint.py`), scores (`scoring/fingerprint.py`) and trends
+(`trends/fingerprint.py`). Integrity thresholds deliberately have none (D38): no integrity
+row's value moves with them, only its verdict, and the verdict is recomputed from scratch
+each run.

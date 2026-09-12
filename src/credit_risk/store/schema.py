@@ -228,7 +228,18 @@ _TABLES = [
       base_severity  TEXT NOT NULL CHECK (base_severity IN ('Low','Medium','High')),
       severity       TEXT NOT NULL CHECK (severity IN ('Low','Medium','High')),
       escalated      INTEGER NOT NULL DEFAULT 0 CHECK (escalated IN (0,1)),
-      created_at     TEXT NOT NULL
+      -- the methodology requires recording that escalation applied AND WHY;
+      -- neither the count nor the threshold was storable before (D51)
+      escalation_reason  TEXT,
+      warnings_in_period INTEGER,
+      -- a warning that stopped firing because a threshold moved must be
+      -- distinguishable from one that stopped because the company improved
+      -- (D52, the same argument D38 makes for integrity thresholds)
+      config_fingerprint TEXT NOT NULL,
+      created_at     TEXT NOT NULL,
+      CHECK (escalated = 0 OR
+             (escalation_reason IS NOT NULL AND warnings_in_period IS NOT NULL)),
+      CHECK (warnings_in_period IS NULL OR warnings_in_period > 0)
     ){strict}
     """,
     """
@@ -301,6 +312,7 @@ _INDEXES = [
     "CREATE UNIQUE INDEX uq_scores_current ON scores(cik, period_end)"
     " WHERE status = 'CURRENT'",
     "CREATE INDEX idx_scores ON scores(cik, period_end)",
+    "CREATE UNIQUE INDEX uq_warning ON warnings(cik, period_end, indicator)",
     "CREATE INDEX idx_warnings ON warnings(cik, period_end, severity)",
     "CREATE INDEX idx_dq_events ON data_quality_events(cik, code)",
 ]

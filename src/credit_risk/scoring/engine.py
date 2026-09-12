@@ -41,9 +41,14 @@ CATEGORIES = {
     "business_performance": ("revenue_growth", "ebitda_margin_trend"),
 }
 
-# Components that need a phase which does not exist yet. Treating these as data
-# gaps would cap every company in every period for an unbuilt feature.
-PENDING_COMPONENTS = frozenset({"ebitda_margin_trend"})
+# Components whose phase does not exist yet. Empty since Phase 7 landed — the
+# trend component is now real. Kept rather than deleted: the mechanism is what
+# lets a future component join the row shape before it can be scored, and its
+# emptiness is the record that nothing is currently pending.
+PENDING_COMPONENTS: frozenset = frozenset()
+
+# Components scored from a trend verdict rather than a metric value (D50).
+TREND_COMPONENTS = {"ebitda_margin_trend": "ebitda_margin"}
 
 
 @dataclass
@@ -55,7 +60,7 @@ class Component:
     treatment: str
     reason_code: str | None = None
     band_label: str | None = None
-    trend: None = None          # Phase 7; stated rather than omitted
+    trend: str | None = None    # the metric's trend verdict (Phase 7)
 
 
 @dataclass
@@ -131,10 +136,18 @@ def cap_for(categories_scored: int, cap_config: dict) -> int | None:
     return cap_config[min(applicable)]
 
 
-def _classify(category: str, metric: str, result) -> Component:
+def _classify(category: str, metric: str, result, trends=None) -> Component:
     """One metric -> one component, under D45's five treatments."""
     if metric in PENDING_COMPONENTS:
         return Component(category, metric, None, None, NOT_YET_IMPLEMENTED)
+    if metric in TREND_COMPONENTS:
+        # a trend verdict, not a metric value: INSUFFICIENT_DATA is a data gap
+        # rather than a verdict, so it drops and can cap (D50)
+        verdict = (trends or {}).get(TREND_COMPONENTS[metric])
+        if verdict is None or verdict == "INSUFFICIENT_DATA":
+            return Component(category, metric, None, None, DROPPED_GAP,
+                             reason_code="INSUFFICIENT_DATA", trend=verdict)
+        return Component(category, metric, None, None, SCORED, trend=verdict)
     if result is None:
         # the metric was never produced for this period at all
         return Component(category, metric, None, None, DROPPED_GAP,
@@ -153,12 +166,24 @@ def _classify(category: str, metric: str, result) -> Component:
                      reason_code=result.reason_code)
 
 
-def _score_category(name, metrics_by_name, weights, bands) -> Category:
+def _score_category(name, metrics_by_name, weights, bands, trends=None,
+                    trend_points=None) -> Category:
     weight = float(weights[name])
-    components = [_classify(name, m, metrics_by_name.get(m))
+    components = [_classify(name, m, metrics_by_name.get(m), trends)
                   for m in CATEGORIES[name]]
     for c in components:
-        if c.treatment == SCORED:
+        # every component carries its own metric's verdict, not only the one
+        # scored from a trend — the explain output promises a trend per
+        # component, and a metric with no trend says INSUFFICIENT_DATA rather
+        # than nothing
+        if c.metric not in TREND_COMPONENTS:
+            c.trend = (trends or {}).get(c.metric)
+        if c.treatment != SCORED:
+            continue
+        if c.metric in TREND_COMPONENTS:
+            c.points = float((trend_points or {})[c.trend])
+            c.band_label = c.trend
+        else:
             c.points = band_points(c.metric, c.value, bands)
             c.band_label = band_label(c.metric, c.value, bands)
 
@@ -181,7 +206,7 @@ def _score_category(name, metrics_by_name, weights, bands) -> Category:
 
 
 def score_period(period_end, metrics_by_name, thresholds=None,
-                 fingerprint=None) -> Score | None:
+                 fingerprint=None, trends=None) -> Score | None:
     """One period's score, or None when no category could be scored at all."""
     if thresholds is None:
         thresholds = config.thresholds()
@@ -189,7 +214,9 @@ def score_period(period_end, metrics_by_name, thresholds=None,
                               thresholds["grades"])
     cap_config = thresholds["max_grade_by_categories_scored"]
 
-    categories = [_score_category(name, metrics_by_name, weights, bands)
+    trend_points = thresholds["trend_points"]
+    categories = [_score_category(name, metrics_by_name, weights, bands,
+                                  trends, trend_points)
                   for name in CATEGORIES]
     scored = [c for c in categories if c.points is not None]
     if not scored:
@@ -217,7 +244,7 @@ def score_period(period_end, metrics_by_name, thresholds=None,
 
 
 def score_company(metrics_report, integrity_report, thresholds=None,
-                  fingerprint=None):
+                  fingerprint=None, trend_report=None):
     """Every scoreable period. Integrity-FAIL periods get no score at all.
 
     A FAIL period is excluded from scoring until the underlying data is
@@ -234,7 +261,12 @@ def score_company(metrics_report, integrity_report, thresholds=None,
     for end in sorted(by_period):
         if end in failed:
             continue
-        score = score_period(end, by_period[end], thresholds, fingerprint)
+        trends = None
+        if trend_report is not None:
+            trends = {t.metric: t.verdict for t in trend_report.trends
+                      if t.period_end == end}
+        score = score_period(end, by_period[end], thresholds, fingerprint,
+                             trends)
         if score is not None:
             scores.append(score)
     return scores
@@ -322,10 +354,9 @@ def explain(score: Score) -> dict:
              "points": comp.points, "points_lost": round(lost, 2)}
             for lost, cat, comp in sorted(drivers, key=lambda d: -d[0])[:3]
         ],
-        # Phase 7 fills these; stated rather than omitted so the output shape
-        # does not change when it lands.
-        "deteriorating_metrics": None,
-        "trend_note": "trend analysis unavailable until Phase 7",
+        "deteriorating_metrics": sorted(
+            {comp.metric for c in score.categories for comp in c.components
+             if comp.trend == "Deteriorating"}),
         "disclaimer": (
             "Internal analytical grade for this project. Not a credit rating; "
             "never mapped to S&P, Moody's, Fitch or any bank's internal scale."

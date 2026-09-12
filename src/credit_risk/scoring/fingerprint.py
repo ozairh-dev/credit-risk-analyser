@@ -32,6 +32,10 @@ FINGERPRINTED_KEYS = (
     "bands",
     "grades",
     "max_grade_by_categories_scored",
+    # a verdict-to-points mapping moves scores, so it belongs here rather than
+    # with the trend settings it sits beside in config (D50). The boundary is
+    # "does this move a score", not "does this look trend-shaped".
+    "trend_points",
 )
 
 

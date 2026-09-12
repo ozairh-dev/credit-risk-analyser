@@ -240,6 +240,59 @@ exactly zero, and `current_liabilities` is never zero or negative. Only
   shape tests plus JNJ's and CCL's; dropping EVIDENCE instead of scoring it
   zero fails two unit tests and four companies' reconciliation.
 
+- Phase 7 (2026-09-12, Opus) — trends and early warnings. trends/engine.py:
+  seven trend rules over three consecutive eligible years, the eleven warning
+  indicators, and the escalation rule with its cause recorded.
+  trends/fingerprint.py is the third disjoint fingerprint (composites, scores,
+  trends). D49-D52. **D43 discharged, not cited:** seven eligibility tests and
+  seven window tests, one per trended metric on its own series, plus a guard
+  that fails if a metric is added without them. Sabotage-verified both halves
+  independently — computing eligibility on all periods rather than the rule's
+  own series, and dropping the window test — each failing its own seven.
+  Phase 6's ebitda_margin_trend transitioned from not_yet_implemented to a
+  real component without the row shape changing, exactly as designed.
+
+## Phase 6 re-baseline from Phase 7 (D50)
+
+`ebitda_margin_trend` became a real scoring component, so business performance
+is now a mean of two rather than one. **Nine of 85 grades moved:**
+
+| Company | Moved | Before -> after |
+|---|---|---|
+| LUMN | 6 | 3x2 4x2 5x8 6x6 -> 3x2 4x3 5x4 6x9 |
+| F | 2 | 4x14 5x2 6x2 -> 4x13 5x2 6x3 |
+| CCL | 1 | 3x5 4x8 5x3 6x3 -> 3x4 4x9 5x3 6x3 |
+| JNJ | 0 | unchanged |
+| KHC | 0 | unchanged |
+
+CCL 2019-11-30 is the clearest case: EBITDA margin fell **2.19pp** against a
+2pp threshold in the year before COVID, so the trend scores 0 and the grade
+moves **3 -> 4**. The component working, not a regression.
+
+**JNJ and KHC moved no grade but changed behaviour**: `ebitda_margin` never
+resolves for either, so their trend component went from *excluded from
+counting* to a **data gap**. Their grades were already capped for other
+reasons, so the change is invisible in the grade and visible only in
+`score_components.treatment`. A change that moves no number is still a change.
+
+## Trends and warnings on real data (measured 2026-09-12)
+
+| Company | Warnings | Escalated | Periods with escalation |
+|---|---|---|---|
+| LUMN | 46 | 39 | 11 |
+| CCL | 38 | 27 | 6 |
+| JNJ | 20 | **0** | **0** |
+| F | 19 | 3 | 1 |
+| KHC | 16 | 6 | 2 |
+
+**JNJ never escalates** across 18 periods — the negative witness, and
+consistent with it being the strong reference company.
+
+Structurally impossible trends, inherited from the known tag-map gaps:
+`ebitda_margin` for JNJ and KHC, `revenue_growth` for KHC, `fcf` for Ford.
+Ford's `net_debt_to_ebitda` and `total_debt` trends have exactly one window
+each — technically possible, evidentially meaningless.
+
 ## Scoring on real data (measured 2026-09-12)
 
 | Company | Scored | Uncapped | Binding caps | Grades |
@@ -355,7 +408,7 @@ never run for it and no revenue-based metric will ever compute. Worth a tag
 investigation before KHC is relied on for anything revenue-derived.
 
 ## Tests
-- 532 passing, 28 skipped (7 setup + 3 env + 6 ingest/tickers + 12 ingest/companyfacts (all
+- 623 passing, 36 skipped (7 setup + 3 env + 6 ingest/tickers + 12 ingest/companyfacts (all
   HTTP-mocked) + 4 cli wiring + 3 fixture guards + 31 selection + 10 mapping +
   42 composites (deviation edges, all four branches, guards, toggles, storage) +
   28 integrity (every check pass/fail/skip, the 1% boundary, D23's three codes,
@@ -410,11 +463,11 @@ investigation before KHC is relied on for anything revenue-derived.
   demonstrated on this set without the output misleading a reader.
 
 ## Next priorities
-- Phase 7 (trends + early warnings). Inherits D40/D42c/D43's sequence-topology hazard
-  directly: every trend rule must state which periods it treats as links, and assert
-  it — D43 is the record of what happens when a decision is cited rather than applied.
-  Phase 7 also fills the `ebitda_margin_trend` component, which scoring already carries
-  as `not_yet_implemented`, and the `trend` field on every explain component.
+- Phase 8 (stress engine). Both EBITDA modes, presets, custom scenarios, driver
+  attribution. The stress tables were deferred at Task 8 (D20) because the config was
+  unresolved — `new_debt_rate`'s fallback is still an open TODO in config/stress.yaml
+  and `fixed_cost_share` is still an untested assumption, so that design work comes
+  first.
 - The company-selection work remains the blocker for *demonstrating* Phase 6: four of
   five companies can never score uncapped. See Open questions.
 

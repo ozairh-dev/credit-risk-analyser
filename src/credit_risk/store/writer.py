@@ -428,6 +428,55 @@ def _store_scores(conn, cik, scores) -> None:
                 )
 
 
+def _store_warnings(conn, cik, report, fingerprint) -> None:
+    """Warnings keyed by (cik, period_end, indicator) — a re-run updates.
+
+    Evidence links to CONCEPTS, not metrics: a metric-triggered warning cites
+    the concepts that fed the metric, reachable through metric_inputs, so
+    provenance still bottoms out in facts and filings (D51).
+    """
+    created_at = _now()
+    for w in report.warnings:
+        conn.execute(
+            """INSERT INTO warnings
+               (cik, period_end, indicator, current_value, previous_value,
+                change, threshold, base_severity, severity, escalated,
+                escalation_reason, warnings_in_period, config_fingerprint,
+                created_at)
+               VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+               ON CONFLICT(cik, period_end, indicator) DO UPDATE SET
+                 current_value=excluded.current_value,
+                 previous_value=excluded.previous_value,
+                 change=excluded.change, threshold=excluded.threshold,
+                 base_severity=excluded.base_severity,
+                 severity=excluded.severity, escalated=excluded.escalated,
+                 escalation_reason=excluded.escalation_reason,
+                 warnings_in_period=excluded.warnings_in_period,
+                 config_fingerprint=excluded.config_fingerprint""",
+            (cik, w.period_end, w.indicator, w.current_value, w.previous_value,
+             w.change, w.threshold, w.base_severity, w.severity,
+             int(w.escalated), w.escalation_reason, w.warnings_in_period,
+             fingerprint, created_at),
+        )
+        row = conn.execute(
+            """SELECT id FROM warnings
+               WHERE cik=? AND period_end=? AND indicator=?""",
+            (cik, w.period_end, w.indicator),
+        ).fetchone()
+        for concept in w.evidence_concepts:
+            src = conn.execute(
+                """SELECT id FROM concepts WHERE cik=? AND concept=?
+                   AND period_end=? AND status='CURRENT'""",
+                (cik, concept, w.period_end),
+            ).fetchone()
+            if src is not None:
+                conn.execute(
+                    """INSERT OR IGNORE INTO warning_evidence
+                       (warning_id, concept_id) VALUES (?,?)""",
+                    (row["id"], src["id"]),
+                )
+
+
 def _store_events(conn, cik, events) -> None:
     created_at = _now()
     for e in events:
@@ -474,6 +523,8 @@ def store_company_data(
     integrity=None,
     metrics=None,
     scores=None,
+    trends=None,
+    trend_fingerprint=None,
 ) -> None:
     """Store one company's selected facts, mapped concepts, composite
     concepts and quality events."""
@@ -495,5 +546,7 @@ def store_company_data(
         events += list(metrics.events)
     if scores is not None:
         _store_scores(conn, cik, scores)
+    if trends is not None:
+        _store_warnings(conn, cik, trends, trend_fingerprint)
     _store_events(conn, cik, events)
     conn.commit()
