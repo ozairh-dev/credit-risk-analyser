@@ -165,9 +165,9 @@ fcf = cfo − capex
 | Metric | Formula | Notes |
 |---|---|---|
 | debt_to_ebitda | total_debt / ebitda | |
-| net_debt_to_ebitda | net_debt / ebitda | primary leverage metric |
+| net_debt_to_ebitda | net_debt / ebitda | headline leverage metric — **no arithmetic weighting**, see Scoring (D45a) |
 | debt_to_capital | total_debt / (total_debt + equity) | negative equity → capital may be ≤ 0 → UNAVAILABLE + warning |
-| ebit_interest_cover | ebit / interest_expense | primary coverage metric |
+| ebit_interest_cover | ebit / interest_expense | headline coverage metric — **no arithmetic weighting**, see Scoring (D45a) |
 | ebitda_interest_cover | ebitda / interest_expense | secondary; never presented as the same thing. Carries every coverage edge case `ebit_interest_cover` does; `ebitda ≤ 0` gives `NEGATIVE_EBITDA`, kind EVIDENCE (D42d) |
 | current_ratio | current_assets / current_liabilities | |
 | quick_ratio | (current_assets − inventory) / current_liabilities | missing inventory → treat as 0 only if the company reports no `InventoryNet` tag in any period (non-inventory business); otherwise UNAVAILABLE. "In any period" means **no `inventory` concept resolves in any period** (D42b), not the tag's presence in the raw payload |
@@ -286,16 +286,24 @@ one severity level (Low→Medium→High). Record that escalation was applied and
 
 | Category | Weight | Component metrics |
 |---|---|---|
-| Leverage | 25 | net_debt_to_ebitda (primary), debt_to_capital |
+| Leverage | 25 | net_debt_to_ebitda, debt_to_capital |
 | Coverage | 20 | ebit_interest_cover |
 | Liquidity | 20 | current_ratio, cash_to_current_liabilities |
 | Cash flow | 20 | fcf_to_debt, fcf_margin |
 | Business performance | 15 | revenue_growth, ebitda_margin trend |
 
+Components within a category are **equally weighted** — the category score is their plain
+mean. No component is "primary" in any arithmetic sense; the word was removed from this
+table because it implied a weighting the spec never defines (D45a).
+
+`ebitda_margin trend` requires Phase 7 and is **not** a scoring component until then. It is
+recorded on every score with treatment `not_yet_implemented` and excluded from all counting
+— treating an unbuilt feature as a data gap would cap every company in every period.
+
 ### Bands
 
 Each component metric maps to 0–10 points via band edges in `config/thresholds.yaml`.
-Defaults for the two primary metrics (others follow the same shape):
+Defaults for the two headline metrics (others follow the same shape):
 
 **net_debt_to_ebitda** (lower is better)
 
@@ -334,13 +342,21 @@ total_score        = sum(category_score)          → 0–100
   is dropped and the category is the mean of the remaining components. If a whole category
   is unavailable, `total_score` is rescaled over the available categories **and**:
   - the output states "score based on N of 5 categories";
-  - the grade is capped at `config max_grade_with_missing_category` (default: Grade 3).
+  - the grade is capped by **how many categories scored** (D46), from
+    `config max_grade_by_categories_scored`: **N ≤ 2 → grade 4**, **N = 3–4 → grade 3**,
+    N = 5 uncapped. A 2-of-5 score must not present with the same authority as a 4-of-5
+    one, and a graduated cap keeps every period scoreable while making the confidence
+    difference visible in the grade itself.
 - A component `UNAVAILABLE` for an **evidence** reason (`NEGATIVE_EARNINGS`,
   `NEGATIVE_EBITDA`) scores 0 points. It is not dropped.
 - `NO_INTEREST_NO_DEBT` (unlevered company): Coverage category is dropped and its weight
   redistributed pro rata. No grade cap — this is a good thing, not a gap.
 
 ### Grades
+
+Grade boundaries are **half-open intervals on the lower bound**: `[70, 85)` is grade 2, so
+a score of 84.9 is grade 2 and 85.0 is grade 1 (D45b). The integers below are bounds, not
+truncation.
 
 | Score | Grade | Label |
 |---|---|---|
@@ -359,9 +375,20 @@ S&P/Moody's/Fitch letters or to any bank's internal scale.
 - Category breakdown: points, weight, contribution
 - Per component: metric, value, band, points, trend, source
 - Strongest two categories, weakest two categories
-- Deteriorating metrics (from trends)
+- Deteriorating metrics (from trends) — **until Phase 7 exists**, every component's
+  `trend` field is `null` and the output carries one explicit line, "trend analysis
+  unavailable until Phase 7". Stated rather than omitted, so the output shape does not
+  change when Phase 7 fills it
 - Positive mitigants (metrics in top band)
 - Top drivers: the three components that cost the most points versus a perfect score
+- **The cap line, always, when a cap applied**: the final grade, the uncapped grade, how
+  many of the five categories scored, and which categories were absent **with their cause**
+  (data gap vs unlevered vs not-yet-implemented). This is a correctness constraint, not a
+  presentation choice: capped grades are systematic rather than exceptional — four of the
+  five current demonstration companies can never produce a five-category score — and a
+  capped grade must never be indistinguishable from a judged one. It is generated from
+  stored columns (`grade_uncapped`, `cap_binding`, `categories_available`) so a consumer
+  cannot omit it by accident.
 
 ## Stress testing
 
@@ -479,9 +506,11 @@ is visible as such.
 A zero or negative `total_assets` makes the balance-sheet check `SKIP`, not a division
 (D39a; general rule 4).
 
-"Fail" means the period is stored but marked `integrity = FAIL` and excluded from scoring
-until reviewed. Never silently accepted. *(Open: v1 has no review mechanism — see the
-Phase 6 open question in `DECISIONS.md`.)*
+"Fail" means the period is stored but marked `integrity = FAIL` and **excluded from
+scoring until the underlying data is corrected and re-ingested** — v1 has no interactive
+review path, and a FAIL period gets no score row at all (D45). Never silently accepted.
+The `overrides` table is value-scoped by design; overriding a *verdict* would be a new
+table and a new workflow, and is a v2 feature if ever wanted.
 
 ### What counts as consecutive
 

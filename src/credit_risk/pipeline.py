@@ -13,6 +13,8 @@ from credit_risk.metrics.composites import compute_composites
 from credit_risk.metrics.integrity import run_integrity_checks
 from credit_risk.metrics.ratios import compute_metrics
 from credit_risk.normalise import map_concepts, select_annual_facts
+from credit_risk.scoring.engine import score_company
+from credit_risk.scoring.fingerprint import score_fingerprint
 from credit_risk.store import db
 from credit_risk.store.writer import store_company_data
 
@@ -24,18 +26,19 @@ def analyse(raw: dict):
     composites = compute_composites(mapping)
     integrity = run_integrity_checks(mapping, composites)
     metrics = compute_metrics(mapping, composites)
-    return selection, mapping, composites, integrity, metrics
+    scores = score_company(metrics, integrity, fingerprint=score_fingerprint())
+    return selection, mapping, composites, integrity, metrics, scores
 
 
 def analyse_and_store(raw: dict, conn=None, database: str = ":memory:"):
     """Run the pipeline and store the result. Returns (conn, cik)."""
     if conn is None:
         conn = db.create_database(database)
-    selection, mapping, composites, integrity, metrics = analyse(raw)
+    selection, mapping, composites, integrity, metrics, scores = analyse(raw)
     store_company_data(
         conn, raw["cik"], raw["entityName"], selection, mapping,
         tag_map=config.tag_map(), composites=composites,
-        integrity=integrity, metrics=metrics,
+        integrity=integrity, metrics=metrics, scores=scores,
     )
     return conn, raw["cik"]
 

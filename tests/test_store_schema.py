@@ -300,19 +300,70 @@ def test_warning_severity_constrained(seeded):
         )
 
 
+SCORE_ROW = """INSERT INTO scores (id, cik, period_end, total_score, grade,
+                        grade_uncapped, categories_available, grade_capped,
+                        cap_binding, config_fingerprint, created_at)
+   VALUES (?,?,?,?,?,?,?,?,?,'fp','now')"""
+
+
 def test_score_component_treatment_constrained(seeded):
-    seeded.execute(
-        """INSERT INTO scores (id, cik, period_end, total_score, grade,
-                               categories_available, created_at)
-           VALUES (1,?,?,60.0,3,5,'now')""",
-        (CIK, "2022-12-31"),
-    )
+    seeded.execute(SCORE_ROW, (1, CIK, "2022-12-31", 60.0, 3, 3, 5, 0, 0))
     with pytest.raises(sqlite3.IntegrityError):
         seeded.execute(
             """INSERT INTO score_components (score_id, category, metric, weight,
                                              treatment)
                VALUES (1, 'Leverage', 'net_debt_to_ebitda', 25, 'ignored')"""
         )
+
+
+def test_the_two_new_treatments_are_accepted(seeded):
+    """D45's five treatments: the table shipped with three."""
+    seeded.execute(SCORE_ROW, (1, CIK, "2022-12-31", 60.0, 3, 3, 5, 0, 0))
+    for metric, treatment in (("fcf_to_debt", "dropped_unlevered"),
+                              ("ebitda_margin", "not_yet_implemented")):
+        seeded.execute(
+            """INSERT INTO score_components (score_id, category, metric, weight,
+                                             treatment)
+               VALUES (1, 'Cash flow', ?, 20, ?)""", (metric, treatment))
+    assert seeded.execute(
+        "SELECT COUNT(*) FROM score_components").fetchone()[0] == 2
+
+
+def test_a_scored_component_must_carry_points(seeded):
+    """An unscored component names a reason instead; a scored one with no
+    points would be a contribution from nowhere."""
+    seeded.execute(SCORE_ROW, (1, CIK, "2022-12-31", 60.0, 3, 3, 5, 0, 0))
+    with pytest.raises(sqlite3.IntegrityError):
+        seeded.execute(
+            """INSERT INTO score_components (score_id, category, metric, weight,
+                                             treatment, points)
+               VALUES (1, 'Leverage', 'net_debt_to_ebitda', 25, 'scored', NULL)"""
+        )
+
+
+def test_cap_binding_requires_a_cap(seeded):
+    """cap_binding says the cap changed the grade — impossible if none applied."""
+    with pytest.raises(sqlite3.IntegrityError):
+        seeded.execute(SCORE_ROW, (1, CIK, "2022-12-31", 60.0, 3, 3, 5, 0, 1))
+
+
+def test_a_cap_can_never_improve_a_grade(seeded):
+    """A cap is a ceiling: the final grade number can only be >= the uncapped
+    one (grades count upward as risk rises)."""
+    with pytest.raises(sqlite3.IntegrityError):
+        seeded.execute(SCORE_ROW, (1, CIK, "2022-12-31", 60.0, 2, 3, 4, 1, 1))
+
+
+def test_one_current_score_per_company_period(seeded):
+    """Append-with-history (D47): a second CURRENT row for the same period is
+    rejected; the superseded one stays."""
+    seeded.execute(SCORE_ROW, (1, CIK, "2022-12-31", 60.0, 3, 3, 5, 0, 0))
+    with pytest.raises(sqlite3.IntegrityError):
+        seeded.execute(SCORE_ROW, (2, CIK, "2022-12-31", 61.0, 3, 3, 5, 0, 0))
+    seeded.execute("UPDATE scores SET status='SUPERSEDED' WHERE id=1")
+    seeded.execute(SCORE_ROW, (2, CIK, "2022-12-31", 61.0, 3, 3, 5, 0, 0))
+    assert seeded.execute(
+        "SELECT COUNT(*) FROM scores WHERE status='CURRENT'").fetchone()[0] == 1
 
 
 # ============ amendment 4: the circular FK actually works ============

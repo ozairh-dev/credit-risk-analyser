@@ -89,8 +89,16 @@ checks (Phase 4) because the checks depend on them. See docs/build-plan.md.
 - [ ] Tag-map gap: KHC resolves `revenue` in zero of 12 periods — no candidate matches
       how Kraft Heinz tags it. Investigate before relying on KHC for anything
       revenue-derived
-- [ ] Phase 6: resolve "excluded from scoring until reviewed" — build a review
-      mechanism or amend the methodology (open question in DECISIONS.md)
+- [x] Phase 6: "excluded until reviewed" resolved by amendment — exclusion lasts until
+      the data is corrected and re-ingested; v1 has no review path (D45)
+
+## Phase 6
+- [x] Scoring engine (2026-09-12): bands, categories, graduated cap (D46), explain
+      output with the cap line leading, score fingerprint (D45), schema amendments
+      (D47), CCL liquidity sector finding recorded not fixed (D48).
+      `credit-risk score <TICKER>`
+- [ ] Phase 7 (trends + early warnings) — fills ebitda_margin_trend and the `trend`
+      field; must assert period eligibility per rule, not cite D40 (see D43)
 
 ## Later
 - See docs/build-plan.md

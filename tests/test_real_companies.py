@@ -51,18 +51,17 @@ def company(request):
     (pre-Phase-6 audit finding 8).
     """
     raw = load(request.param)
-    selection, mapping, composites, integrity, metrics = pipeline.analyse(raw)
-    return raw, selection, mapping, composites, integrity, metrics
+    return (raw,) + pipeline.analyse(raw)
 
 
 @pytest.fixture
 def stored(company):
-    raw, selection, mapping, composites, integrity, metrics = company
+    raw, selection, mapping, composites, integrity, metrics, scores = company
     conn = db.create_database(":memory:")
     store_company_data(
         conn, raw["cik"], raw["entityName"], selection, mapping,
         tag_map=config.tag_map(), composites=composites,
-        integrity=integrity, metrics=metrics,
+        integrity=integrity, metrics=metrics, scores=scores,
     )
     yield conn, raw, selection, mapping
     conn.close()
@@ -777,3 +776,138 @@ def test_pipeline_analyse_and_store_produces_every_stage(stored):
         assert scalar(conn, "SELECT COUNT(*) FROM filings WHERE cik = ?", (cik,)) > 0
     finally:
         conn.close()
+
+
+# ============ Phase 6: scoring on real data ============
+#
+# Measured 2026-09-12 and examined before pinning (rule 14). CCL's 19 periods
+# are the spine: the arc is the point — moderate pre-COVID, worst band through
+# the distress, one grade per year of recovery.
+
+CCL_SCORES = {
+    "2007-11-30": (60.0, 4), "2008-11-30": (54.5, 4), "2009-11-30": (35.5, 5),
+    "2010-11-30": (40.0, 4), "2011-11-30": (53.5, 4), "2012-11-30": (44.1, 4),
+    "2013-11-30": (41.2, 4), "2014-11-30": (48.8, 4), "2015-11-30": (66.0, 3),
+    "2016-11-30": (65.0, 3), "2017-11-30": (68.0, 3), "2018-11-30": (66.0, 3),
+    "2019-11-30": (56.5, 3), "2020-11-30": (21.0, 6), "2021-11-30": (14.5, 6),
+    "2022-11-30": (21.0, 6), "2023-11-30": (25.0, 5), "2024-11-30": (36.0, 5),
+    "2025-11-30": (43.5, 4),
+}
+
+SCORE_SHAPE = {
+    # cik: (scored periods, uncapped periods, binding caps)
+    18926: (18, 0, 2), 37996: (18, 0, 3), 200406: (18, 0, 15),
+    815097: (19, 13, 1), 1637459: (12, 0, 0),
+}
+
+
+def test_score_shape_per_company(stored):
+    conn, raw, _, _ = stored
+    scored, uncapped, binding = SCORE_SHAPE[raw["cik"]]
+    assert scored == scalar(conn, """SELECT COUNT(*) FROM scores
+        WHERE cik = ? AND status = 'CURRENT'""", (raw["cik"],))
+    assert uncapped == scalar(conn, """SELECT COUNT(*) FROM scores
+        WHERE cik = ? AND status = 'CURRENT' AND grade_capped = 0""",
+        (raw["cik"],))
+    assert binding == scalar(conn, """SELECT COUNT(*) FROM scores
+        WHERE cik = ? AND status = 'CURRENT' AND cap_binding = 1""",
+        (raw["cik"],))
+
+
+def test_ccl_score_arc(stored):
+    """The only company that ever scores uncapped, across a real
+    distress-and-recovery arc."""
+    conn, raw, _, _ = stored
+    if raw["cik"] != 815097:
+        pytest.skip("CCL only")
+    for end, (total, grade) in CCL_SCORES.items():
+        row = conn.execute("""SELECT total_score, grade FROM scores
+            WHERE cik = ? AND period_end = ? AND status = 'CURRENT'""",
+            (raw["cik"], end)).fetchone()
+        assert row is not None, end
+        assert row["total_score"] == pytest.approx(total, abs=0.05), end
+        assert row["grade"] == grade, end
+
+
+def test_ccl_liquidity_scores_zero_by_sector_not_by_weakness(stored):
+    """D48, pinned as-is: cruise operators carry deferred ticket revenue in
+    current liabilities, so both liquidity ratios bottom-band even in CCL's
+    strongest year. A future sector-threshold change must show up here as a
+    deliberate re-baseline, not slip through."""
+    conn, raw, _, _ = stored
+    if raw["cik"] != 815097:
+        pytest.skip("CCL only")
+    rows = conn.execute("""SELECT sc.metric, sc.value, sc.points
+        FROM score_components sc JOIN scores s ON s.id = sc.score_id
+        WHERE s.cik = ? AND s.period_end = '2019-11-30'
+          AND sc.category = 'liquidity'""", (raw["cik"],)).fetchall()
+    points = {r["metric"]: r["points"] for r in rows}
+    assert points == {"current_ratio": 0.0, "cash_to_current_liabilities": 0.0}
+    values = {r["metric"]: r["value"] for r in rows}
+    assert values["current_ratio"] == pytest.approx(0.2256, abs=0.0001)
+    assert values["cash_to_current_liabilities"] == pytest.approx(0.0568, abs=0.0001)
+
+
+def test_jnj_caps_bind_and_are_visible(stored):
+    """The cap-visibility witness: JNJ scores 86-97 — uncapped grade 1 — and
+    shows grade 3 in every period. A capped grade must never be
+    indistinguishable from a judged one."""
+    conn, raw, _, _ = stored
+    if raw["cik"] != 200406:
+        pytest.skip("JNJ only")
+    rows = conn.execute("""SELECT total_score, grade, grade_uncapped, cap_binding,
+        categories_available FROM scores WHERE cik = ? AND status = 'CURRENT'
+        ORDER BY period_end""", (raw["cik"],)).fetchall()
+    assert len(rows) == 18
+    assert {r["grade"] for r in rows} == {3}
+    high = [r for r in rows if r["total_score"] >= 85]
+    assert high, "JNJ's strongest periods score into grade 1 territory"
+    for r in high:
+        assert r["grade_uncapped"] == 1
+        assert r["cap_binding"] == 1
+        assert r["categories_available"] < 5
+
+
+def test_every_stored_score_reconciles_with_its_components(stored):
+    """The stored total must be the rescaled sum of stored contributions —
+    otherwise the explain output and the grade could disagree."""
+    conn, raw, _, _ = stored
+    for s in conn.execute("""SELECT id, total_score, categories_available
+        FROM scores WHERE cik = ? AND status = 'CURRENT'""", (raw["cik"],)):
+        cats = conn.execute("""SELECT category, weight,
+                AVG(points) AS mean_points, COUNT(points) AS n
+            FROM score_components WHERE score_id = ?
+              AND treatment IN ('scored','evidence_zero')
+            GROUP BY category, weight""", (s["id"],)).fetchall()
+        assert len(cats) == s["categories_available"]
+        contribution = sum(c["mean_points"] / 10 * c["weight"] for c in cats)
+        available = sum(c["weight"] for c in cats)
+        assert s["total_score"] == pytest.approx(
+            contribution / available * 100, abs=0.01)
+
+
+def test_no_score_row_for_an_integrity_fail_period(stored):
+    """Exclusion is an absent row, not a flag (D45). Zero FAIL periods exist in
+    the cache, so this asserts the invariant holds rather than the path fires."""
+    conn, raw, _, _ = stored
+    failed = {r["period_end"] for r in conn.execute(
+        """SELECT DISTINCT period_end FROM integrity_results
+           WHERE cik = ? AND outcome = 'FAIL'""", (raw["cik"],))}
+    scored = {r["period_end"] for r in conn.execute(
+        """SELECT period_end FROM scores WHERE cik = ? AND status = 'CURRENT'""",
+        (raw["cik"],))}
+    assert not (failed & scored)
+
+
+def test_scores_restore_idempotently(stored):
+    conn, raw, selection, mapping = stored
+    before = scalar(conn, "SELECT COUNT(*) FROM scores")
+    _, _, composites, integrity, metrics, scores = pipeline.analyse(
+        pipeline.load_cached(raw["cik"]))
+    store_company_data(
+        conn, raw["cik"], raw["entityName"], selection, mapping,
+        tag_map=config.tag_map(), composites=composites,
+        integrity=integrity, metrics=metrics, scores=scores,
+    )
+    assert scalar(conn, "SELECT COUNT(*) FROM scores") == before
+    assert scalar(conn, "SELECT COUNT(*) FROM scores WHERE status='SUPERSEDED'") == 0

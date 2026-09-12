@@ -7,6 +7,7 @@ import typer
 
 from credit_risk import __version__, config, ingest, pipeline
 from credit_risk.metrics.ratios import METRICS, reason_kind
+from credit_risk.scoring.engine import explain
 from credit_risk.store import queries
 
 app = typer.Typer(help="Credit risk analyser", no_args_is_help=True)
@@ -139,6 +140,76 @@ def metrics(
             typer.echo(f"  integrity: {v['verdict']} "
                        f"({v['checks_run']} checks run, {v['skipped']} skipped)")
         typer.echo("")
+
+
+@app.command()
+def score(
+    ticker: str,
+    period: str = typer.Option(None, "--period", help="One period end, YYYY-MM-DD."),
+    all_periods: bool = typer.Option(False, "--all-periods",
+                                     help="Every period, not just the latest."),
+) -> None:
+    """Score TICKER and print the explain output for each period.
+
+    The cap line leads every period deliberately: capped grades are systematic
+    rather than exceptional in the current company set, and a capped grade must
+    never read as a judged one.
+    """
+    cik = ingest.ticker_to_cik(ticker)
+    raw = pipeline.load_cached(cik)
+    _, _, _, integrity, _, scores = pipeline.analyse(raw)
+
+    by_period = {s.period_end: s for s in scores}
+    ends = sorted(by_period)
+    failed = sorted({r.period_end for r in integrity.results
+                     if r.outcome == "FAIL"})
+    if period:
+        if period not in by_period:
+            why = ("excluded: integrity FAIL" if period in failed
+                   else "no score for that period")
+            raise typer.BadParameter(
+                f"{period}: {why}. Scored periods: {', '.join(ends) or 'none'}")
+        ends = [period]
+    elif not all_periods:
+        ends = ends[-1:]
+
+    typer.echo(f"\n{raw['entityName']} (CIK {cik})")
+    if failed:
+        typer.echo(f"Excluded by integrity FAIL: {', '.join(failed)}")
+    typer.echo("")
+
+    for end in ends:
+        report = explain(by_period[end])
+        typer.echo("=" * 72)
+        typer.echo(f"Period end {end}")
+        typer.echo(f"  {report['headline']}")
+        typer.echo(f"  Total score {report['total_score']}/100\n")
+        for cat in report["categories"]:
+            if cat["points"] is None:
+                typer.echo(f"  {cat['category']:22} ABSENT  "
+                           f"({cat['absent_cause']}), weight {cat['weight']:g}")
+            else:
+                typer.echo(f"  {cat['category']:22} {cat['points']:5.2f}/10  "
+                           f"weight {cat['weight']:<3g} contribution "
+                           f"{cat['contribution']:5.2f}")
+            for comp in cat["components"]:
+                value = "—" if comp["value"] is None else f"{comp['value']:,.4g}"
+                if comp["treatment"] == "scored":
+                    detail = f"{comp['points']:>4.0f} pts  {comp['band']}"
+                else:
+                    detail = f"{comp['treatment']}  {comp['reason_code'] or ''}"
+                typer.echo(f"      {comp['metric']:28} {value:>12}  {detail}")
+        typer.echo("")
+        typer.echo(f"  strongest: {', '.join(report['strongest']) or '—'}")
+        typer.echo(f"  weakest:   {', '.join(report['weakest']) or '—'}")
+        if report["positive_mitigants"]:
+            typer.echo(f"  mitigants: {', '.join(report['positive_mitigants'])}")
+        typer.echo("  top drivers (points lost vs a perfect score):")
+        for d in report["top_drivers"]:
+            typer.echo(f"      {d['metric']:28} {d['points_lost']:5.2f} "
+                       f"({d['category']})")
+        typer.echo(f"  {report['trend_note']}")
+        typer.echo(f"\n  {report['disclaimer']}\n")
 
 
 if __name__ == "__main__":

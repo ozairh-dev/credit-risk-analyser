@@ -369,6 +369,65 @@ def _store_integrity(conn, cik, report, fingerprint) -> None:
         )
 
 
+def _score_unchanged(conn, cik, score) -> bool:
+    row = conn.execute(
+        """SELECT total_score, grade, grade_uncapped, categories_available,
+                  config_fingerprint
+           FROM scores WHERE cik=? AND period_end=? AND status='CURRENT'""",
+        (cik, score.period_end),
+    ).fetchone()
+    return row is not None and (
+        row["total_score"] == score.total_score
+        and row["grade"] == score.grade
+        and row["grade_uncapped"] == score.grade_uncapped
+        and row["categories_available"] == score.categories_available
+        and row["config_fingerprint"] == score.config_fingerprint
+    )
+
+
+def _store_scores(conn, cik, scores) -> None:
+    """Append-with-history, like concepts and metrics (D18/D47).
+
+    An integrity-FAIL period simply is not in `scores` — the engine produced
+    nothing for it (D45), so exclusion is visible as an absent row rather than
+    a flag nobody reads.
+    """
+    created_at = _now()
+    for score in scores:
+        if _score_unchanged(conn, cik, score):
+            continue
+        conn.execute(
+            """UPDATE scores SET status='SUPERSEDED'
+               WHERE cik=? AND period_end=? AND status='CURRENT'""",
+            (cik, score.period_end),
+        )
+        cur = conn.execute(
+            """INSERT INTO scores
+               (cik, period_end, total_score, grade, grade_uncapped,
+                categories_available, grade_capped, cap_binding, status,
+                config_fingerprint, created_at)
+               VALUES (?,?,?,?,?,?,?,?,'CURRENT',?,?)""",
+            (cik, score.period_end, score.total_score, score.grade,
+             score.grade_uncapped, score.categories_available,
+             int(score.grade_capped), int(score.cap_binding),
+             score.config_fingerprint, created_at),
+        )
+        score_id = cur.lastrowid
+        for category in score.categories:
+            for comp in category.components:
+                conn.execute(
+                    """INSERT INTO score_components
+                       (score_id, category, metric, value, points, weight,
+                        contribution, treatment, reason_code)
+                       VALUES (?,?,?,?,?,?,?,?,?)""",
+                    (score_id, category.name, comp.metric, comp.value,
+                     comp.points, category.weight,
+                     None if comp.points is None
+                     else comp.points / 10 * category.weight,
+                     comp.treatment, comp.reason_code),
+                )
+
+
 def _store_events(conn, cik, events) -> None:
     created_at = _now()
     for e in events:
@@ -414,6 +473,7 @@ def store_company_data(
     composites: list | None = None,
     integrity=None,
     metrics=None,
+    scores=None,
 ) -> None:
     """Store one company's selected facts, mapped concepts, composite
     concepts and quality events."""
@@ -433,5 +493,7 @@ def store_company_data(
     if metrics is not None:
         _store_metrics(conn, cik, metrics, fingerprint)
         events += list(metrics.events)
+    if scores is not None:
+        _store_scores(conn, cik, scores)
     _store_events(conn, cik, events)
     conn.commit()

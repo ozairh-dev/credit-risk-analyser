@@ -75,6 +75,11 @@ Consequences: reason codes are load-bearing and must be tested.
 Reason: a score built on partial data should not be able to show "Very strong".
 Alternatives: no cap; refuse to score.
 Consequences: cap value is config; stated in the explain output.
+**Amended by D46 (2026-09-12):** the cap is no longer a single value. It is graduated by
+how many categories actually scored — N <= 2 caps at grade 4, N = 3-4 at grade 3 — because
+a 2-of-5 score was presenting with the same authority as a 4-of-5 one. The config key
+`max_grade_with_missing_category` is replaced by `max_grade_by_categories_scored`. D10's
+principle is unchanged; only its granularity moved.
 
 ## D11 — Lease liability concepts split into current/noncurrent, not one "candidate" pair
 Reason: `docs/data-sources.md` originally listed `finance_lease_liab` and
@@ -1088,3 +1093,159 @@ why "the copies still behave the same" is not a reason to keep them.
 
 Consequences: 64 lines removed, suite unchanged, `metrics/ratios.py` branch coverage
 82% -> 100%.
+
+## D45 — Scoring engine: five component treatments, one category-outcome rule, three questions closed
+Decision (owner-approved 2026-09-12, Phase 6 design). The scoring engine lives in
+`scoring/engine.py` and consumes stored-shape metric and integrity results.
+
+**Spec check first:** `config/thresholds.yaml` and `docs/credit-methodology.md` were
+compared number by number before designing — weights, both documented band tables, all six
+grade boundaries, and the banded-metric list. **They agree.** The methodology's "rescaled
+over the available categories" (GAP) and "weight redistributed pro rata" (NEITHER) are the
+same arithmetic — `sum(category_scores) / sum(available_weights) * 100` — so one mechanism
+is implemented and the two *causes* are recorded separately. Two mechanisms would be the
+same duplication rule 13 forbids.
+
+**Five component treatments, not three.** D41's kinds drive behaviour; two further states
+exist that no kind covers:
+
+| Treatment | When | Effect on the category mean |
+|---|---|---|
+| `scored` | metric computed | band points |
+| `evidence_zero` | EVIDENCE reason | **0 points, counted** — never dropped |
+| `dropped_gap` | GAP reason | excluded; marks the category gap-touched |
+| `dropped_unlevered` | NEITHER reason | excluded; benign |
+| `not_yet_implemented` | `ebitda_margin` trend, until Phase 7 | excluded from all counting |
+
+`not_yet_implemented` exists because treating an unbuilt feature as a GAP would cap every
+company in every period for something that does not exist yet. The row is still written so
+the output shape does not change when Phase 7 fills it.
+
+**Category-outcome rule, stated precisely because this is where the phase's complexity
+lives:**
+- One or more components `scored` or `evidence_zero` -> the category scores, as the mean
+  of exactly those components. A `dropped_gap` beside an `evidence_zero` changes nothing.
+- No such components -> the category is **absent**, and its cause is **GAP if any
+  component was `dropped_gap`, else NEITHER**. Reason: D10's cap exists so that partial
+  data cannot show "Very strong". A category absent purely because the company is
+  unlevered is not partial data; one where even a single gap contributed might have shown
+  something, so fail-safe caps.
+- **Cap and redistribution together:** one rescale over the scoring categories, and the
+  cap applies once, from the GAP-caused absence. The cap is a ceiling, never stacked.
+- Every absent category is named in the output with its cause.
+
+**Consequence ratified by the owner:** every company's first period is capped, because
+`revenue_growth` is `INSUFFICIENT_DATA` (a GAP) and it is business performance's only
+Phase 6 component. Growth genuinely unknown is partial data, so the cap is correctly
+caused; it is visibly attributed rather than silent.
+
+**Open question 1 — "excluded until reviewed" — closed by amending the methodology.**
+A period failing an integrity check is excluded from scoring **until the underlying data is
+corrected and re-ingested**; v1 has no interactive review path. A FAIL period gets no score
+row at all. Reason: the `overrides` table is value-scoped by design, so a verdict override
+would need a new table and a new workflow for a state that occurs **zero times** across all
+89 cached company-periods — speculative machinery, which rule 9 rules out. A review
+workflow is a v2 feature with its own design if ever wanted.
+Alternatives: build a `verdict_overrides` table now (rejected above); score FAIL periods
+and mark them (rejected — the methodology is explicit that they are excluded).
+
+**Open question 2 — NO_DEBT redistribution — closed by the component rule, with no special
+mechanism.** `fcf_to_debt` returning `NO_DEBT` is a `dropped_unlevered` *component*; cash
+flow then scores on `fcf_margin` alone. Only if `fcf_margin` were also absent would the
+category question arise, and the category-cause rule above already answers it. The audit's
+narrowing holds: `NO_DEBT` fires zero times across all 89 cached company-periods and only
+`fcf_to_debt` is a scoring metric. No category-level `NO_DEBT` rule exists to drift.
+
+**Open question 3 — score fingerprint — confirmed, with an explicit allowlist.**
+`scoring/fingerprint.py::score_fingerprint()` covers exactly `weights`, `bands` (every
+metric's edges, points and direction), `grades`, and the graduated cap settings. It
+excludes `trend_materiality` and `warning_escalation_count`: those change trends and
+warnings, not scores, and including them would orphan score history on every Phase 7
+tuning — the same disjointness D18's scope note requires. The score row stores this
+fingerprint only; the composite fingerprint in force is reachable through the period's
+metric rows, so reproducibility needs no second column.
+
+**Two smaller readings settled in the methodology rather than in code:**
+(a) **"Primary" is dropped from the band table.** Within leverage, `debt_to_capital`
+counts equally with `net_debt_to_ebitda` in the plain mean — that is what "mean" says. The
+label implied a weighting the spec never defines; the fix is to remove the label, not to
+invent the weighting.
+(b) **Grade boundaries are half-open intervals on the config's lower bounds** — `[70, 85)`
+is grade 2, so 84.9 is grade 2. Stated explicitly because the documented table's integers
+could be misread as truncation.
+
+## D46 — The grade cap is graduated by how many categories were scored
+Decision (owner call, 2026-09-12): the missing-category cap depends on **N**, the number of
+categories that actually scored. `config/thresholds.yaml` carries
+`max_grade_by_categories_scored`: **N <= 2 caps at grade 4**, **N = 3-4 caps at grade 3**
+(the previous single `max_grade_with_missing_category` value becomes the 3-4 entry). N = 5
+is uncapped.
+
+Reason: a 2-of-5 score presents with the same authority as a 4-of-5 score, which overstates
+its confidence. A minimum-N floor would refuse to score and lose the information entirely; a
+graduated cap keeps every period scoreable while making the confidence difference visible
+**in the grade itself**, not only in a caveat a reader may skip.
+
+Witness: **CCL 2007-11-30** scores 60.0 on **2 of 5** categories — leverage, liquidity and
+business performance all absent. Under the flat cap it presented as grade 3, the same grade
+CCL earns in 2015-2019 on all five categories. Under the graduated cap it is grade 4, and
+the difference between a well-evidenced 3 and a thin 3 is legible without reading the
+caveat.
+
+Alternatives: a minimum-N floor, e.g. no score below N=3 (rejected — refusing discards a
+real if thin signal, and N is already stored and displayed); keep the flat cap (rejected
+above).
+Consequences: `max_grade_with_missing_category` is superseded by
+`max_grade_by_categories_scored` and removed, so one setting cannot disagree with the other.
+The cap value used is derived from stored `categories_scored`, never stored separately.
+
+## D47 — Score storage amendments (schema)
+Decision (2026-09-12, recorded separately per D35's standing rule that schema changes get
+their own entry rather than riding inside a feature commit).
+
+`scores` gains four columns:
+- **`config_fingerprint TEXT NOT NULL`** — the score fingerprint (D45). Its absence would
+  violate D18's own reasoning the moment a band edge moved: a score that changed for a
+  settings reason would be indistinguishable from one that changed for a filing reason.
+- **`status`** plus a partial unique index on `(cik, period_end) WHERE status='CURRENT'` —
+  the methodology says scores keep their own history (D18); without this the table can only
+  be deleted from or duplicated into.
+- **`grade_uncapped INTEGER`** and **`cap_binding INTEGER`** — a cap that does not change
+  the grade and one that does are different facts. Measured: JNJ carries 18 **binding**
+  caps (uncapped 1-2, shown 3) while LUMN's caps are mostly **non-binding** (its scores are
+  worse than the cap anyway). `cap_binding` is stored rather than derived because deriving
+  it in every consumer is how one consumer forgets to show it.
+
+`score_components` gains:
+- **`treatment`'s CHECK extended** with `'dropped_unlevered'` and `'not_yet_implemented'`
+  (D45's five treatments; the table shipped with three).
+- **`reason_code TEXT`** so an UNAVAILABLE component names its reason in place, rather than
+  requiring a join back to `metrics` to explain a zero or an omission.
+
+Consequences: `grade_capped` is retained as "a cap applied at all"; `cap_binding` says
+whether it changed the outcome. The databases are gitignored and rebuilt from cache, so no
+migration is required.
+
+## D48 — CCL's liquidity scores zero by sector, not by weakness: the first measured case for sector thresholds
+Decision (owner call, 2026-09-12): **record, do not adjust.** The generic liquidity bands
+score CCL **0 of 10 points in every one of its strong years** — measured 2019-11-30:
+`current_ratio` **0.23** against a first band edge of 0.8, and
+`cash_to_current_liabilities` **0.06** against a first edge of 0.1.
+
+This is a sector effect rather than weak liquidity: cruise operators carry **deferred ticket
+revenue** — cash already collected for future sailings — inside current liabilities, which
+inflates the denominator of every liquidity ratio without representing a funding need.
+
+Measured cost: CCL's 2019 total is **56.5, grade 3**. With mid-band liquidity points it
+would score into grade 2. The sector effect costs a full grade at the company's peak.
+
+Reason for recording rather than fixing: generic bands behaving conservatively on a sector
+outlier is precisely what the methodology's Calibration section says they are — starting
+assumptions for this project. Re-tuning a band so one demonstration company scores better
+is the backwards move D26 already rejected in another form. **This is the first concrete,
+measured instance justifying the post-MVP sector-specific-thresholds item**, and it now
+carries numbers rather than an intuition.
+Alternatives: widen the liquidity bands (rejected — fits one company, unvalidated for the
+rest); exclude liquidity for cruise operators (a sector rule with no sector framework yet).
+Consequences: CCL's scores are pinned in tests **as they are**, including the zero liquidity
+points, so a future sector-threshold change shows up as a deliberate re-baseline.

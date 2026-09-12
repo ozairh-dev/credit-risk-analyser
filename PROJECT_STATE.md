@@ -225,6 +225,41 @@ exactly zero, and `current_liabilities` is never zero or negative. Only
   pipeline 42% -> 100%, cli 29% -> 90%, total 90% -> 98%.
   **Findings 1 and 6 are NOT fixed — they are company-set problems, not code.**
 
+- Phase 6 (2026-09-12, design on Fable per the model protocol, build on Opus)
+  — scoring engine. scoring/engine.py: band lookup (one bisect_right for both
+  directions, pinned to the methodology's two printed tables including every
+  edge), category aggregation, graduated grade cap, and the explain output.
+  scoring/fingerprint.py over thresholds.yaml only, disjoint from the
+  composite fingerprint (D45). Five component treatments, not three — D41's
+  kinds plus not_yet_implemented for Phase 7's trend, which would otherwise
+  cap every company for an unbuilt feature. D45-D48 record the design, the
+  three previously-open questions, the graduated cap, the schema amendments
+  and CCL's liquidity sector finding.
+  `credit-risk score <TICKER>` prints the explain output with the cap line
+  leading. Sabotage-verified: disabling the cap fails all five companies'
+  shape tests plus JNJ's and CCL's; dropping EVIDENCE instead of scoring it
+  zero fails two unit tests and four companies' reconciliation.
+
+## Scoring on real data (measured 2026-09-12)
+
+| Company | Scored | Uncapped | Binding caps | Grades |
+|---|---|---|---|---|
+| **CCL** | 19 | **13** | 1 | 3×5, 4×8, 5×3, 6×3 |
+| LUMN | 18 | 0 | 2 | 3×2, 4×2, 5×8, 6×6 |
+| F | 18 | 0 | 3 | 4×14, 5×2, 6×2 |
+| JNJ | 18 | 0 | **15** | **3×18** |
+| KHC | 12 | 0 | 0 | 3×1, 4×5, 5×6 |
+
+**JNJ is the cap-visibility witness and the clearest argument for the company
+work:** it scores **86-97** — uncapped grade 1 — and shows **grade 3 in every
+one of its 18 periods**, because `ebit` and `revenue` never resolve together
+so coverage and business performance keep emptying. Without the cap line, JNJ
+and LUMN's best periods are indistinguishable in the output at grade 3.
+
+CCL's arc is the band validation: 2.1-3.1x leverage scoring 4-5 through the
+crisis, grade 3 at its 2015-2019 peak, grade 6 through the COVID negative-EBITDA
+years, then 5, 5, 4 as it recovers. One grade per year of recovery, no jumps.
+
 ## Metric coverage — all seventeen (Phase 10 input, measured 2026-09-12)
 
 Periods producing a value. Company period counts: LUMN/F/JNJ/CCL 19 each, KHC 13.
@@ -320,7 +355,7 @@ never run for it and no revenue-based metric will ever compute. Worth a tag
 investigation before KHC is relied on for anything revenue-derived.
 
 ## Tests
-- 439 passing, 16 skipped (7 setup + 3 env + 6 ingest/tickers + 12 ingest/companyfacts (all
+- 532 passing, 28 skipped (7 setup + 3 env + 6 ingest/tickers + 12 ingest/companyfacts (all
   HTTP-mocked) + 4 cli wiring + 3 fixture guards + 31 selection + 10 mapping +
   42 composites (deviation edges, all four branches, guards, toggles, storage) +
   28 integrity (every check pass/fail/skip, the 1% boundary, D23's three codes,
@@ -375,12 +410,11 @@ investigation before KHC is relied on for anything revenue-derived.
   demonstrated on this set without the output misleading a reader.
 
 ## Next priorities
-- Phase 6 (scoring). Reads REASON_KIND to apply D9: EVIDENCE scores 0, GAP drops and
-  caps, NEITHER redistributes weight. Three open questions wait for it, all recorded
-  in DECISIONS.md: the "excluded until reviewed" mechanism; what redistribution means
-  when three leverage and cash-flow metrics all return NO_DEBT (D42a); and whether a
-  score fingerprint over thresholds.yaml is needed (D18's scope note).
-- Phase 7 (trends) inherits D40 and D42c's sequence-topology hazard directly — every
-  trend rule must state which periods it treats as links before it is implemented.
-- Phase 6 must resolve the "excluded from scoring until reviewed" gap — see the open
-  question in DECISIONS.md. Task 10 stores the verdict and stops there by design.
+- Phase 7 (trends + early warnings). Inherits D40/D42c/D43's sequence-topology hazard
+  directly: every trend rule must state which periods it treats as links, and assert
+  it — D43 is the record of what happens when a decision is cited rather than applied.
+  Phase 7 also fills the `ebitda_margin_trend` component, which scoring already carries
+  as `not_yet_implemented`, and the `trend` field on every explain component.
+- The company-selection work remains the blocker for *demonstrating* Phase 6: four of
+  five companies can never score uncapped. See Open questions.
+

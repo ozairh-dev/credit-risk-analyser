@@ -175,11 +175,23 @@ _TABLES = [
       period_end           TEXT NOT NULL,
       total_score          REAL NOT NULL,
       grade                INTEGER NOT NULL CHECK (grade BETWEEN 1 AND 6),
+      -- a cap that changed the grade and one that did not are different facts
+      -- (D47): JNJ's caps bind (uncapped 1-2, shown 3), LUMN's mostly do not.
+      grade_uncapped       INTEGER NOT NULL CHECK (grade_uncapped BETWEEN 1 AND 6),
       categories_available INTEGER NOT NULL
                            CHECK (categories_available BETWEEN 0 AND 5),
       grade_capped         INTEGER NOT NULL DEFAULT 0
                            CHECK (grade_capped IN (0,1)),
-      created_at           TEXT NOT NULL
+      cap_binding          INTEGER NOT NULL DEFAULT 0
+                           CHECK (cap_binding IN (0,1)),
+      status               TEXT NOT NULL DEFAULT 'CURRENT'
+                           CHECK (status IN ('CURRENT','SUPERSEDED')),
+      config_fingerprint   TEXT NOT NULL,
+      created_at           TEXT NOT NULL,
+      -- the cap can only bind if one was applied, and it can only raise the
+      -- grade number (worsen it), never improve one
+      CHECK (cap_binding = 0 OR grade_capped = 1),
+      CHECK (grade >= grade_uncapped)
     ){strict}
     """,
     """
@@ -191,9 +203,16 @@ _TABLES = [
       points       REAL,
       weight       REAL NOT NULL,
       contribution REAL,
+      -- five treatments (D45): two more than this table shipped with.
+      -- dropped_unlevered is benign and must never cap; not_yet_implemented
+      -- keeps Phase 7's trend component in the row shape without counting it.
       treatment    TEXT NOT NULL DEFAULT 'scored'
-                   CHECK (treatment IN ('scored','dropped_data_gap','evidence_zero')),
-      PRIMARY KEY (score_id, category, metric)
+                   CHECK (treatment IN ('scored','dropped_data_gap','evidence_zero',
+                                        'dropped_unlevered','not_yet_implemented')),
+      reason_code  TEXT,
+      PRIMARY KEY (score_id, category, metric),
+      -- a scored component has points; an unscored one names why instead
+      CHECK (treatment <> 'scored' OR points IS NOT NULL)
     ){strict}
     """,
     """
@@ -277,6 +296,10 @@ _INDEXES = [
     "CREATE UNIQUE INDEX uq_metrics_current ON metrics(cik, metric, period_end)"
     " WHERE status = 'CURRENT'",
     "CREATE INDEX idx_metrics_metric_period ON metrics(metric, period_end)",
+    # append-with-history: one CURRENT score per (company, period), as D18
+    # requires for anything whose value moves with config (D47)
+    "CREATE UNIQUE INDEX uq_scores_current ON scores(cik, period_end)"
+    " WHERE status = 'CURRENT'",
     "CREATE INDEX idx_scores ON scores(cik, period_end)",
     "CREATE INDEX idx_warnings ON warnings(cik, period_end, severity)",
     "CREATE INDEX idx_dq_events ON data_quality_events(cik, code)",

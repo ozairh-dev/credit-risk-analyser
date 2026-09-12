@@ -6,7 +6,14 @@ weights:
   cash_flow: 20
   business_performance: 15
 
-max_grade_with_missing_category: 3
+# Grade cap when fewer than five categories scored, graduated by how many did (D46).
+# A 2-of-5 score must not present with the same authority as a 4-of-5 one. Keys are the
+# maximum (numerically highest = worst) N the entry applies to; N=5 is uncapped.
+# Witness: CCL 2007-11-30 scores 60.0 on 2 of 5 categories — grade 3 under a flat cap,
+# grade 4 under this one.
+max_grade_by_categories_scored:
+  2: 4        # N <= 2 -> cap at grade 4
+  4: 3        # N = 3 or 4 -> cap at grade 3
 
 grades:            # score lower bound -> grade
   85: 1
