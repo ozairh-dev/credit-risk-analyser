@@ -77,3 +77,70 @@ def test_fetch_unknown_ticker_fails_clearly(monkeypatch):
     result = runner.invoke(cli.app, ["fetch", "NOPE"])
 
     assert result.exit_code != 0
+
+
+# ============ the metrics command (pre-Phase-6 audit finding 5) ============
+
+import json                                                    # noqa: E402
+
+import pytest                                                  # noqa: E402
+
+from credit_risk import pipeline                               # noqa: E402
+
+CCL = 815097
+CACHED_CCL = config.RAW_DIR / f"CIK{CCL:010d}.json"
+
+
+@pytest.mark.skipif(not CACHED_CCL.exists(),
+                    reason="no cached companyfacts in data/raw/ (gitignored)")
+def test_metrics_command_prints_a_ratio_with_its_provenance(monkeypatch):
+    """The Task 11 deliverable, asserted rather than eyeballed.
+
+    The recursion bug found during Task 11 — the chain stopping one level
+    short, so a CALCULATED number appeared with no visible origin — was caught
+    by eye. This is the test that would have caught it: the output must reach
+    a source tag and a filing accession, not merely name the composite.
+    """
+    monkeypatch.setattr(cli.ingest, "ticker_to_cik", lambda ticker, **kw: CCL)
+    result = runner.invoke(cli.app, ["metrics", "CCL", "--period", "2019-11-30"])
+
+    assert result.exit_code == 0, result.output
+    assert "Carnival" in result.output
+    assert "2019-11-30" in result.output
+    # the value, hand-recomputed in Task 11: ebit 3,276 / interest 206
+    assert "ebit_interest_cover" in result.output
+    assert "15.90" in result.output
+    # the chain must reach a reported tag and the filing behind it
+    assert "OperatingIncomeLoss" in result.output
+    assert "10-K" in result.output
+    assert "0000815097-20-000003" in result.output
+    # and the disclaimer the methodology requires on user-facing output
+    assert "Not a rating" in result.output
+
+
+@pytest.mark.skipif(not CACHED_CCL.exists(), reason="no cached companyfacts")
+def test_metrics_command_labels_an_unavailable_ratio_with_its_kind(monkeypatch):
+    """A refusal must show the reason AND the kind — the kind is what Phase 6
+    acts on, and a reader cannot infer it from the code alone (D41a)."""
+    monkeypatch.setattr(cli.ingest, "ticker_to_cik", lambda ticker, **kw: CCL)
+    result = runner.invoke(cli.app, ["metrics", "CCL", "--period", "2020-11-30"])
+
+    assert result.exit_code == 0, result.output
+    assert "UNAVAILABLE" in result.output
+    assert "NEGATIVE_EBITDA" in result.output
+    assert "(evidence)" in result.output          # not a data gap
+
+
+@pytest.mark.skipif(not CACHED_CCL.exists(), reason="no cached companyfacts")
+def test_metrics_command_rejects_an_unknown_period(monkeypatch):
+    monkeypatch.setattr(cli.ingest, "ticker_to_cik", lambda ticker, **kw: CCL)
+    result = runner.invoke(cli.app, ["metrics", "CCL", "--period", "1999-01-01"])
+    assert result.exit_code != 0
+    assert "not a period" in result.output
+
+
+def test_load_cached_names_the_fetch_command_when_nothing_is_cached(tmp_path, monkeypatch):
+    """The error a first-time user hits must say what to run next."""
+    monkeypatch.setattr(config, "RAW_DIR", tmp_path)
+    with pytest.raises(FileNotFoundError, match="credit-risk fetch"):
+        pipeline.load_cached(999999)

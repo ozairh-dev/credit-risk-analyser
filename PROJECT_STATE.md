@@ -214,6 +214,17 @@ exactly zero, and `current_liabilities` is never zero or negative. Only
   cross-period inventory rule per-period fails two unit tests plus exactly
   LUMN, the only company with partial inventory.
 
+- Pre-Phase-6 audit fixes (2026-09-12, Opus) — findings 2, 3, 4, 5, 7 and 8
+  from docs/audits/2026-09-11-pre-phase-6-audit.md cleared. revenue_growth now
+  pairs on eligibility AND window (D43): LUMN recovers a value lost to a
+  phantom period, 16 -> 17. Three superseded ratio helpers deleted (D44) —
+  they had already diverged on NEGATIVE_DENOMINATOR payload within a single
+  phase. Three undefended branches tested; the metrics CLI and pipeline.py
+  now have tests, and test_real_companies.py's fixture drives pipeline.analyse
+  rather than reassembling the stages. Coverage: ratios 82% -> 100%,
+  pipeline 42% -> 100%, cli 29% -> 90%, total 90% -> 98%.
+  **Findings 1 and 6 are NOT fixed — they are company-set problems, not code.**
+
 ## Metric coverage — all seventeen (Phase 10 input, measured 2026-09-12)
 
 Periods producing a value. Company period counts: LUMN/F/JNJ/CCL 19 each, KHC 13.
@@ -233,7 +244,7 @@ Periods producing a value. Company period counts: LUMN/F/JNJ/CCL 19 each, KHC 13
 | fcf_to_debt | **0** | **0** | 18 | 17 | 12 | 47 |
 | cfo_to_debt | 10 | 3 | 18 | 17 | 12 | 60 |
 | capex_to_revenue | 6 | **0** | 10 | 15 | **0** | 31 |
-| revenue_growth | 16 | 18 | 9 | 13 | **0** | 56 |
+| revenue_growth | 17 | 18 | 9 | 13 | **0** | 57 |
 | ebitda_margin | 18 | 9 | **0** | 15 | **0** | 42 |
 | ebit_margin | 18 | 9 | **0** | 15 | **0** | 42 |
 | net_margin | 18 | 13 | 10 | 15 | **0** | 56 |
@@ -309,7 +320,7 @@ never run for it and no revenue-based metric will ever compute. Worth a tag
 investigation before KHC is relied on for anything revenue-derived.
 
 ## Tests
-- 424 passing, 8 skipped (7 setup + 3 env + 6 ingest/tickers + 12 ingest/companyfacts (all
+- 439 passing, 16 skipped (7 setup + 3 env + 6 ingest/tickers + 12 ingest/companyfacts (all
   HTTP-mocked) + 4 cli wiring + 3 fixture guards + 31 selection + 10 mapping +
   42 composites (deviation edges, all four branches, guards, toggles, storage) +
   28 integrity (every check pass/fail/skip, the 1% boundary, D23's three codes,
@@ -355,6 +366,13 @@ investigation before KHC is relied on for anything revenue-derived.
 
 ## Open questions
 - Which 25-50 companies form the v1 universe? (US-listed, non-financial, 3+ years of 10-K data)
+  **Sharpened by the pre-Phase-6 audit into a blocker for demonstrating Phase 6:** four of
+  the five current companies can never produce a five-category score, so every grade they
+  generate is capped at 3 by D10 for coverage reasons rather than credit reasons. Only CCL
+  clears the cap, in 13 of 19 periods. Ford can never score cash flow (no capex tag); KHC
+  can never score business performance (no revenue); LUMN and JNJ top out at 4 of 5.
+  Phase 6 can be BUILT on CCL alone — it exercises every scoring path — but cannot be
+  demonstrated on this set without the output misleading a reader.
 
 ## Next priorities
 - Phase 6 (scoring). Reads REASON_KIND to apply D9: EVIDENCE scores 0, GAP drops and

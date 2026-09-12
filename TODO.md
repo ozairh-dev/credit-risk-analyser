@@ -57,6 +57,19 @@ checks (Phase 4) because the checks depend on them. See docs/build-plan.md.
       implemented, four new reason codes classified, D42's five calls recorded.
       Full coverage table in PROJECT_STATE.md as a Phase 10 input
 
+## Pre-Phase-6 audit (docs/audits/2026-09-11-pre-phase-6-audit.md)
+- [x] Finding 2: revenue_growth pairs on eligibility AND window (D43)
+- [x] Finding 3: three superseded ratio helpers deleted (D44)
+- [x] Finding 4: the three undefended branches tested
+- [x] Finding 5 + 8: metrics CLI and pipeline tests; fixture drives pipeline.analyse
+- [x] Finding 7: D30(b) marked an obligation on the first exporter
+- [ ] Finding 1 (BLOCKER for demonstrating, not for building): four of five companies
+      can never produce a five-category score — every grade capped at 3 by coverage.
+      Company-set problem; see Open questions in PROJECT_STATE.md
+- [ ] Finding 6: debt_subset still has one usable witness (JNJ); same selection work
+- [ ] Phase 6 must state the capped-category list in every explain output, so a capped
+      grade is never mistaken for a judged one (required regardless of company set)
+
 ## Phase 9/10 inputs raised by Task 10
 - [ ] Phase 10 universe selection must cover `debt_subset`: it has one usable witness
       (JNJ), since lease-inclusive filers have total_debt_ex_leases UNAVAILABLE and CCL

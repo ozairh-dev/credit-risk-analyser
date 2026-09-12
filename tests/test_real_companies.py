@@ -20,7 +20,7 @@ from pathlib import Path
 
 import pytest
 
-from credit_risk import config
+from credit_risk import config, pipeline
 from credit_risk.metrics.composites import compute_composites
 from credit_risk.metrics.integrity import run_integrity_checks
 from credit_risk.metrics.ratios import (
@@ -43,22 +43,26 @@ def load(path):
 
 @pytest.fixture(params=CACHED, ids=lambda p: p.stem)
 def company(request):
-    """One cached company, run through selection and mapping."""
+    """One cached company, run through the real pipeline.
+
+    Driven through pipeline.analyse rather than reassembling the stages here:
+    if the module and this fixture ever disagreed about stage order, every
+    test would still pass while the CLI produced different results
+    (pre-Phase-6 audit finding 8).
+    """
     raw = load(request.param)
-    selection = select_annual_facts(raw)
-    return raw, selection, map_concepts(selection)
+    selection, mapping, composites, integrity, metrics = pipeline.analyse(raw)
+    return raw, selection, mapping, composites, integrity, metrics
 
 
 @pytest.fixture
 def stored(company):
-    raw, selection, mapping = company
+    raw, selection, mapping, composites, integrity, metrics = company
     conn = db.create_database(":memory:")
-    composites = compute_composites(mapping)
     store_company_data(
         conn, raw["cik"], raw["entityName"], selection, mapping,
         tag_map=config.tag_map(), composites=composites,
-        integrity=run_integrity_checks(mapping, composites),
-        metrics=compute_metrics(mapping, composites),
+        integrity=integrity, metrics=metrics,
     )
     yield conn, raw, selection, mapping
     conn.close()
@@ -627,7 +631,7 @@ METRIC_COVERAGE = {
     "fcf_to_debt":                 {18926: 0, 37996: 0, 200406: 18, 815097: 17, 1637459: 12},
     "cfo_to_debt":                 {18926: 10, 37996: 3, 200406: 18, 815097: 17, 1637459: 12},
     "capex_to_revenue":            {18926: 6, 37996: 0, 200406: 10, 815097: 15, 1637459: 0},
-    "revenue_growth":              {18926: 16, 37996: 18, 200406: 9, 815097: 13, 1637459: 0},
+    "revenue_growth":              {18926: 17, 37996: 18, 200406: 9, 815097: 13, 1637459: 0},
     "ebitda_margin":               {18926: 18, 37996: 9, 200406: 0, 815097: 15, 1637459: 0},
     "ebit_margin":                 {18926: 18, 37996: 9, 200406: 0, 815097: 15, 1637459: 0},
     "net_margin":                  {18926: 18, 37996: 13, 200406: 10, 815097: 15, 1637459: 0},
@@ -713,3 +717,63 @@ def test_no_debt_never_fires_on_cached_data(stored):
     assert scalar(conn, """SELECT COUNT(*) FROM metrics
         WHERE cik = ? AND status = 'CURRENT' AND reason_code = 'NO_DEBT'""",
         (raw["cik"],)) == 0
+
+
+def test_revenue_growth_pairs_past_a_phantom_period(stored):
+    """D43: LUMN's phantom 2014-02-20 sits between two real revenue periods
+    365 days apart. Pairing against ends[i-1] lost that comparison; pairing
+    against the most recent revenue-resolving prior recovers it.
+
+    18 revenue periods -> 17 pairs, and all 17 are produced.
+    """
+    conn, raw, _, mapping = stored
+    if raw["cik"] != 18926:
+        pytest.skip("LUMN only — the only cached company with this shape")
+    revenue_periods = len({c.end for c in mapping.concepts if c.concept == "revenue"})
+    assert revenue_periods == 18
+    n = scalar(conn, """SELECT COUNT(*) FROM metrics
+        WHERE cik = ? AND metric = 'revenue_growth' AND status = 'CURRENT'
+          AND data_status = 'CALCULATED'""", (raw["cik"],))
+    assert n == revenue_periods - 1 == 17
+    # the recovered pair specifically
+    row = conn.execute("""SELECT value FROM metrics WHERE cik = ?
+        AND metric = 'revenue_growth' AND period_end = '2014-12-31'
+        AND status = 'CURRENT'""", (raw["cik"],)).fetchone()
+    assert row["value"] is not None
+
+
+def test_revenue_growth_still_refuses_a_genuine_multi_year_gap(stored):
+    """The eligibility filter must not swallow the window test: CCL's revenue
+    jumps 2009-11-30 -> 2014-11-30 (1826 days) and that pair stays refused."""
+    conn, raw, _, _ = stored
+    if raw["cik"] != 815097:
+        pytest.skip("CCL only")
+    row = conn.execute("""SELECT data_status, reason_code FROM metrics
+        WHERE cik = ? AND metric = 'revenue_growth'
+          AND period_end = '2014-11-30' AND status = 'CURRENT'""",
+        (raw["cik"],)).fetchone()
+    assert row["data_status"] == "UNAVAILABLE"
+    assert row["reason_code"] == "INSUFFICIENT_DATA"
+
+
+def test_pipeline_analyse_and_store_produces_every_stage(stored):
+    """The six stages run as one call and every one lands in the store
+    (pre-Phase-6 audit finding 5). Rebuilt independently of the fixture so
+    this asserts the module's own assembly, not the test's.
+    """
+    _, raw, _, _ = stored
+    conn, cik = pipeline.analyse_and_store(pipeline.load_cached(raw["cik"]))
+    try:
+        counts = {
+            table: scalar(conn, f"SELECT COUNT(*) FROM {table} WHERE cik = ?", (cik,))
+            for table in ("facts", "concepts", "metrics", "integrity_results")
+        }
+        assert all(n > 0 for n in counts.values()), counts
+        # concepts must include all three data_status kinds the pipeline makes
+        statuses = {r[0] for r in conn.execute(
+            "SELECT DISTINCT data_status FROM concepts WHERE cik = ?", (cik,))}
+        assert {"REPORTED", "CALCULATED", "UNAVAILABLE"} <= statuses
+        # filings back the facts, so provenance is reachable end to end
+        assert scalar(conn, "SELECT COUNT(*) FROM filings WHERE cik = ?", (cik,)) > 0
+    finally:
+        conn.close()

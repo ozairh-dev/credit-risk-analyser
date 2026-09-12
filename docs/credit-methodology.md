@@ -177,7 +177,7 @@ fcf = cfo − capex
 | fcf_to_debt | fcf / total_debt | zero debt → UNAVAILABLE, reason NO_DEBT |
 | cfo_to_debt | cfo / total_debt | zero debt → UNAVAILABLE, reason NO_DEBT |
 | capex_to_revenue | capex / revenue | |
-| revenue_growth | revenue_t / revenue_(t−1) − 1 | needs two consecutive fiscal years — **consecutive by `continuity_window_days`, not adjacency in the list** (D42c); otherwise `INSUFFICIENT_DATA`. Adjacent-in-the-list is not adjacent-in-time when intervening periods do not resolve revenue |
+| revenue_growth | revenue_t / revenue_(t−1) − 1 | needs two consecutive fiscal years. **Two rules, both required** (D43): the prior period is the most recent one that *resolves revenue* (eligibility, D40), and that pair must then fall within `continuity_window_days` (the window, D36). Otherwise `INSUFFICIENT_DATA`. Applying only the window lets a period resolving nothing swallow a legitimate comparison; applying only eligibility lets a genuine multi-year gap pass as one-year growth |
 | ebitda_margin | ebitda / revenue | |
 | ebit_margin | ebit / revenue | |
 | net_margin | net_income / revenue | |

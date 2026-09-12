@@ -516,3 +516,49 @@ def test_revenue_growth_skips_a_period_whose_prior_has_no_revenue():
 def test_revenue_growth_is_negative_when_revenue_falls():
     metrics, _ = run([mc("revenue", 1000, end=PRIOR), mc("revenue", 750)])
     assert metrics["revenue_growth"].value == pytest.approx(-0.25)
+
+
+# ============ branches with neither a real-data witness nor, until now, a test ============
+#
+# Pre-Phase-6 audit finding 4. Each is reachable from a filer tagging error and
+# each was the only undefended path left in the Task 9-11 modules.
+
+def test_negative_total_debt_refuses_on_a_debt_denominated_ratio():
+    """Negative debt is a tagging artefact. It must not produce a negative
+    ratio, and it is a denominator problem, not NO_DEBT."""
+    for metric, concepts, comps in (
+        ("cash_to_debt", [mc("cash", 250)], [comp("total_debt", -100)]),
+        ("fcf_to_debt", [], [comp("fcf", 150), comp("total_debt", -100)]),
+        ("cfo_to_debt", [mc("cfo", 300)], [comp("total_debt", -100)]),
+    ):
+        m = one(metric, concepts, composites=comps)
+        assert m.reason_code == NEGATIVE_DENOMINATOR, metric
+        assert m.kind == GAP, metric
+        assert m.value is None, metric
+
+
+def test_negative_total_debt_surfaces_the_offending_figure():
+    _, report = run([mc("cash", 250)], composites=[comp("total_debt", -100)])
+    events = [e for e in report.events if e.concept == "cash_to_debt"]
+    assert len(events) == 1
+    assert "total_debt" in events[0].detail and "-100" in events[0].detail
+
+
+def test_revenue_growth_refuses_when_the_prior_period_had_zero_revenue():
+    """Never an undefined or infinite growth rate."""
+    metrics, _ = run([mc("revenue", 0, end=PRIOR), mc("revenue", 1200)])
+    m = metrics["revenue_growth"]
+    assert m.reason_code == ZERO_DENOMINATOR
+    assert m.kind == GAP
+    assert m.value is None
+
+
+def test_revenue_growth_refuses_on_negative_prior_revenue():
+    """A negative prior would flip the sign of the growth rate — a
+    plausible-looking wrong number rather than a visible failure."""
+    metrics, report = run([mc("revenue", -500, end=PRIOR), mc("revenue", 1200)])
+    m = metrics["revenue_growth"]
+    assert m.reason_code == NEGATIVE_DENOMINATOR
+    assert m.kind == GAP
+    assert any(e.concept == "revenue_growth" and "-500" in e.detail
+               for e in report.events)

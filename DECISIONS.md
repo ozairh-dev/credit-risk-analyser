@@ -581,6 +581,11 @@ monetary items and the dimension (`ratio`, `percent`) for everything else.
 function of `(cik, accession)`, both already columns on `facts`. A stored copy can only
 drift: if EDGAR's URL shape changes, every historic row is silently wrong and needs a
 migration, whereas a derived URL is corrected by editing one function.
+*Status (pre-Phase-6 audit, finding 7): this is an **obligation on the first exporter**,
+not a description of existing code. No exporter exists yet and nothing in `src/` derives
+a URL, so there is presently nothing to point a reader at. Whoever builds the first
+export path owes the derivation — this entry states the requirement, it does not record
+a completed one.*
 
 Reason: both are the same principle — do not store what is already derivable from what is
 stored, because the copy can disagree with its source. That is CLAUDE.md rule 13 (one
@@ -1002,6 +1007,10 @@ noted that checks over sequences amplify bad members while checks over single ro
 them, and flagged Phase 7 as entirely sequence-based. `revenue_growth` is the first metric
 of that shape, and the same question — *which periods count as links?* — must be asked of
 every trend rule in Phase 7 before it is implemented.
+**Amended by D43 (2026-09-12):** this entry specified the *window* and cited D40, but the
+implementation it produced applied the window **without** D40's eligibility filter, losing
+a legitimate LUMN value to a phantom period. Read D43 before implementing anything from
+this clause: the rule is eligibility **and** window, not window alone.
 
 **(d) `ebitda_interest_cover` with `ebitda <= 0` carries `NEGATIVE_EBITDA`, kind
 EVIDENCE.** Neither coverage-table row fits exactly: `NEGATIVE_EARNINGS` is specified for
@@ -1015,3 +1024,67 @@ later reader does not try to deduplicate them: **the check asks whether the data
 possible; the metric asks whether it can be computed.** They are different questions about
 the same fact, and both answers are wanted — one marks the period unfit for scoring, the
 other explains why a particular number is absent. Zero witnesses in the cache.
+
+## D43 — revenue_growth pairs on eligibility AND window; citing a decision is not implementing it
+Decision (pre-Phase-6 audit, finding 2, 2026-09-12): `revenue_growth` pairs each period
+with **the most recent prior period that actually resolves `revenue`**, and then applies
+D36's `continuity_window_days` test to *that* pair. Previously it paired with `ends[i-1]`
+— whichever row happened to precede — and applied the window to that.
+
+Reason: the two rules answer different questions and both are needed. **Eligibility**
+(D40) asks *which periods are links in the chain*; a period resolving no concepts is not
+one. **The window** (D42c/D36) asks *whether an eligible pair is close enough in time*.
+Applying only the window makes a phantom period swallow a legitimate comparison; applying
+only eligibility would let a genuine five-year gap pass as one-year growth.
+
+Measured: LUMN's phantom `2014-02-20` sits between `2013-12-31` and `2014-12-31`, which
+are **365 days** apart. The old pairing compared `2014-12-31` against the phantom, found
+no revenue, and returned `INSUFFICIENT_DATA` — **losing one of 17 available values**.
+LUMN now produces 17 of 17. Nothing else moved: F 18, JNJ 9, CCL 13, KHC 0 are unchanged,
+and CCL's one rejected pair is a genuine 1,826-day gap (2009 to 2014) that must stay
+refused. Both directions are now pinned by test.
+
+**The lesson, which matters more than the fix.** D40 established phantom-period
+exclusion and stated the sequence-topology hazard explicitly. D42c then **named
+`revenue_growth` as the first metric inheriting it** — and the implementation still
+reused D36's window without D40's eligibility filter. The decision was cited, understood
+and written down, and the code was wrong anyway.
+
+**Citing a decision is not the same as implementing it.** A reference to a prior decision
+records that its existence was noticed; only an assertion records that its *content* was
+applied. **Phase 7 is entirely sequence-based**, and every trend rule there must apply
+the eligibility filter as well as the window — the check being, for each rule: *which
+periods does this treat as links, and is a period that resolves nothing one of them?*
+That question is to be answered per rule, in a test, not by citing D40 or this entry.
+
+Alternatives: drop phantom periods at mapping (contradicts D17's no-silent-drop, and D40
+rejected it for the same reason); apply eligibility without the window (admits real gaps).
+Consequences: `compute_metrics` computes the eligible-prior list once per company;
+`_revenue_growth` receives an already-filtered `prior_end` and keeps the window test,
+so the two rules stay visibly separate in the code rather than merged into one condition.
+
+## D44 — The three superseded ratio helpers are deleted; rule 13's failure observed in miniature
+Decision (pre-Phase-6 audit, finding 3, 2026-09-12): `_net_debt_to_ebitda`,
+`_ebit_interest_cover` and `_current_ratio` are removed from `metrics/ratios.py`. They
+were Task 11's originals, superseded during the Phase 5 completion by `_ebitda_ratio`,
+`_interest_cover` and `_simple_ratio`, and left in place with zero call sites.
+
+Reason: CLAUDE.md rule 13. The `NEGATIVE_EBITDA` gate, the interest gate and the general
+denominator rules each existed in two places.
+
+**Worth recording because the divergence had already happened, in rule 13's mildest
+possible form:** the two copies still agreed on every *reason code* — the thing tests
+assert — and disagreed on *payload*. The live `_simple_ratio` carries the offending figure
+on a `NEGATIVE_DENOMINATOR` refusal (`('current_liabilities', -5)`); the dead
+`_current_ratio` returned `None`, so a warning raised through it would have lost its
+number. **That divergence appeared within a single phase**, between the commit that
+introduced the shared shapes and the audit days later, with no one editing either copy
+deliberately — it arose because only one copy was updated when the `denominator` field was
+added.
+
+The generalisable point: duplicated logic does not announce itself by disagreeing on the
+obvious thing. It agrees on what the tests check and drifts on what they do not, which is
+why "the copies still behave the same" is not a reason to keep them.
+
+Consequences: 64 lines removed, suite unchanged, `metrics/ratios.py` branch coverage
+82% -> 100%.

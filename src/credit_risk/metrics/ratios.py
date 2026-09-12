@@ -108,70 +108,6 @@ def _unavailable(metric, end, reason_code, denominator=None):
                         denominator=denominator)
 
 
-def _net_debt_to_ebitda(end, values):
-    """net_debt / ebitda. Negative net debt (net cash) is valid and negative."""
-    if "net_debt" not in values:
-        return _unavailable("net_debt_to_ebitda", end, "MISSING_INPUT:net_debt")
-    if "ebitda" not in values:
-        return _unavailable("net_debt_to_ebitda", end, "MISSING_INPUT:ebitda")
-    ebitda = values["ebitda"]
-    if ebitda <= 0:
-        # zero takes this code too: it names the worst band, not the sign (D41d)
-        return _unavailable("net_debt_to_ebitda", end, NEGATIVE_EBITDA)
-    return _calculated("net_debt_to_ebitda", end, values["net_debt"] / ebitda,
-                       "net_debt / ebitda",
-                       [("net_debt", end), ("ebitda", end)])
-
-
-def _ebit_interest_cover(end, values):
-    """ebit / interest_expense, with the coverage table's gates.
-
-    The interest gate runs before the earnings check (D41c): a missing
-    denominator means the ratio was never computable, while negative earnings
-    is a statement about a ratio you could have computed.
-    """
-    interest = values.get("interest_expense")
-    # negative interest is a tagging artefact, not free money — same as zero (D41f)
-    if interest is None or interest <= 0:
-        debt = values.get("total_debt")
-        if debt is None:
-            # the gate itself could not be evaluated (D41b)
-            return _unavailable("ebit_interest_cover", end, "MISSING_INPUT:total_debt")
-        if debt == 0:
-            return _unavailable("ebit_interest_cover", end, NO_INTEREST_NO_DEBT)
-        return _unavailable("ebit_interest_cover", end, INTEREST_MISSING_WITH_DEBT)
-    if "ebit" not in values:
-        return _unavailable("ebit_interest_cover", end, "MISSING_INPUT:ebit")
-    ebit = values["ebit"]
-    if ebit <= 0:
-        return _unavailable("ebit_interest_cover", end, NEGATIVE_EARNINGS)
-    return _calculated("ebit_interest_cover", end, ebit / interest,
-                       "ebit / interest_expense",
-                       [("ebit", end), ("interest_expense", end)])
-
-
-def _current_ratio(end, values):
-    """current_assets / current_liabilities, under the general denominator rules."""
-    if "current_assets" not in values:
-        return _unavailable("current_ratio", end, "MISSING_INPUT:current_assets")
-    if "current_liabilities" not in values:
-        return _unavailable("current_ratio", end, "MISSING_INPUT:current_liabilities")
-    denominator = values["current_liabilities"]
-    if denominator == 0:
-        return _unavailable("current_ratio", end, ZERO_DENOMINATOR)
-    if denominator < 0:
-        return _unavailable("current_ratio", end, NEGATIVE_DENOMINATOR)
-    return _calculated("current_ratio", end, values["current_assets"] / denominator,
-                       "current_assets / current_liabilities",
-                       [("current_assets", end), ("current_liabilities", end)])
-
-
-# --- shared shapes -----------------------------------------------------------
-#
-# Most of the seventeen are "a / b with the general denominator rules". Those
-# go through _simple_ratio so the rules are written once (CLAUDE.md rule 13);
-# anything with its own edge cases gets its own function below.
-
 def _simple_ratio(metric, end, values, numerator, denominator, method=None):
     """numerator / denominator under the general rules.
 
@@ -309,10 +245,18 @@ def _quick_ratio(end, values, company_reports_inventory):
 def _revenue_growth(end, values, prior_end, prior_values, window):
     """revenue_t / revenue_(t-1) - 1, over genuinely consecutive periods.
 
-    Adjacent in the series is not adjacent in time: a company whose revenue
-    resolves in only some periods would otherwise produce a multi-year change
-    labelled as one-year growth (D42c). The pair must sit within
-    continuity_window_days, the same window D36 uses.
+    Two separate rules, and both are needed (D43):
+
+    - **Eligibility** (D40): the prior period is the most recent one that
+      actually *resolves revenue*, not whichever row happens to precede this
+      one. A phantom period — one resolving no concepts at all — is not a link
+      in the chain, and pairing against it discards a legitimate comparison.
+    - **Window** (D42c/D36): that pair must then sit within
+      continuity_window_days, so a genuine multi-year gap is never labelled
+      one-year growth.
+
+    `prior_end` is supplied already filtered by the caller; the window test
+    below is what rejects a pair that is eligible but too far apart.
     """
     if "revenue" not in values:
         return _unavailable("revenue_growth", end, "MISSING_INPUT:revenue")
@@ -363,12 +307,18 @@ def compute_metrics(mapping, composites, cfg: dict | None = None) -> MetricsRepo
         c.concept == "inventory" for c in mapping.concepts)
 
     ends = sorted(by_period)
+    # Periods that actually resolve revenue, in order. revenue_growth pairs
+    # against the most recent of these, never against whichever row precedes
+    # it — a phantom period between two real ones is not a link (D43/D40).
+    revenue_ends = [e for e in ends if "revenue" in by_period[e]]
+
     metrics: list[MetricResult] = []
     events: list[DataQualityEvent] = []
 
-    for i, end in enumerate(ends):
+    for end in ends:
         values = by_period[end]
-        prior_end = ends[i - 1] if i else None
+        earlier = [e for e in revenue_ends if e < end]
+        prior_end = earlier[-1] if earlier else None
         prior_values = by_period.get(prior_end) if prior_end else None
 
         results = [
