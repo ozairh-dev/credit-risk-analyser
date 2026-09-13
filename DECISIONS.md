@@ -1565,3 +1565,167 @@ Consequences: both are output duties recorded before the engine exists, joining 
 D54's. Step two must also measure the `fixed_cost_share` x `floating_share` **joint** worst
 case — both push the same direction and were measured independently, so the combined effect
 is untested.
+
+## D58 — The three stress tables, specified (D20's deferral discharged)
+Decision (owner-approved 2026-09-13, Phase 8 step two; recorded separately per D35).
+D20 named `stress_runs`, `stress_results` and `stress_drivers` but never specified their
+columns — deliberately, because the config that determines their shape was unsettled. It is
+now (D53-D56), so this is a fresh specification rather than an amendment to a sketch.
+
+**`stress_runs`** — one row per (cik, period_end, scenario), append-with-history with a
+partial unique index on CURRENT:
+- the five shock inputs (`revenue_shock`, `margin_shock`, `rate_shock_bps`,
+  `additional_debt`, `capex_shock`);
+- **the per-run assumptions D56 requires as columns, not fingerprint**: `ebitda_mode`,
+  `fixed_cost_share`, `floating_share`, `new_debt_rate_used`, `new_debt_rate_source`
+  (`explicit` | `implied` | `default_substituted`) and `new_debt_rate_reason`;
+- `base_score`, `base_grade`, `stressed_score`, `stressed_grade`;
+- `config_fingerprint` — the D56 **policy** fingerprint, never the score fingerprint.
+
+**`stress_results`** — one row per (run, metric): `base_value`, `stressed_value`, `change`,
+plus `data_status` and `reason_code`, so a stressed metric that refuses (negative stressed
+EBITDA) records **why** instead of going null. Same evidence-versus-gap discipline as D9.
+
+**`stress_drivers`** — one row per (run, shock, metric): the change that shock causes
+**alone** against base. Natural key `(run_id, shock, metric)`.
+
+Reason the per-run values are columns: D56's principle — a value that varies per run is not
+a config version. Storing them here also means the output duties (D53a, D54, D53b) read
+from the same row the engine wrote, so output and storage cannot disagree.
+
+## D59 — A stressed grade may never enter the scores table, enforced structurally
+Decision (owner call, 2026-09-13): the write path **makes it impossible** to store a
+stressed grade as a score, and a test pins it. Not left as implementation discipline.
+
+Reason: a stressed grade written to `scores` would carry the **score** fingerprint (D45)
+rather than the stress policy fingerprint, and would occupy the `(cik, period_end)` CURRENT
+slot that `uq_scores_current` reserves for the real grade. It would not merely mislead a
+reader — it would **corrupt score history**, superseding a genuine grade with a hypothetical
+one and leaving no way to tell them apart after the fact. That is the same class of harm
+D18 exists to prevent, arriving from a new direction.
+
+Mechanism: `store_company_data` accepts base scores only; stress results go through a
+separate writer that has no access to the `scores` table, and a test asserts that running a
+stress scenario adds zero rows to `scores` and leaves every existing score row CURRENT and
+unchanged.
+
+## D60 — Driver attribution is directional and bounded, never additive
+Decision (owner-approved 2026-09-13): driver attribution runs each shock **alone** against
+base and reports the metric change it causes in isolation. Tests assert **directional
+consistency and a bounded residual against the combined run — never additivity.**
+
+**Additivity is false, and asserting it would assert a falsehood about the arithmetic.**
+The propagation is multiplicative (`ebitda_s = revenue_s x margin_s`, so revenue and margin
+shocks interact), and interest reaches net income through a floor
+(`tax_s = max(0, ebit_s - interest_s) x etr`), which is non-linear by construction. Shocks
+applied together therefore do not sum to shocks applied apart, and the residual is a real
+property of the model rather than an error to be tuned away. The bound is chosen from the
+**measured** residual (rule 14), not picked in advance.
+
+**Joint-parameter measurement, recorded here because it strengthens the print duties rather
+than motivating a restructure.** `fixed_cost_share` x `floating_share` over
+{0.3, 0.7} x {0.3, 1.0}, all 42 stressable periods at Moderate and Severe:
+**no period swings 2 or more grades** — the alarm does not fire. But **two periods reach a
+grade under the combined assumptions that neither parameter reaches alone**: CCL 2017-11-30
+Moderate (fcs-only 3, floating-only 3, **both 4**) and CCL 2019-11-30 Moderate
+(fcs-only 4, floating-only 4, **both 5**). The parameters compound. That is an argument for
+printing both values in every output — D53a and D54 already require it — not for changing
+either default.
+
+## D61 — Three deliberate v1 boundaries in stress
+Decision (owner calls, 2026-09-13), recorded so each reads as a choice rather than a gap.
+
+**(a) The base scenario IS stored as a run.** All-zero shocks, so stressed equals base by
+construction — which is precisely why it is worth a row: it makes the driver baseline
+explicit, the base-versus-stressed comparison self-documenting, and `stress_runs`
+self-contained without a reader needing to join back to `scores`.
+
+**(b) The sensitivity grid is computed on demand, never stored.** 5 x 5 cells x 42
+stressable periods is 1,050 rows that are a **pure function of inputs already stored** —
+D30's don't-store-what-is-derivable — and every config move would otherwise require
+invalidating them.
+
+**(c) No named custom-scenario persistence in v1.** A custom run's shocks are stored on its
+row, which gives full reproducibility; naming and reuse is a workflow feature with **no
+consumer** (CLAUDE.md rule 9 — no abstractions for problems we do not have). A v2 feature
+if a consumer appears, not an omission.
+
+## D62 — rate_shock renamed rate_shock_bps in the propagation block, with the conversion stated
+Decision (owner call, 2026-09-13): the methodology's propagation block now writes
+`(rate_shock_bps / 10000) x floating_share x total_debt`, and the inputs table names the
+shock `rate_shock_bps` to match every preset and the sensitivity grid.
+
+Reason: the block said `rate_shock` while every preset and the config say
+`rate_shock_bps`, and the block omitted the unit conversion entirely. **Taken literally the
+text multiplies total debt by the basis-point figure** — a preset value of 100 would add
+100x debt to interest expense. Only the implied /10000 conversion produces sane numbers, so
+an implementer following the text exactly would have produced nonsense and an implementer
+producing sane numbers would have been departing from the spec. Neither is acceptable in a
+document that is the authority.
+Consequences: one name and one conversion; no behaviour changes, because the measurements
+and the engine both use the sane reading. Recorded because a specification that only works
+when silently corrected is a defect in the specification.
+
+## D63 — The two EBITDA modes disagree in DIRECTION for a loss-making company
+Finding (measured during Phase 8 implementation, 2026-09-13). Recorded because it is
+counter-intuitive, both behaviours are arithmetically correct, and choosing a mode for a
+loss-making company is therefore a real decision rather than a preference.
+
+For a company with **negative** base EBITDA, a revenue fall moves stressed EBITDA in
+**opposite directions** under the two modes. Worked from the test fixture (revenue 1000,
+EBITDA -50, a -20% revenue shock):
+
+- **Constant margin:** the margin is held at -5% while the base shrinks, so
+  `800 x -5% = -40`. **The loss gets smaller.**
+- **Operating leverage:** fixed costs stay put while revenue falls —
+  `800 - 315 - 588 = -103`. **The loss deepens.**
+
+Mode A's behaviour is not a bug: holding a negative margin constant against a smaller
+revenue mathematically produces a smaller absolute loss. But it is the wrong *economics*
+for a loss-making company under stress, where the whole concern is that fixed costs do not
+fall with revenue. **Mode B is the honest mode for a loss-making company**, and mode A can
+make a distressed company look better under a revenue shock than it does at base.
+
+This does not change the default (`constant_margin`, per config) because the effect only
+appears when base EBITDA is already negative — at which point every EBITDA-based metric is
+already refusing with `NEGATIVE_EBITDA` evidence and the grade is saturated at 6, so no
+stressed grade is flattered in practice. Verified: both modes produce
+`NEGATIVE_EBITDA` on the stressed metrics in that state.
+Consequences: pinned by test in both directions with the arithmetic spelled out, so the
+divergence reads as understood rather than discovered; a future change to the default mode
+must weigh this case.
+
+## D64 — The base scenario is not a no-op for cash-flow metrics, and that is the point of storing it
+Finding (measured during Phase 8 implementation, 2026-09-13), surfaced by D61a's decision
+to store the base run. Recorded because it changes how a base-versus-stressed comparison
+must be read.
+
+At **zero shock**, five of the seven stressed metrics reproduce their base values
+**exactly** — `net_debt_to_ebitda`, `debt_to_ebitda`, `ebit_interest_cover`,
+`ebitda_interest_cover` and `ebitda_margin`, 151 exact matches and zero drift. The two
+cash-flow metrics do not: `fcf_margin` and `fcf_to_debt` drift in **every** case, with a
+**median gap of 59.1% and a maximum of 1934%**.
+
+**Cause, and it is the methodology working as written, not a defect.** The propagation
+approximates cash flow as `cfo_s = ebitda_s - interest_s - tax_s` with working capital
+held flat — a documented simplification. The **base** composite's `fcf` is
+`reported CFO - capex`, where CFO is the filer's actual
+`NetCashProvidedByUsedInOperatingActivities`, which includes working-capital movements.
+At zero shock the two are therefore **different quantities**, not the same quantity
+unshocked.
+
+**Consequence for reading the output: a base-versus-stressed comparison of an FCF metric
+contains the approximation gap as well as the shock effect**, and the two are not
+separable by inspection. Leverage, coverage and margin comparisons are clean.
+
+**This is precisely the value D61a predicted.** Storing the base run was justified as
+making the driver baseline explicit and the comparison self-documenting; it has
+immediately made a 59%-median modelling artefact visible that would otherwise have been
+silently folded into every stressed FCF figure and mistaken for a shock effect.
+
+Not fixed, deliberately: the alternative is to seed stressed CFO from reported CFO and
+adjust it, which would make the stressed figure depend on a working-capital movement the
+scenario has no view about — importing a real-world number into a hypothetical.
+Consequences: the stress output must say that FCF metrics carry the approximation gap; a
+test pins the exact/drifting split so a future change to the CFO treatment shows up as a
+deliberate re-baseline rather than a silent improvement.

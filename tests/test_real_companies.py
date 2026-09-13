@@ -21,6 +21,8 @@ from pathlib import Path
 import pytest
 
 from credit_risk import config, pipeline
+from credit_risk.store.stress_writer import store_stress_runs
+from credit_risk.stress.fingerprint import stress_fingerprint
 from credit_risk.trends.fingerprint import trend_fingerprint
 from credit_risk.metrics.composites import compute_composites
 from credit_risk.metrics.integrity import run_integrity_checks
@@ -57,7 +59,8 @@ def company(request):
 
 @pytest.fixture
 def stored(company):
-    raw, selection, mapping, composites, integrity, metrics, trends, scores = company
+    (raw, selection, mapping, composites, integrity, metrics, trends,
+     scores, stress) = company
     conn = db.create_database(":memory:")
     store_company_data(
         conn, raw["cik"], raw["entityName"], selection, mapping,
@@ -65,6 +68,7 @@ def stored(company):
         integrity=integrity, metrics=metrics, scores=scores, trends=trends,
         trend_fingerprint=trend_fingerprint(),
     )
+    store_stress_runs(conn, raw["cik"], stress, stress_fingerprint())
     yield conn, raw, selection, mapping
     conn.close()
 
@@ -909,8 +913,8 @@ def test_no_score_row_for_an_integrity_fail_period(stored):
 def test_scores_restore_idempotently(stored):
     conn, raw, selection, mapping = stored
     before = scalar(conn, "SELECT COUNT(*) FROM scores")
-    _, _, composites, integrity, metrics, trends, scores = pipeline.analyse(
-        pipeline.load_cached(raw["cik"]))
+    (_, _, composites, integrity, metrics, trends, scores,
+     _) = pipeline.analyse(pipeline.load_cached(raw["cik"]))
     store_company_data(
         conn, raw["cik"], raw["entityName"], selection, mapping,
         tag_map=config.tag_map(), composites=composites,
@@ -1032,8 +1036,8 @@ def test_trend_components_are_no_longer_pending_anywhere(stored):
 def test_warnings_restore_idempotently(stored):
     conn, raw, selection, mapping = stored
     before = scalar(conn, "SELECT COUNT(*) FROM warnings")
-    _, _, composites, integrity, metrics, trends, scores = pipeline.analyse(
-        pipeline.load_cached(raw["cik"]))
+    (_, _, composites, integrity, metrics, trends, scores,
+     _) = pipeline.analyse(pipeline.load_cached(raw["cik"]))
     store_company_data(
         conn, raw["cik"], raw["entityName"], selection, mapping,
         tag_map=config.tag_map(), composites=composites,
@@ -1041,3 +1045,169 @@ def test_warnings_restore_idempotently(stored):
         trend_fingerprint=trend_fingerprint(),
     )
     assert scalar(conn, "SELECT COUNT(*) FROM warnings") == before
+
+
+# ============ Phase 8: stress on real data ============
+#
+# Measured 2026-09-13 and examined before pinning (rule 14). Only three of five
+# companies can be stressed at all: both EBITDA modes need revenue and ebitda in
+# the same period, which JNJ and KHC never have.
+
+STRESSABLE = {18926: 18, 37996: 9, 200406: 0, 815097: 15, 1637459: 0}
+
+
+def test_stressable_period_count_per_company(stored):
+    """The real denominator: 42 of 87 company-periods, three of five companies."""
+    conn, raw, _, _ = stored
+    n = scalar(conn, """SELECT COUNT(DISTINCT period_end) FROM stress_runs
+        WHERE cik = ? AND status = 'CURRENT'""", (raw["cik"],))
+    assert n == STRESSABLE[raw["cik"]]
+
+
+def test_a_company_that_cannot_be_stressed_has_no_runs_at_all(stored):
+    """JNJ and KHC: an absent row, not an empty or null-filled one."""
+    conn, raw, _, _ = stored
+    if raw["cik"] not in (200406, 1637459):
+        pytest.skip("JNJ and KHC only")
+    assert scalar(conn, "SELECT COUNT(*) FROM stress_runs WHERE cik = ?",
+                  (raw["cik"],)) == 0
+
+
+def test_a_stressed_grade_never_enters_the_scores_table(stored):
+    """D59, enforced structurally: the stress writer cannot reach `scores`.
+
+    A stressed grade there would carry the score fingerprint and occupy the
+    CURRENT slot reserved for the real grade — corrupting score history rather
+    than merely misleading a reader.
+    """
+    conn, raw, _, _ = stored
+    scores_before = scalar(conn, "SELECT COUNT(*) FROM scores WHERE cik = ?",
+                           (raw["cik"],))
+    runs = scalar(conn, "SELECT COUNT(*) FROM stress_runs WHERE cik = ?",
+                  (raw["cik"],))
+    # every score row is CURRENT and none was superseded by a stress run
+    assert scalar(conn, """SELECT COUNT(*) FROM scores
+        WHERE cik = ? AND status = 'SUPERSEDED'""", (raw["cik"],)) == 0
+    # the score count equals the scoreable-period count, untouched by stress
+    assert scores_before == scalar(conn, """SELECT COUNT(DISTINCT period_end)
+        FROM scores WHERE cik = ? AND status = 'CURRENT'""", (raw["cik"],))
+    if runs:
+        # and the two fingerprints are genuinely different values
+        sf = conn.execute("""SELECT DISTINCT config_fingerprint FROM scores
+            WHERE cik = ?""", (raw["cik"],)).fetchone()[0]
+        tf = conn.execute("""SELECT DISTINCT config_fingerprint FROM stress_runs
+            WHERE cik = ?""", (raw["cik"],)).fetchone()[0]
+        assert sf != tf
+
+
+def test_every_period_gets_all_three_presets(stored):
+    conn, raw, _, _ = stored
+    rows = conn.execute("""SELECT period_end, COUNT(*) AS n FROM stress_runs
+        WHERE cik = ? AND status = 'CURRENT' GROUP BY period_end""",
+        (raw["cik"],)).fetchall()
+    for r in rows:
+        assert r["n"] == 3, r["period_end"]
+
+
+# D64: at zero shock, five of seven metrics reproduce base EXACTLY; the two
+# cash-flow metrics do not, because the propagation approximates CFO with
+# working capital held flat while the base composite uses reported CFO.
+EXACT_AT_BASE = {"net_debt_to_ebitda", "debt_to_ebitda", "ebit_interest_cover",
+                 "ebitda_interest_cover", "ebitda_margin"}
+APPROXIMATED_AT_BASE = {"fcf_margin", "fcf_to_debt"}
+
+
+def test_the_base_scenario_reproduces_everything_except_the_cfo_approximation(stored):
+    """D61a stored the base run to make the comparison self-documenting, and
+    D64 is what that immediately exposed: the base run is NOT a no-op for
+    cash-flow metrics. Pinned as an exact/drifting split so a future change to
+    the CFO treatment is a deliberate re-baseline, not a silent improvement."""
+    conn, raw, _, _ = stored
+    rows = conn.execute("""SELECT sr.metric, sr.base_value, sr.stressed_value
+        FROM stress_results sr JOIN stress_runs run ON run.id = sr.run_id
+        WHERE run.cik = ? AND run.scenario = 'base' AND run.status = 'CURRENT'
+          AND sr.data_status = 'CALCULATED' AND sr.base_value IS NOT NULL""",
+        (raw["cik"],)).fetchall()
+    if not rows:
+        pytest.skip("company cannot be stressed")
+    for r in rows:
+        if r["metric"] in EXACT_AT_BASE:
+            assert r["stressed_value"] == pytest.approx(r["base_value"]), r["metric"]
+        elif r["metric"] in APPROXIMATED_AT_BASE:
+            pass          # drifts by construction; the gap is measured in D64
+
+
+def test_the_cfo_approximation_gap_is_real_and_only_touches_fcf(stored):
+    """The other half: the FCF metrics must actually differ, so the finding
+    cannot quietly disappear if someone 'fixes' the approximation."""
+    conn, raw, _, _ = stored
+    rows = conn.execute("""SELECT sr.metric, sr.base_value, sr.stressed_value
+        FROM stress_results sr JOIN stress_runs run ON run.id = sr.run_id
+        WHERE run.cik = ? AND run.scenario = 'base' AND run.status = 'CURRENT'
+          AND sr.metric IN ('fcf_margin','fcf_to_debt')
+          AND sr.data_status = 'CALCULATED' AND sr.base_value IS NOT NULL""",
+        (raw["cik"],)).fetchall()
+    if not rows:
+        pytest.skip("company produces no base-scenario FCF metrics")
+    assert any(r["stressed_value"] != pytest.approx(r["base_value"])
+               for r in rows)
+
+
+def test_severe_is_never_kinder_than_moderate(stored):
+    """A monotonicity invariant across the presets, on real data."""
+    conn, raw, _, _ = stored
+    rows = conn.execute("""SELECT period_end, scenario, stressed_score
+        FROM stress_runs WHERE cik = ? AND status = 'CURRENT'""",
+        (raw["cik"],)).fetchall()
+    by = {}
+    for r in rows:
+        by.setdefault(r["period_end"], {})[r["scenario"]] = r["stressed_score"]
+    for end, scores in by.items():
+        if {"moderate", "severe"} <= set(scores):
+            assert scores["severe"] <= scores["moderate"] + 1e-9, end
+
+
+def test_no_preset_needs_a_new_debt_rate(stored):
+    """D53c: presets carry additional_debt 0, so the rate is never priced —
+    the machinery exists for custom scenarios only."""
+    conn, raw, _, _ = stored
+    for r in conn.execute("""SELECT new_debt_rate_source, new_debt_rate_used,
+            additional_debt FROM stress_runs WHERE cik = ? AND status = 'CURRENT'""",
+            (raw["cik"],)):
+        assert r["additional_debt"] == 0
+        assert r["new_debt_rate_source"] == "not_needed"
+        assert r["new_debt_rate_used"] is None
+
+
+def test_stressed_results_that_refuse_name_a_reason(stored):
+    """The D9 discipline carried into stress: a refused stressed metric records
+    why rather than going null."""
+    conn, raw, _, _ = stored
+    for r in conn.execute("""SELECT sr.metric, sr.data_status, sr.reason_code,
+            sr.stressed_value FROM stress_results sr
+            JOIN stress_runs run ON run.id = sr.run_id WHERE run.cik = ?""",
+            (raw["cik"],)):
+        if r["data_status"] == "UNAVAILABLE":
+            assert r["reason_code"] and r["stressed_value"] is None
+        else:
+            assert r["reason_code"] is None
+
+
+def test_drivers_exist_for_every_shocked_scenario(stored):
+    conn, raw, _, _ = stored
+    for r in conn.execute("""SELECT id, scenario FROM stress_runs
+            WHERE cik = ? AND status = 'CURRENT' AND scenario <> 'base'""",
+            (raw["cik"],)):
+        n = scalar(conn, "SELECT COUNT(*) FROM stress_drivers WHERE run_id = ?",
+                   (r["id"],))
+        assert n > 0, r["scenario"]
+
+
+def test_stress_restores_idempotently(stored):
+    conn, raw, _, _ = stored
+    before = scalar(conn, "SELECT COUNT(*) FROM stress_runs")
+    _, _, _, _, _, _, _, runs = pipeline.analyse(pipeline.load_cached(raw["cik"]))
+    store_stress_runs(conn, raw["cik"], runs, stress_fingerprint())
+    assert scalar(conn, "SELECT COUNT(*) FROM stress_runs") == before
+    assert scalar(conn, """SELECT COUNT(*) FROM stress_runs
+        WHERE status = 'SUPERSEDED'""") == 0

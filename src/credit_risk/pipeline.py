@@ -15,9 +15,12 @@ from credit_risk.metrics.ratios import compute_metrics
 from credit_risk.normalise import map_concepts, select_annual_facts
 from credit_risk.scoring.engine import score_company
 from credit_risk.scoring.fingerprint import score_fingerprint
+from credit_risk.stress.engine import stress_company
+from credit_risk.stress.fingerprint import stress_fingerprint
 from credit_risk.trends.engine import analyse_trends
 from credit_risk.trends.fingerprint import trend_fingerprint
 from credit_risk.store import db
+from credit_risk.store.stress_writer import store_stress_runs
 from credit_risk.store.writer import store_company_data
 
 
@@ -33,20 +36,28 @@ def analyse(raw: dict):
     trends = analyse_trends(mapping, composites, metrics)
     scores = score_company(metrics, integrity, fingerprint=score_fingerprint(),
                            trend_report=trends)
-    return selection, mapping, composites, integrity, metrics, trends, scores
+    stress = stress_company(mapping, composites, metrics, scores,
+                            trend_report=trends,
+                            fingerprint=stress_fingerprint())
+    return (selection, mapping, composites, integrity, metrics, trends,
+            scores, stress)
 
 
 def analyse_and_store(raw: dict, conn=None, database: str = ":memory:"):
     """Run the pipeline and store the result. Returns (conn, cik)."""
     if conn is None:
         conn = db.create_database(database)
-    selection, mapping, composites, integrity, metrics, trends, scores = analyse(raw)
+    (selection, mapping, composites, integrity, metrics, trends, scores,
+     stress) = analyse(raw)
     store_company_data(
         conn, raw["cik"], raw["entityName"], selection, mapping,
         tag_map=config.tag_map(), composites=composites,
         integrity=integrity, metrics=metrics, scores=scores,
         trends=trends, trend_fingerprint=trend_fingerprint(),
     )
+    # stress goes through its OWN writer, which cannot reach the scores table
+    # (D59): a stressed grade must never occupy a real grade's CURRENT slot
+    store_stress_runs(conn, raw["cik"], stress, stress_fingerprint())
     return conn, raw["cik"]
 
 

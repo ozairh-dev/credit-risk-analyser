@@ -8,6 +8,7 @@ import typer
 from credit_risk import __version__, config, ingest, pipeline
 from credit_risk.metrics.ratios import METRICS, reason_kind
 from credit_risk.scoring.engine import explain
+from credit_risk.stress import engine as stress_engine
 from credit_risk.store import queries
 
 app = typer.Typer(help="Credit risk analyser", no_args_is_help=True)
@@ -210,6 +211,92 @@ def score(
                        f"({d['category']})")
         typer.echo(f"  {report['trend_note']}")
         typer.echo(f"\n  {report['disclaimer']}\n")
+
+
+@app.command()
+def stress(
+    ticker: str,
+    period: str = typer.Option(None, "--period", help="One period end, YYYY-MM-DD."),
+    scenario: str = typer.Option("severe", "--scenario",
+                                 help="base | moderate | severe"),
+    grid: bool = typer.Option(False, "--grid",
+                              help="Also print the sensitivity grid."),
+) -> None:
+    """Stress TICKER and print base vs stressed with driver attribution.
+
+    The assumptions block is not decoration: five of its lines are output
+    duties recorded as decisions before this command existed.
+    """
+    cik = ingest.ticker_to_cik(ticker)
+    raw = pipeline.load_cached(cik)
+    _, mapping, composites, _, metrics, trends, _, runs = pipeline.analyse(raw)
+
+    by = {(r.period_end, r.scenario): r for r in runs}
+    periods = sorted({p for p, _ in by})
+    if not periods:
+        typer.echo(f"\n{raw['entityName']} cannot be stress tested: no period "
+                   f"resolves both revenue and EBITDA.")
+        raise typer.Exit(0)
+    end = period or periods[-1]
+    run = by.get((end, scenario))
+    if run is None:
+        raise typer.BadParameter(
+            f"no {scenario} run for {end}. Stressable periods: "
+            f"{', '.join(periods)}")
+
+    typer.echo(f"\n{raw['entityName']} (CIK {cik}) — {end} — {scenario}")
+    typer.echo(f"  grade {run.base_grade} (base, {run.base_score:.1f}) -> "
+               f"{run.stressed_grade} (stressed, {run.stressed_score:.1f})\n")
+    typer.echo(f"  {'metric':26} {'base':>12} {'stressed':>12} {'change':>12}")
+    for metric, (b, s_, c, status, reason) in sorted(run.results.items()):
+        if status == "UNAVAILABLE":
+            typer.echo(f"  {metric:26} {b if b is None else f'{b:12.4f}'}"
+                       f" {'UNAVAILABLE':>12}  {reason}")
+        else:
+            typer.echo(f"  {metric:26} "
+                       f"{'—' if b is None else f'{b:12.4f}'} {s_:12.4f} "
+                       f"{'—' if c is None else f'{c:+12.4f}'}")
+
+    typer.echo("\n  driver attribution (each shock alone against base):")
+    shocks = sorted({sh for sh, _ in run.drivers})
+    for shock in shocks:
+        typer.echo(f"    {shock}")
+        for (sh, metric), change in sorted(run.drivers.items()):
+            if sh == shock and metric in ("net_debt_to_ebitda",
+                                          "ebit_interest_cover", "fcf_margin"):
+                typer.echo(f"      {metric:24} {change:+.4f}")
+    typer.echo("    (drivers do not sum to the combined run: the propagation "
+               "is multiplicative and tax is floored)")
+
+    typer.echo("\n  assumptions and simplifications:")
+    for line in run.assumptions:
+        typer.echo(f"    - {line}")
+
+    if grid:
+        series = {}
+        for c in mapping.concepts:
+            series.setdefault(c.end, {})[c.concept] = c.value
+        for c in composites:
+            if c.data_status == "CALCULATED":
+                series.setdefault(c.end, {})[c.concept] = c.value
+        base_metrics = {m.metric: m for m in metrics.metrics if m.end == end}
+        tv = {t.metric: t.verdict for t in trends.trends if t.period_end == end}
+        cells = stress_engine.sensitivity_grid(end, series[end], base_metrics, tv)
+        typer.echo("\n  sensitivity grid (revenue x margin shock) — "
+                   "net_debt_to_ebitda / grade:")
+        margins = sorted({c["margin_shock"] for c in cells})
+        typer.echo("      rev\\mar " + "".join(f"{m:>12.0%}" for m in margins))
+        for rev in sorted({c["revenue_shock"] for c in cells}, reverse=True):
+            row = [next(c for c in cells if c["revenue_shock"] == rev
+                        and c["margin_shock"] == m) for m in margins]
+            cells_txt = "".join(
+                f"{'—/—':>12}" if c["net_debt_to_ebitda"] is None
+                else f"{c['net_debt_to_ebitda']:8.2f}/{c['grade']}" .rjust(12)
+                for c in row)
+            typer.echo(f"      {rev:>7.0%} {cells_txt}")
+
+    typer.echo("\n  Internal analytical grade for this project. Not a credit "
+               "rating.\n")
 
 
 if __name__ == "__main__":

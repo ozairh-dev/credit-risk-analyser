@@ -286,7 +286,7 @@ reasons, so the change is invisible in the grade and visible only in
   negative-base-margin path are now written in the methodology.
 
 - Phase 8 step one part two (2026-09-13, Opus) — remaining stress config
-  settled, engine still NOT built. D54: floating_share stays 1.0 but its
+  settled (engine built in step two, below). D54: floating_share stays 1.0 but its
   justification was *corrected* — the fixed/floating split is unreachable in
   companyfacts (measured: no rate-split USD amount in any of the five), and
   1.0 is not cheap conservatism since it moves the stressed grade in four
@@ -296,6 +296,24 @@ reasons, so the change is invisible in the grade and visible only in
   policy keys only; per-run assumptions are columns — a value that varies per
   run is not a config version. D57: stressed scores carry base trend
   verdicts, and the liquidity exclusion is surfaced in the output.
+
+- Phase 8 step two (2026-09-13, Opus) — the stress engine and D20's three
+  deferred tables. stress/engine.py: both EBITDA modes, the full propagation
+  block, new_debt_rate resolution with source and reason, driver attribution
+  (each shock alone), and the sensitivity grid computed on demand.
+  stress/fingerprint.py is the fourth disjoint fingerprint. D58-D64.
+  `credit-risk stress <TICKER> [--grid]`.
+  **Two findings came out of implementing it:**
+  D63 — the two EBITDA modes move a loss-making company's stressed EBITDA in
+  OPPOSITE directions (constant margin shrinks the loss, operating leverage
+  deepens it); both are arithmetically right and mode B is the honest one.
+  D64 — the base scenario is NOT a no-op for cash-flow metrics: five of seven
+  metrics reproduce base exactly, but fcf_margin and fcf_to_debt drift by a
+  median 59% because the propagation approximates CFO with working capital
+  flat while the base composite uses reported CFO. D61a's decision to store
+  the base run is what exposed it.
+  Sabotage-verified: breaking driver isolation and dropping the basis-point
+  conversion each fail their own tests.
 
 ## Stress coverage (Phase 8/10 input, measured 2026-09-12)
 
@@ -504,15 +522,10 @@ investigation before KHC is relied on for anything revenue-derived.
   demonstrated on this set without the output misleading a reader.
 
 ## Next priorities
-- Phase 8 step two: the stress engine and the D20-deferred tables (stress_runs,
-  stress_results, stress_drivers). The config is fully settled (D53-D57). The engine
-  carries **five output duties recorded before the code exists**: print ebitda_mode,
-  fixed_cost_share and floating_share; name which new-debt rate was used and why; say
-  the trend component carries its base verdict; and surface that liquidity is unstressed
-  so 20 of 100 points cannot move. It must also measure the fixed_cost_share x
-  floating_share **joint** worst case — both push the same direction and were measured
-  independently. Note stress is structurally impossible for JNJ and KHC (see Stress
-  coverage).
+- Phase 9 (evidence pack / AI governance workflow) and Phase 10 (company universe).
+  The company-selection work is now the binding constraint on demonstrating anything:
+  four of five companies cannot score uncapped, three of five cannot be stressed, and
+  two of five cannot be stressed at all. See Open questions and the coverage tables.
 - The company-selection work remains the blocker for *demonstrating* Phase 6: four of
   five companies can never score uncapped. See Open questions.
 

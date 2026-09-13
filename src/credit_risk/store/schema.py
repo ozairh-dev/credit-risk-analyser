@@ -249,6 +249,75 @@ _TABLES = [
       PRIMARY KEY (warning_id, concept_id)
     ){strict}
     """,
+    # ---------------- stress (D20 deferred these; D58 specifies them) -------
+    """
+    CREATE TABLE stress_runs (
+      id            INTEGER PRIMARY KEY,
+      cik           INTEGER NOT NULL REFERENCES companies(cik),
+      period_end    TEXT NOT NULL,
+      scenario      TEXT NOT NULL,
+      -- the five shock inputs
+      revenue_shock   REAL NOT NULL,
+      margin_shock    REAL NOT NULL,
+      rate_shock_bps  REAL NOT NULL,
+      additional_debt REAL NOT NULL,
+      capex_shock     REAL NOT NULL,
+      -- per-run ASSUMED values: columns, never fingerprint, because a value
+      -- that varies per run is not a config version (D56)
+      ebitda_mode           TEXT NOT NULL
+                            CHECK (ebitda_mode IN ('constant_margin','operating_leverage')),
+      fixed_cost_share      REAL NOT NULL,
+      floating_share        REAL NOT NULL,
+      new_debt_rate_used    REAL,
+      new_debt_rate_source  TEXT
+                            CHECK (new_debt_rate_source IN
+                                   ('explicit','implied','default_substituted','not_needed')),
+      new_debt_rate_reason  TEXT,
+      base_score      REAL,
+      base_grade      INTEGER CHECK (base_grade BETWEEN 1 AND 6),
+      stressed_score  REAL,
+      stressed_grade  INTEGER CHECK (stressed_grade BETWEEN 1 AND 6),
+      -- the STRESS POLICY fingerprint (D56), never the score fingerprint
+      config_fingerprint TEXT NOT NULL,
+      status        TEXT NOT NULL DEFAULT 'CURRENT'
+                    CHECK (status IN ('CURRENT','SUPERSEDED')),
+      created_at    TEXT NOT NULL,
+      -- a resolved rate must say where it came from, and every source that
+      -- resolves one must carry it. 'not_needed' is the exception and must
+      -- carry no rate: a scenario with no additional debt has nothing to price.
+      CHECK (new_debt_rate_source <> 'not_needed' OR new_debt_rate_used IS NULL),
+      CHECK (new_debt_rate_source IS NULL
+             OR new_debt_rate_source = 'not_needed'
+             OR new_debt_rate_used IS NOT NULL)
+    ){strict}
+    """,
+    """
+    CREATE TABLE stress_results (
+      run_id         INTEGER NOT NULL REFERENCES stress_runs(id),
+      metric         TEXT NOT NULL,
+      base_value     REAL,
+      stressed_value REAL,
+      change         REAL,
+      -- a stressed metric that REFUSES records why rather than going null:
+      -- the same evidence-versus-gap discipline as D9
+      data_status    TEXT NOT NULL CHECK (data_status IN ('CALCULATED','UNAVAILABLE')),
+      reason_code    TEXT,
+      PRIMARY KEY (run_id, metric),
+      CHECK ((data_status = 'UNAVAILABLE') = (reason_code IS NOT NULL)),
+      CHECK (data_status <> 'UNAVAILABLE' OR stressed_value IS NULL)
+    ){strict}
+    """,
+    """
+    CREATE TABLE stress_drivers (
+      run_id  INTEGER NOT NULL REFERENCES stress_runs(id),
+      shock   TEXT NOT NULL,
+      metric  TEXT NOT NULL,
+      -- the change THIS shock causes alone against base. Drivers do not sum to
+      -- the combined run and must never be asserted to (D60).
+      change  REAL,
+      PRIMARY KEY (run_id, shock, metric)
+    ){strict}
+    """,
     # ---------------- data quality ----------------
     """
     CREATE TABLE integrity_results (
@@ -314,6 +383,9 @@ _INDEXES = [
     "CREATE INDEX idx_scores ON scores(cik, period_end)",
     "CREATE UNIQUE INDEX uq_warning ON warnings(cik, period_end, indicator)",
     "CREATE INDEX idx_warnings ON warnings(cik, period_end, severity)",
+    "CREATE UNIQUE INDEX uq_stress_run_current"
+    " ON stress_runs(cik, period_end, scenario) WHERE status = 'CURRENT'",
+    "CREATE INDEX idx_stress_runs ON stress_runs(cik, period_end)",
     "CREATE INDEX idx_dq_events ON data_quality_events(cik, code)",
 ]
 

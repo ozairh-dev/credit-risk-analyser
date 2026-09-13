@@ -108,9 +108,11 @@ checks (Phase 4) because the checks depend on them. See docs/build-plan.md.
       (split unreachable, measured); default_tax_rate 0.21 on statutory grounds;
       stress fingerprint = policy keys only, per-run values as columns; stressed scores
       carry base trend verdicts; liquidity exclusion surfaced (D54-D57)
-- [ ] Phase 8 step two: the stress engine + D20's deferred tables. FIVE output duties
-      pre-recorded in D53/D54/D56/D57, plus the fixed_cost_share x floating_share joint
-      measurement. JNJ and KHC cannot be stressed at all — see PROJECT_STATE
+- [x] Phase 8 step two (2026-09-13): stress/engine.py + D20's three tables. Both
+      modes, driver attribution, sensitivity grid on demand, five output duties each
+      pinned by a test. D58-D64, including two findings from implementation: the modes
+      diverge in direction for loss-makers (D63) and the base run is not a no-op for
+      FCF metrics (D64). `credit-risk stress <TICKER> [--grid]`
 
 ## Later
 - See docs/build-plan.md

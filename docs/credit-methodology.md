@@ -445,7 +445,7 @@ All stress inputs are `ASSUMED` and go in the assumption register. All stress ou
 |---|---|---|
 | revenue_shock | % | −5, −10, −15, −20 |
 | margin_shock | percentage points of EBITDA margin | see presets table below — sign convention: positive value reduces margin |
-| rate_shock | basis points | +100, +200, +300 |
+| rate_shock_bps | basis points | +100, +200, +300 |
 | additional_debt | currency | 0 |
 | capex_shock | % | 0 |
 
@@ -483,7 +483,12 @@ ebit_s      = ebitda_s − d_and_a_s
 
 debt_s      = total_debt + additional_debt
 interest_s  = interest_expense
-            + rate_shock × floating_share × total_debt  # floating_share ASSUMED, default 1.0, per-run
+            + (rate_shock_bps / 10000) × floating_share × total_debt
+                                                        # NOTE THE CONVERSION: the shock is in basis
+                                                        # points, so it is divided by 10,000 before use.
+                                                        # Read literally without it, a preset value of
+                                                        # 100 would multiply debt by 100 (D58/D61 note);
+                                                        # floating_share ASSUMED, default 1.0, per-run
                                                         # overridable, and PRINTED in every stress
                                                         # output (D54). The fixed/floating split is
                                                         # UNREACHABLE in companyfacts — measured: no
