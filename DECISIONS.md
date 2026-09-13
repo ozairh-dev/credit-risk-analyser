@@ -1729,3 +1729,135 @@ scenario has no view about — importing a real-world number into a hypothetical
 Consequences: the stress output must say that FCF metrics carry the approximation gap; a
 test pins the exact/drifting split so a future change to the CFO treatment shows up as a
 deliberate re-baseline rather than a silent improvement.
+
+## D65 — The v1 company universe: 43 demonstration companies and 5 retained fixtures
+Decision (owner-approved 2026-09-13, Phase 10). **105 companies screened through the full
+pipeline over their entire filing history** (D25's rule: validate before adopting, never on
+familiarity). **43 pass every hard filter — a 41% rate.** The open question that has stood
+since Phase 0 is closed.
+
+Hard filters applied, each traceable to a finding: US-listed and non-financial (SIC outside
+6000-6799, verified per candidate from the submissions endpoint); **joint** input
+availability rather than per-concept counts (the JNJ/LUMN empty-intersection trap); at
+least **3 consecutive periods where all five scoring categories score** (D10/D46's uncapped
+requirement); `revenue` and `ebitda` resolving in the **same** period (D53e's stress
+requirement); no structurally impossible metric.
+
+**CCL is one of the 43, not an addition to them** — it now qualifies on the criteria rather
+than on its distress-and-recovery arc, which is the outcome the re-screen was for.
+
+The full set with per-company uncapped periods, stressable periods, `debt_subset` witness
+counts and thin-path contributions is recorded in `PROJECT_STATE.md`.
+
+**Fixtures, retained for specific witness value only and NOT demonstration companies:**
+
+| Fixture | Why it stays |
+|---|---|
+| **QCOM** | The sole real `NO_DEBT` witness — FY2014, `ShortTermBorrowings` and `LongTermDebt` both tagged **explicit zero**, giving `total_debt = 0`. **2 occurrences in 1,028 resolved `total_debt` values across 105 companies.** Fails the uncapped-run filter, so a fixture and never a demonstration case (D67). |
+| **LUMN** | D27's lease-inclusive branch witness and D43's phantom-period witness. Both irreplaceable; neither is a demonstration. |
+| **JNJ** | **Cap-visibility witness only.** Scores 86-97 uncapped and shows grade 3 in all 18 periods. **It must stop being described as the strong reference company anywhere that phrasing survives** — it cannot score uncapped or be stressed at all. |
+| **F** | The negative fixture of D25: it earns its place by **refusing to compute**. |
+| **KHC** | Second lease-inclusive witness behind LUMN. |
+
+**Thin-path coverage now achieved**, ending gaps that every audit's unvalidated-assumptions
+table has carried:
+- **`NON_POSITIVE_CAPITAL` has two witnesses** — YUM x5 and MAR x2 — so it is no longer a
+  single point of failure.
+- **FYE derivation is no longer synthetic-only**: BKNG produces **407** FYE events,
+  exercising `FYE_DISAGREEMENT` / `FYE_TIE` / `AMBIGUOUS_FYE` at volume. These have been
+  listed as "never exercised by real data" since the pre-Task-9 audit.
+- **`NO_DEBT` has QCOM** (D67).
+- `debt_subset` has **20 companies with 5+ periods**, against a set-level target of 8+.
+
+**BKNG's grade 6 is understood and accepted — do not re-investigate.** It occurs in
+**2020 only**: revenue **-54.9%**, EBITDA negative, EBIT negative. A travel-booking company
+in COVID, sitting between grade 1s and a recovery. That is a genuine single-year collapse
+and makes BKNG a **better** demonstration case, not a riskier one.
+
+## D66 — A filter on data availability became a filter on industry
+Decision (owner call, 2026-09-13): the `Liabilities`-tag requirement is **demoted from a
+hard per-company filter to a set-level coverage target** — the set must contain enough
+`debt_subset` witnesses (8+ companies with 5+ periods each); individual members need not
+qualify.
+
+Reason, measured: as a hard filter it eliminated WMT, MCD, KO, TGT, AZO, FAST, TJX, LUV,
+DAL, VZ **and CCL itself** — companies strong on every other axis. It was **selecting for a
+reporting convention, not for quality**: hotels and gaming filers tag `Liabilities`,
+big-box retail largely does not. The resulting concentration read as a property of the
+market when it was an artefact of the screen — the 19-company set was 5/19 hotels and
+gaming for that reason alone.
+
+Measured effect of the demotion: **19 -> 43 passing (25% -> 41%)**, 21 distinct 2-digit SIC
+groups instead of a leisure-heavy cluster, and set-level coverage **exceeded** at 20
+companies with 5+ `debt_subset` periods.
+
+**The generalisable point: a check that not every filer can witness must be a set-level
+target, never a per-company gate.** Requiring each member to witness every check selects
+for whichever filing convention the check depends on, and silently narrows the universe
+along a dimension nobody chose. `debt_subset` is the first check with this shape; the same
+test should be applied to any future check before it becomes a selection criterion.
+Alternatives: keep it hard (loses CCL and ten strong companies to a tagging convention);
+drop the requirement entirely (leaves `debt_subset` with its one usable witness, the
+finding that started this).
+
+## D67 — NO_DEBT is reachable and witnessed: a correction, and how the error survived review
+Correction (2026-09-13). Recorded in full, including the error, because the reasoning
+failure is more instructive than the fact.
+
+**What was claimed, and what is true.** After screening 77 companies and finding zero
+`NO_DEBT` occurrences, the assistant reported the path as **"structurally unwitnessable"**
+and supplied a mechanism: *"a debt-free filer reports nothing rather than zero, so
+`NO_DEBT_DATA` fires at the composite layer before `NO_DEBT` can."*
+
+**Both halves are false, and both were checkable in one query.**
+- The **mechanism** is false: filers tag explicit zeros routinely. Measured across 105
+  payloads: **213 explicit zero debt tags** — `short_term_debt` 75, `current_ltd` 68,
+  `total_ltd_aggregate` 9, and others.
+- The **conclusion** is false: **QCOM FY2014** reports `ShortTermBorrowings = 0` **and**
+  `LongTermDebt = 0`, so `total_debt` computes to exactly 0 and `NO_DEBT` fires, kind
+  `NEITHER`, exactly as D42a designed. The unlevered company is correctly not grade-capped.
+
+**So the answer to the question the claim raised: the path is reachable through the real
+pipeline, not synthetic-only, and the `NEITHER` classification defends a real state.** It is
+simply rare — **2 occurrences in 1,028 resolved `total_debt` values across 105 companies** —
+which is why 77 were not enough to find it.
+
+**The lesson, which is the point of this entry.** Absence of evidence across 77 companies
+was treated as **impossibility**, and the gap was filled with an **invented mechanism**
+rather than a measurement. CLAUDE.md rule 13 says measure rather than assert; this is
+precisely the case where a claim about *unreachability* was asserted. A negative claim needs
+the same evidentiary standard as a positive one — arguably a higher one, since "not found
+yet" and "cannot exist" are indistinguishable from inside a finite sample, and only the
+second licenses removing a code path.
+
+**The error survived review.** The owner read the claim, accepted the theory, and asked for
+it to be recorded as a finding — so a second pair of eyes did not catch it either. A
+plausible mechanism attached to a true observation ("we found none") is unusually
+persuasive, which is exactly why the measurement, not the story, has to carry the weight.
+The correction came only from screening one more batch for unrelated reasons.
+Consequences: no code changes — `NO_DEBT` and its `NEITHER` kind were always correct. QCOM
+is adopted as the fixture that witnesses it (D65).
+
+## D68 — Pinned assertions follow the fixtures; the universe gets structural invariants
+Decision (2026-09-13, forced by adopting D65's universe): `tests/test_real_companies.py`
+parametrises its **pinned** assertions over the five FIXTURE ciks only, and adds a separate
+pass parametrised over **every** cached payload asserting structural invariants with no
+pinned numbers.
+
+Reason: the regression net globbed `data/raw/`, so caching 105 screened candidates silently
+widened it from 5 companies to 105 while every pinned dict — `METRIC_COVERAGE`,
+`CCL_SCORES`, `SCORE_SHAPE`, `STRESSABLE` — remained keyed to the original five.
+**Pinning a number per company would have meant ~100 expectations nobody had hand-checked**,
+which is precisely the failure CLAUDE.md rule 14 exists to prevent: expectations derived
+from output rather than examined.
+
+The split matches what D65 made the two roles mean. A **fixture** is retained to witness a
+specific behaviour, so its numbers are examined and pinned. A **demonstration company** is
+adopted for coverage, so it is exercised by properties that must hold for any filer — it
+stores without raising, every metric has a row per period, every reason code classifies, an
+integrity-FAIL period is never scored, no stressed grade reaches `scores`. A new candidate
+is therefore exercised the moment it is fetched, without anyone inventing an expectation
+for it.
+Consequences: the suite runs 816 tests over 105 payloads. D65's thin-path claims are
+asserted rather than trusted — a test fails if `NO_DEBT` loses QCOM or
+`NON_POSITIVE_CAPITAL` loses YUM and MAR.

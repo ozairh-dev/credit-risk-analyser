@@ -100,27 +100,95 @@ because the integrity checks depend on the composites. See docs/build-plan.md.
   DataQualityEvent records (normalise/quality.py) persisted to
   data_quality_events, so only one shape exists in the codebase.
 
-## Demonstration companies (current set)
+- Phase 10 universe adopted (2026-09-13, Opus) — 105 companies screened
+  through the full pipeline, 43 adopted, 5 retained as fixtures. Closed the
+  open question that had stood since Phase 0. D65-D68, including two
+  corrections: the Liabilities filter was selecting for industry rather than
+  quality (D66), and NO_DEBT was wrongly reported as structurally
+  unwitnessable (D67 — QCOM FY2014 disproves it). Adopting the universe also
+  forced the test split: pinned assertions follow the fixtures, structural
+  invariants run over all 105 payloads (D68).
 
-Cached in `data/raw/`. Every adoption must be validated by running the full pipeline over
-the company's entire filing history first (DECISIONS D25) — not assumed from familiarity.
+## Company universe (adopted 2026-09-13, D65)
 
-| Ticker | CIK | Role | Pipeline-verified |
-|---|---|---|---|
-| CCL | 815097 | leveraged borrower | all five of total_debt / ebitda / interest_expense / cfo / capex resolve for 18 periods, **15 consecutive after D26** (2011-11-30 -> 2025-11-30; 2010-11-30 is a 7.9% component/aggregate mismatch); no config changes needed; debt/assets 22-69% |
-| JNJ | 200406 | strong / low-leverage anchor | total_debt 18/19 periods, but `ebit` only 2010-2014, so EBITDA leverage is limited to those years |
-| LUMN | 18926 | weak / deteriorating | ebitda 18/18; **total_debt 15/18 under D27's lease-inclusive branch** (2011-2025). 2009/2010 stay UNAVAILABLE — an uncorrected filer tagging error makes their inputs self-contradictory, and refusing them is correct (D27) |
+**105 screened through the full pipeline over entire filing histories; 43 adopted (41%).**
+The Phase 0 open question is closed.
 
-Still needed for Phase 10's four documented cases: one that looks weak at base but
-survives Severe stress. CCL's 2020-2022 distress and recovery may serve.
+Hard filters: US-listed non-financial (SIC verified per candidate), **joint** input
+availability, 3+ consecutive all-five-category periods, revenue and ebitda in the same
+period, no structurally impossible metric. The `Liabilities` tag is a **set-level** target,
+not a per-company gate (D66).
 
-**Cached fixtures that are NOT demonstration companies** — they do not count toward the
-v1 universe of 25-50 names and are not reported on:
+| # | Ticker | Sector | Uncapped | Stressable | debt_subset | Thin-path contribution | Grades |
+|---|---|---|---|---|---|---|---|
+| 1 | YUM | restaurants | 14 | 20 | 10 | **NON_POSITIVE_CAPITAL x5** / **FYE x1** / lease branch x5 | 1-4 |
+| 2 | BKNG | transport svcs | 10 | 18 | 13 | **FYE x407** | 1-6 |
+| 3 | MAR | hotels | 16 | 7 | 0 | **NON_POSITIVE_CAPITAL x2** / lease branch x7 | 3-6 |
+| 4 | DPZ | food wholesale | 12 | 17 | 3 | **FYE x2** / lease branch x11 | 3-5 |
+| 5 | CAG | food | 4 | 15 | 15 | **FYE x1** | 3-6 |
+| 6 | HLT | hotels | 13 | 14 | 2 | lease branch x11 | 2-5 |
+| 7 | MPC | refining | 8 | 15 | 1 | lease branch x8 | 2-6 |
+| 8 | TXRH | restaurants | 3 | 17 | 9 | lease branch x3 | 2-5 |
+| 9 | CMI | engines | 12 | 19 | 13 | lease branch x1 | 1-4 |
+| 10 | PENN | hotels/gaming | 10 | 16 | 9 | lease branch x4 | 3-6 |
+| 11 | SBUX | restaurants | 18 | 19 | 18 | — | 1-5 |
+| 12 | STLD | steel | 13 | 19 | 17 | — | 1-6 |
+| 13 | WYNN | hotels/gaming | 10 | 11 | 17 | — | 2-6 |
+| 14 | HAS | toys | 10 | 16 | 15 | — | 2-5 |
+| 15 | WBD | cable/media | 6 | 19 | 9 | — | 1-5 |
+| 16 | SYK | med devices | 17 | 17 | 11 | — | 1-4 |
+| 17 | LYB | chemicals | 14 | 15 | 0 | lease branch x12 | 1-5 |
+| 18 | LVS | hotels/gaming | 13 | 18 | 0 | lease branch x17 | 1-6 |
+| 19 | IDXX | diagnostics | 13 | 18 | 15 | — | 1-4 |
+| 20 | MGM | hotels/gaming | 12 | 18 | 12 | — | 3-6 |
+| 21 | SLB | oil services | 9 | 11 | 18 | — | 1-4 |
+| 22 | GIS | grain mill | 8 | 10 | 4 | lease branch x14 | 3-6 |
+| 23 | RCL | water transport | 17 | 18 | 0 | lease branch x14 | 3-6 |
+| 24 | LYV | entertainment | 16 | 17 | 0 | lease branch x14 | 3-6 |
+| 25 | PG | household | 14 | 19 | 14 | — | 2-4 |
+| 26 | AZO | auto parts retail | 14 | 18 | 0 | **FYE x2** | 3-4 |
+| 27 | COST | retail | 14 | 18 | 17 | — | 2-4 |
+| 28 | PPG | paints | 14 | 15 | 17 | — | 2-4 |
+| 29 | CHD | household | 8 | 10 | 16 | — | 2-4 |
+| 30 | CZR | hotels/gaming | 7 | 14 | 12 | — | 4-6 |
+| 31 | DVN | oil & gas | 4 | 6 | 0 | — | 2-5 |
+| 32 | MCD | restaurants | 17 | 19 | 0 | — | 1-4 |
+| 33 | CCL | water transport | 13 | 15 | 0 | — | 3-6 |
+| 34 | ECL | specialty chem | 13 | 6 | 0 | lease branch x14 | 2-4 |
+| 35 | BBY | retail | 10 | 10 | 0 | lease branch x1 | 2-4 |
+| 36 | KO | beverages | 9 | 10 | 0 | lease branch x2 | 2-4 |
+| 37 | MCK | drug wholesale | 9 | 18 | 0 | lease branch x1 | 3-6 |
+| 38 | LUV | airlines | 6 | 19 | 0 | lease branch x9 | 2-4 |
+| 39 | TJX | apparel retail | 6 | 8 | 0 | — | 1-4 |
+| 40 | FAST | industrial dist | 12 | 4 | 0 | — | 1-4 |
+| 41 | CHTR | cable | 3 | 16 | 0 | — | 4-6 |
+| 42 | WMT | retail | 18 | 19 | 0 | — | 3-4 |
+| 43 | BDX | med devices | 6 | 19 | 0 | — | 3-4 |
 
-| Ticker | CIK | Why it is cached |
+CCL is **one of** the 43 — it now qualifies on the criteria rather than on its arc.
+
+### Fixtures — retained for witness value only, NOT demonstration companies
+
+| Fixture | Why it stays |
+|---|---|
+| **QCOM** | Sole real `NO_DEBT` witness: FY2014 tags `ShortTermBorrowings` and `LongTermDebt` both explicit zero. 2 occurrences in 1,028 resolved `total_debt` values across 105 companies. Fails the uncapped-run filter (D67) |
+| **LUMN** | D27 lease-inclusive branch witness; D43 phantom-period witness |
+| **JNJ** | **Cap-visibility witness only** — scores 86-97 uncapped, shows grade 3 in all 18 periods. **No longer the "strong reference company"**: it cannot score uncapped or be stressed at all |
+| **F** | D25's negative fixture — earns its place by refusing to compute |
+| **KHC** | Second lease-inclusive witness behind LUMN |
+
+### Thin-path coverage achieved
+
+| Path | Status before | Now |
 |---|---|---|
-| F | 37996 | negative fixture: no period produces both total_debt and ebitda, so no leverage metric can ever compute. Retained deliberately as a test that the tool refuses rather than inventing a number (D25). Also the reason D27's aggregate is cross-check-only — F resolves that tag in 13 periods and the pair in zero |
-| KHC | 1637459 | second independent witness for D27's lease-inclusive branch (12 periods, no conflicts). A rule with one witness is worth less than one with two, so LUMN alone was not enough |
+| `NON_POSITIVE_CAPITAL` | synthetic-only | **YUM x5, MAR x2** — two witnesses, no longer a single point of failure |
+| FYE derivation (`FYE_DISAGREEMENT`/`FYE_TIE`/`AMBIGUOUS_FYE`) | synthetic-only since the pre-Task-9 audit | **BKNG x407** |
+| `NO_DEBT` | believed unwitnessable (wrongly — D67) | **QCOM x2** |
+| `debt_subset` | 1 usable witness (JNJ) | **20 companies with 5+ periods** |
+
+**BKNG's grade 6 is understood — do not re-investigate.** 2020 only: revenue **-54.9%**,
+EBITDA and EBIT negative. A travel-booking company in COVID, between grade 1s and a
+recovery. A genuine single-year collapse, which makes it a better demonstration case.
 
 ## Known dependencies (not open questions)
 - **SIC code has no source in v1 data.** companyfacts JSON does not carry it, and
@@ -344,8 +412,9 @@ only 39 of 87 periods**, and 10 of those 39 fall outside [0, 50%] — so
 | F | 19 | 3 | 1 |
 | KHC | 16 | 6 | 2 |
 
-**JNJ never escalates** across 18 periods — the negative witness, and
-consistent with it being the strong reference company.
+**JNJ never escalates** across 18 periods — the negative witness. (Written when
+JNJ was treated as the strong reference company; it is now a cap-visibility
+fixture only, D65. The zero-escalation result stands on its own.)
 
 Structurally impossible trends, inherited from the known tag-map gaps:
 `ebitda_margin` for JNJ and KHC, `revenue_growth` for KHC, `fcf` for Ford.
@@ -405,8 +474,8 @@ Periods producing a value. Company period counts: LUMN/F/JNJ/CCL 19 each, KHC 13
 2. **JNJ's `revenue` and `ebit` periods do not overlap at all.** `ebit` resolves
    2010-2014, `revenue` 2017-2025 — the intersection is **empty**, so
    `ebit_margin` and `ebitda_margin` are not merely thin for JNJ but
-   *structurally impossible*. The designated strong reference company cannot
-   produce either margin in any period.
+   *structurally impossible* — it cannot produce either margin in any period.
+   This is the finding that ended JNJ's role as a demonstration company (D65).
 3. **KHC's revenue gap costs six of seventeen metrics** — every
    revenue-denominated ratio plus `revenue_growth`.
 
@@ -467,7 +536,7 @@ never run for it and no revenue-based metric will ever compute. Worth a tag
 investigation before KHC is relied on for anything revenue-derived.
 
 ## Tests
-- 623 passing, 36 skipped (7 setup + 3 env + 6 ingest/tickers + 12 ingest/companyfacts (all
+- 816 passing, 45 skipped (7 setup + 3 env + 6 ingest/tickers + 12 ingest/companyfacts (all
   HTTP-mocked) + 4 cli wiring + 3 fixture guards + 31 selection + 10 mapping +
   42 composites (deviation edges, all four branches, guards, toggles, storage) +
   28 integrity (every check pass/fail/skip, the 1% boundary, D23's three codes,
@@ -512,14 +581,7 @@ investigation before KHC is relied on for anything revenue-derived.
 - none
 
 ## Open questions
-- Which 25-50 companies form the v1 universe? (US-listed, non-financial, 3+ years of 10-K data)
-  **Sharpened by the pre-Phase-6 audit into a blocker for demonstrating Phase 6:** four of
-  the five current companies can never produce a five-category score, so every grade they
-  generate is capped at 3 by D10 for coverage reasons rather than credit reasons. Only CCL
-  clears the cap, in 13 of 19 periods. Ford can never score cash flow (no capex tag); KHC
-  can never score business performance (no revenue); LUMN and JNJ top out at 4 of 5.
-  Phase 6 can be BUILT on CCL alone — it exercises every scoring path — but cannot be
-  demonstrated on this set without the output misleading a reader.
+- none. The v1 universe question — open since Phase 0 — was closed on 2026-09-13 by D65.
 
 ## Next priorities
 - Phase 9 (evidence pack / AI governance workflow) and Phase 10 (company universe).

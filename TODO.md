@@ -5,8 +5,9 @@ Ordered. Top unchecked item is next.
 ## Phase 0 - spec
 - [ ] Read docs/credit-methodology.md end to end; be able to explain every formula
       and the stress propagation rules
-- [ ] Choose the v1 company universe (25-50 names)
-- [ ] Settle the remaining open question in PROJECT_STATE.md (company universe)
+- [x] Choose the v1 company universe (25-50 names) — 43 adopted 2026-09-13 from 105
+      screened, plus 5 retained fixtures (D65). Open since Phase 0
+- [x] Settle the remaining open question in PROJECT_STATE.md (company universe) — D65
 
 ## Phase 1 - foundation
 - [x] Task 1: repo, pyproject.toml, layout, .gitignore, passing pytest run
@@ -71,13 +72,11 @@ checks (Phase 4) because the checks depend on them. See docs/build-plan.md.
       grade is never mistaken for a judged one (required regardless of company set)
 
 ## Phase 9/10 inputs raised by Task 10
-- [ ] Phase 10 universe selection must cover `debt_subset`: it has one usable witness
-      (JNJ), since lease-inclusive filers have total_debt_ex_leases UNAVAILABLE and CCL
-      reports no `Liabilities` tag. Needs filers with plain debt AND a Liabilities tag
-- [ ] Phase 10 selection must treat headline-metric coverage as a selection criterion:
-      JNJ resolves OperatingIncomeLoss in only 6 of 19 periods, so the designated
-      strong reference company is the thinnest evidence for both headline metrics —
-      two of five demonstration companies now have a tag-map hole in a headline metric
+- [x] `debt_subset` coverage solved at set level, not per company (D66): 20 adopted
+      companies witness it with 5+ periods each, against an 8+ target
+- [x] Phase 10 selection treats headline-metric coverage as a selection criterion —
+      applied as the joint-availability filter in the 2026-09-13 screen (D65). JNJ's
+      6-of-19 OperatingIncomeLoss resolution is what demoted it to a fixture
 - [ ] Tag-map gap: Ford reports no `PaymentsToAcquirePropertyPlantAndEquipment` at
       all, so capex never resolves and fcf_margin / fcf_to_debt / capex_to_revenue
       are zero for it in every period. LUMN resolves capex in 6 of 18

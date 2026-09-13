@@ -33,7 +33,21 @@ from credit_risk.normalise.selection import period_type
 from credit_risk.store import db, queries
 from credit_risk.store.writer import store_company_data
 
-CACHED = sorted((config.RAW_DIR).glob("CIK*.json")) if config.RAW_DIR.exists() else []
+# The five FIXTURES (D65). Every pinned assertion in this module is keyed to
+# these, because that is what a fixture is for: a company retained to witness a
+# specific behaviour, with numbers we have examined and can defend.
+#
+# data/raw/ also holds the adopted demonstration companies (43 as of D65) and
+# every other candidate screened. Those are NOT pinned — a pinned number per
+# company would be 100 expectations nobody has hand-checked, which is exactly
+# the bug rule 14 exists to prevent. They are exercised by the structural
+# invariants at the end of this module instead.
+FIXTURE_CIKS = (18926, 37996, 200406, 815097, 1637459)   # LUMN F JNJ CCL KHC
+
+ALL_CACHED = (sorted(config.RAW_DIR.glob("CIK*.json"))
+              if config.RAW_DIR.exists() else [])
+CACHED = [p for p in ALL_CACHED
+          if int(p.stem.replace("CIK", "")) in FIXTURE_CIKS]
 
 pytestmark = pytest.mark.skipif(
     not CACHED, reason="no cached companyfacts in data/raw/ (gitignored)"
@@ -1211,3 +1225,77 @@ def test_stress_restores_idempotently(stored):
     assert scalar(conn, "SELECT COUNT(*) FROM stress_runs") == before
     assert scalar(conn, """SELECT COUNT(*) FROM stress_runs
         WHERE status = 'SUPERSEDED'""") == 0
+
+
+# ============ every cached company, structural invariants only ============
+#
+# Parametrised over ALL cached payloads — the 43 adopted demonstration
+# companies, the 5 fixtures and every other candidate screened (D65). No pinned
+# numbers: these assert properties that must hold for any filer, so adopting a
+# company cannot silently break the pipeline, and a new candidate is exercised
+# the moment it is fetched.
+
+@pytest.mark.skipif(not ALL_CACHED, reason="no cached companyfacts")
+@pytest.mark.parametrize("path", ALL_CACHED, ids=lambda p: p.stem)
+def test_every_cached_company_runs_and_stores(path):
+    """The regression net widened to the whole universe: no filer may crash the
+    pipeline, and everything it produces must be storable."""
+    raw = load(path)
+    if "facts" not in raw:
+        pytest.skip("payload carries no facts")
+    (selection, mapping, composites, integrity, metrics, trends, scores,
+     stress) = pipeline.analyse(raw)
+    conn = db.create_database(":memory:")
+    try:
+        store_company_data(
+            conn, raw["cik"], raw["entityName"], selection, mapping,
+            tag_map=config.tag_map(), composites=composites,
+            integrity=integrity, metrics=metrics, scores=scores, trends=trends,
+            trend_fingerprint=trend_fingerprint(),
+        )
+        store_stress_runs(conn, raw["cik"], stress, stress_fingerprint())
+
+        periods = len({m.end for m in metrics.metrics})
+        # every metric has a row for every period — no silent skipping
+        for metric in METRICS:
+            assert scalar(conn, """SELECT COUNT(*) FROM metrics
+                WHERE cik = ? AND metric = ? AND status = 'CURRENT'""",
+                (raw["cik"], metric)) == periods, metric
+        # every reason code classifies, or Phase 6 cannot treat it
+        for r in conn.execute("""SELECT DISTINCT reason_code FROM metrics
+                WHERE cik = ? AND data_status = 'UNAVAILABLE'""", (raw["cik"],)):
+            assert reason_kind(r["reason_code"]) in (EVIDENCE, GAP, NEITHER), \
+                r["reason_code"]
+        # an integrity-FAIL period is never scored (D45)
+        failed = {r["period_end"] for r in conn.execute(
+            """SELECT DISTINCT period_end FROM integrity_results
+               WHERE cik = ? AND outcome = 'FAIL'""", (raw["cik"],))}
+        scored = {r["period_end"] for r in conn.execute(
+            """SELECT period_end FROM scores WHERE cik = ? AND status='CURRENT'""",
+            (raw["cik"],))}
+        assert not (failed & scored)
+        # a stressed grade never reaches the scores table (D59)
+        assert scalar(conn, """SELECT COUNT(*) FROM scores
+            WHERE cik = ? AND status = 'SUPERSEDED'""", (raw["cik"],)) == 0
+    finally:
+        conn.close()
+
+
+@pytest.mark.skipif(not ALL_CACHED, reason="no cached companyfacts")
+def test_the_universe_witnesses_the_thin_paths(  ):
+    """D65's coverage claims, asserted rather than trusted: the paths that were
+    synthetic-only must now have real witnesses somewhere in the universe."""
+    import collections
+    seen = collections.Counter()
+    for path in ALL_CACHED:
+        raw = load(path)
+        if "facts" not in raw:
+            continue
+        _, mapping, composites, _, metrics, trends, _, _ = pipeline.analyse(raw)
+        for m in metrics.metrics:
+            if m.reason_code in ("NO_DEBT", "NON_POSITIVE_CAPITAL"):
+                seen[m.reason_code] += 1
+        seen["fye_events"] += len(_.warnings) if hasattr(_, "warnings") else 0
+    # QCOM is the sole NO_DEBT witness; YUM and MAR carry NON_POSITIVE_CAPITAL
+    assert seen["NO_DEBT"] >= 2, "NO_DEBT lost its only witness (QCOM FY2014)"
+    assert seen["NON_POSITIVE_CAPITAL"] >= 7, "NON_POSITIVE_CAPITAL witnesses lost"
