@@ -108,3 +108,37 @@ def test_stress_config_carries_the_d53_structure():
     # presets deliberately carry no incremental borrowing (D53c)
     for name, preset in stress["presets"].items():
         assert preset["additional_debt"] == 0, name
+
+
+def test_stress_config_per_run_and_policy_keys_are_both_present():
+    """D54-D56: the policy keys the stress fingerprint will cover, and the
+    per-run levers it must NOT. Pinned before the engine so the split cannot be
+    quietly collapsed when step two wires it."""
+    stress = config.stress()
+    policy = {"presets", "sensitivity_grid", "default_tax_rate",
+              "new_debt_rate_default", "new_debt_rate_band"}
+    per_run = {"ebitda_mode", "fixed_cost_share", "floating_share",
+               "new_debt_rate"}
+    assert policy <= set(stress)
+    assert per_run <= set(stress)
+    assert not (policy & per_run)          # a key is one or the other, never both
+    assert stress["floating_share"] == 1.0
+    assert stress["default_tax_rate"] == 0.21
+
+
+def test_the_four_fingerprint_scopes_are_disjoint():
+    """D56: four fingerprints, no key in two of them. File location is
+    incidental — trend_points lives in thresholds.yaml and belongs to the score
+    scope; default_tax_rate lives in stress.yaml and belongs to the stress
+    scope. Blast radius is the boundary."""
+    from credit_risk.scoring.fingerprint import FINGERPRINTED_KEYS as SCORE
+    from credit_risk.store.fingerprint import FINGERPRINTED_KEYS as COMPOSITE
+    from credit_risk.trends.fingerprint import FINGERPRINTED_KEYS as TREND
+    STRESS = ("presets", "sensitivity_grid", "default_tax_rate",
+              "new_debt_rate_default", "new_debt_rate_band")
+    scopes = [set(COMPOSITE), set(SCORE), set(TREND), set(STRESS)]
+    for i, a in enumerate(scopes):
+        for b in scopes[i + 1:]:
+            assert not (a & b), (a & b)
+    assert "trend_points" in set(SCORE)          # not the trend scope
+    assert "default_tax_rate" in set(STRESS)     # not the score scope

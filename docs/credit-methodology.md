@@ -483,7 +483,15 @@ ebit_s      = ebitda_s − d_and_a_s
 
 debt_s      = total_debt + additional_debt
 interest_s  = interest_expense
-            + rate_shock × floating_share × total_debt  # floating_share ASSUMED, default 1.0
+            + rate_shock × floating_share × total_debt  # floating_share ASSUMED, default 1.0, per-run
+                                                        # overridable, and PRINTED in every stress
+                                                        # output (D54). The fixed/floating split is
+                                                        # UNREACHABLE in companyfacts — measured: no
+                                                        # rate-split USD amount in any cached company —
+                                                        # so 1.0 is forced, not chosen. It is not cheap
+                                                        # conservatism: at 1.0 vs 0.3 the stressed grade
+                                                        # moves in four measured periods (CCL 2015 and
+                                                        # 2018 fall 3 → 4 at Severe)
             + new_debt_rate × additional_debt           # new_debt_rate ASSUMED (D53b): explicit config
                                                         # override if set; else the implied rate
                                                         # interest_expense / total_debt IF it falls inside
@@ -509,8 +517,20 @@ net_debt_s  = net_debt + additional_debt               # no cash sweep, ASSUMED
 
 Then recompute `net_debt_to_ebitda`, `debt_to_ebitda`, `ebit_interest_cover`,
 `ebitda_interest_cover`, `fcf_to_debt`, `fcf_margin`, `ebitda_margin`, and re-score to get
-the **stressed grade**. Liquidity ratios are **not** stressed in v1 (balance-sheet
-liquidity is held at base); say so in the output.
+the **stressed grade**.
+
+**The stressed score carries the base period's trend verdict** (D57a). A trend is history,
+and a stress scenario is a hypothetical about one period rather than a rewritten past, so
+`ebitda_margin_trend` scores under stress exactly as it does at base. Suppressing it would
+drop a scored category and trigger the grade cap, making stressed grades incomparable to
+base ones for a presentational reason rather than a credit one. **The stressed output must
+say that the trend component carries the base verdict.**
+
+**Liquidity ratios are not stressed in v1** (balance-sheet liquidity is held at base). The
+output must **surface this, not merely footnote it** (D57b): the liquidity category is
+**20 of 100 weight**, so it scores identically in base and stressed, which caps how far any
+stressed grade can fall. A reader comparing a base grade to a stressed one needs to know
+that a fifth of the score could not move by construction.
 
 Both EBITDA modes run correctly from a **negative base margin**: a company already at
 negative EBITDA stresses to deeper-negative EBITDA, which carries `NEGATIVE_EBITDA`
@@ -519,7 +539,13 @@ incidental (D53d).
 
 Documented simplifications (state them in every stress output): D&A held flat; whole debt
 stack reprices if `floating_share = 1.0`; working capital held flat; no cash sweep; tax
-floored at zero.
+floored at zero; liquidity held at base; the trend component carries its base verdict.
+
+**Values printed in every stress output** (D53a, D54, D56): `ebitda_mode`,
+`fixed_cost_share`, `floating_share`, and the `new_debt_rate` actually used with the reason
+it was chosen. These vary per run, so they are recorded as columns on the stress run rather
+than covered by the stress config fingerprint — a value that varies per run is not a config
+version (D56).
 
 ### Stress output
 

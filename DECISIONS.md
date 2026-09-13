@@ -63,6 +63,11 @@ Reason: floating/fixed split is not reliably available from XBRL. Whole-stack re
 is conservative and stated as a simplification.
 Alternatives: assume a floating share; parse debt footnotes.
 Consequences: stressed interest is an upper bound; documented in every stress output.
+**Amended by D54 (2026-09-13):** the value stands, the reasoning does not. Measured, the
+split is **unreachable** rather than "not reliably available" — no rate-split USD amount
+exists in any of the five cached payloads — and 1.0 is **not** merely "conservative": it
+changes the stressed grade in four measured periods, including CCL 2015 and 2018 falling
+3 -> 4 at Severe. Read D54 before relying on this entry's justification.
 
 ## D9 — Evidence-reason vs data-gap-reason UNAVAILABLE handled differently in scoring
 Reason: negative EBITDA is information (score 0); missing interest expense is a gap
@@ -1253,6 +1258,13 @@ rest); exclude liquidity for cruise operators (a sector rule with no sector fram
 Consequences: CCL's scores are pinned in tests **as they are**, including the zero liquidity
 points, so a future sector-threshold change shows up as a deliberate re-baseline.
 
+**Second measured instance (added by D55, 2026-09-13): CCL's effective tax rate is ~0.19%**
+across its two computable periods — cruise operators are taxed under tonnage regimes rather
+than corporate income tax, so the statutory 21% stress default overstates their tax burden
+just as the generic liquidity bands understate their liquidity. Same shape, same treatment:
+a real sector property that a generic parameter handles conservatively, recorded rather than
+fixed. Two independent instances now sit behind the sector-thresholds item.
+
 ## D49 — Trend classification: per-rule eligibility, change_over_window, mixed units, strict monotonicity
 Decision (owner-approved 2026-09-12, Phase 7).
 
@@ -1434,3 +1446,122 @@ globally).
 Consequences: config keys exist ahead of the engine, like D26's tolerance did — the YAML
 notes Phase 8 wires them. The stress engine's output duties (print fcs; name the rate
 used) are design requirements recorded before the code exists.
+
+## D54 — floating_share stays 1.0, but "conservative simplification" was the wrong justification
+Decision (owner-approved 2026-09-13, Phase 8 step one part two): `floating_share` stays at
+**1.0**, the methodology's justification is **replaced**, and every stress output must
+**print the value used** — the same duty D53a gives `fixed_cost_share`.
+
+**Why the justification changed rather than the value.** The methodology called 1.0 a
+conservative simplification because the floating/fixed split "isn't reliably available from
+XBRL". Measured, that is both understated and mis-framed:
+
+*It is not merely unreliable — it is unreachable.* Across all five cached payloads
+(360-666 us-gaap tags each): **zero** `FloatingRate`/`VariableRate` tags anywhere, one
+`FixedRate`-family tag in KHC, and **no USD-denominated rate-split amount in any company**.
+The split cannot be derived from companyfacts at all, so per-company values would need a
+non-XBRL source and are out of v1 scope. That is a measurement, not an assumption.
+
+*And 1.0 is not cheap conservatism.* Unlike `fixed_cost_share`, where no period moved a
+grade, `floating_share` at 1.0 versus 0.3 **changes the stressed grade in four measured
+periods**, and not in the saturated tail: CCL 2015-11-30 and 2018-11-30 both move
+**grade 3 -> 4** at Severe, CCL 2014-11-30 moves 5 -> 6, and LUMN 2011-12-31 moves 5 -> 6
+at Moderate. Median interest uplift at 1.0 is +29% (CCL Moderate) to +58% (CCL Severe).
+So at Severe the parameter is an active assertion that 100% of the debt reprices within the
+year — for a cruise operator with a largely fixed-rate bond stack, unlikely — and it costs
+CCL a full grade in two of its strongest years.
+
+Ford shows the opposite extreme: +0.3% interest uplift, because its debt barely resolves at
+all (D25). The parameter does nothing there.
+
+Reason to keep 1.0 regardless: the data forces the simplification, and the honest response
+to a forced assumption that moves grades is **visibility**, not a different invented number.
+Alternatives: lower the default to 0.5 (invents a split the data cannot support, and is
+less conservative for no evidential gain); derive per company (unreachable, measured above).
+Consequences: the print duty is a design requirement recorded before the engine exists,
+alongside D53a's.
+
+## D55 — default_tax_rate stays 0.21 on statutory grounds, not empirical ones
+Decision (owner-approved 2026-09-13): `default_tax_rate` stays **0.21**, the US federal
+corporate rate, and the reasoning is recorded explicitly **because the measurement appears
+to contradict it**.
+
+Measured effective rates (`tax_expense / pretax_income` where `pretax > 0`), 39 computable
+periods: median **16.31%**, mean **6.20%**, and **10 of 39 (26%) outside [0, 50%]** —
+including -220.79% (KHC 2024), -157.22% (LUMN 2017), -132.95% (F 2011) and +206.70%
+(LUMN 2013). CCL's two computable periods sit at ~0.19%.
+
+**Recorded so that "measured median 16%, default 21%" does not read as an error:** the
+in-sample distribution is dominated by **loss carry-forwards, one-off tax benefits and
+sector regimes** — exactly what a stress scenario must *not* project forward. A stressed
+period asks what the company would pay on stressed profit, and the statutory rate is the
+right kind of number for that question. Adopting the 16.31% median would be **fitting five
+companies' tax accidents**, and the mean is worse still: at 6.20% it is below every
+plausible statutory rate because loss years drag it down.
+
+**This default is the dominant path, not an edge case:** it is reached in **48 of 87
+periods (55%)** — 14 where `pretax_income <= 0` and 34 where the tax inputs are missing
+entirely (D53d added the second). A poor default here has far broader effect than
+`new_debt_rate`'s, which is currently unreachable (D53c).
+
+**CCL's ~0.2% is a genuine regime effect, not noise** — cruise operators are taxed under
+tonnage regimes rather than corporate income tax. It joins **D48's sector-specific
+thresholds item** alongside the liquidity finding: the same shape, a real sector property
+that a generic parameter handles conservatively, recorded rather than fixed.
+Alternatives: use the in-sample median (fits tax accidents, above); use the mean (6.20%,
+below any statutory rate); per-sector rates now (D48's item, not a five-company decision).
+
+## D56 — Stress fingerprint covers policy keys only; per-run assumptions are columns, not a config version
+Decision (owner-approved 2026-09-13): `stress/fingerprint.py` covers exactly **`presets`,
+`sensitivity_grid`, `default_tax_rate`, `new_debt_rate_default`, `new_debt_rate_band`**.
+The per-run values — **`ebitda_mode`, `fixed_cost_share`, `floating_share`, the resolved
+`new_debt_rate` and why it was chosen** — are **columns on the stress-run row**, not
+fingerprinted.
+
+**The principle, which is new and generalises: a value that varies per run is not a config
+version.** Fingerprinting one would make two runs with *different* assumptions hash
+identically whenever the config file had not changed — **D52's mechanism inverted**. D52
+exists so that a warning which stopped firing because a threshold moved is distinguishable
+from one that stopped because the company improved; putting a per-run override in a
+fingerprint would destroy exactly that distinguishability for stress. A fingerprint answers
+"which policy produced this row"; a per-run column answers "which assumptions did this run
+make". Conflating them loses both answers.
+
+Storing the per-run values as columns also satisfies D53a's and D54's print duties from the
+same source, so the output cannot disagree with what was actually used.
+
+**Four fingerprints now exist with confirmed-disjoint scopes:** composites
+(`store/fingerprint.py`), scores (`scoring/fingerprint.py`), trends
+(`trends/fingerprint.py`) and stress (`stress/fingerprint.py`). Verified by inspection that
+no key appears in two. Integrity thresholds deliberately have none (D38).
+**File location is incidental to the split; blast radius is the boundary.** `trend_points`
+lives in `thresholds.yaml` beside the trend settings and belongs to the *score* fingerprint
+because it moves scores (D50); `default_tax_rate` lives in `stress.yaml` beside per-run
+levers and belongs to the *stress* fingerprint because it is policy. Asking "which file is
+this in" would have got both wrong.
+
+## D57 — A stressed score carries the base-period trend verdict, and liquidity immobility is surfaced
+Decision (owner call, 2026-09-13), settling two questions the stress engine would otherwise
+resolve by implementation.
+
+**(a) The stressed score reuses the base period's trend verdict.** A trend is *history*, and
+a stress scenario is a hypothetical about one period rather than a rewritten past, so
+`ebitda_margin_trend` scores under stress exactly as it does at base.
+The alternative — suppressing the trend component under stress — would **drop a scored
+category and trigger the grade cap (D10/D46)**, making stressed grades incomparable to base
+ones for a presentational reason rather than a credit one. Comparing a capped stressed grade
+against an uncapped base grade would misattribute a mechanical artefact to the scenario.
+The stressed output must **say** that the trend component carries the base verdict, so the
+reuse is visible rather than assumed.
+
+**(b) The liquidity exclusion is surfaced in the stress output, not only in the doc.** The
+methodology holds balance-sheet liquidity at base under stress. That means the liquidity
+category — **20 of 100 weight** — scores identically in base and stressed, which **caps how
+far any stressed grade can fall**. That is a material property of the result, not a footnote:
+a reader comparing a base grade 3 to a stressed grade 4 should know that a fifth of the
+score could not move by construction.
+
+Consequences: both are output duties recorded before the engine exists, joining D53a's and
+D54's. Step two must also measure the `fixed_cost_share` x `floating_share` **joint** worst
+case — both push the same direction and were measured independently, so the combined effect
+is untested.

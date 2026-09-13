@@ -1,4 +1,10 @@
 # All values here are ASSUMED and go in the assumption register.
+# PER-RUN values (ebitda_mode, fixed_cost_share, floating_share, and the resolved
+# new_debt_rate) are recorded as COLUMNS on each stress run, not fingerprinted: a value
+# that varies per run is not a config version, and fingerprinting one would make two runs
+# with different assumptions hash identically (D56). The stress fingerprint covers the
+# POLICY keys only — presets, sensitivity_grid, default_tax_rate, new_debt_rate_default,
+# new_debt_rate_band.
 ebitda_mode: constant_margin        # or operating_leverage
 
 # Used only in operating_leverage mode; overridable per custom scenario, and every
@@ -10,9 +16,21 @@ ebitda_mode: constant_margin        # or operating_leverage
 # names; per-sector values are D48's sector-thresholds item, not this file's job.
 fixed_cost_share: 0.3
 
-floating_share: 1.0                 # share of debt that reprices under a rate shock
-default_tax_rate: 0.21              # used when pretax income <= 0, or when the tax
-                                    # inputs are missing entirely (D53d) — ASSUMED
+# Share of debt that reprices under a rate shock. Stays 1.0 because the fixed/floating
+# split is UNREACHABLE, not merely unreliable: measured across all five cached payloads
+# (360-666 us-gaap tags each), zero FloatingRate/VariableRate tags and no USD-denominated
+# rate-split amount anywhere. Per-run overridable, and every stress output must PRINT the
+# value used (D54) — this is NOT cheap conservatism: at 1.0 vs 0.3 the stressed grade
+# moves in four measured periods, including CCL 2015 and 2018 falling 3 -> 4 at Severe.
+floating_share: 1.0
+
+# Used when pretax_income <= 0, or when the tax inputs are missing entirely (D53d).
+# Reached in 48 of 87 periods (55%) — the dominant path, not an edge case. Kept at the
+# US federal STATUTORY rate rather than the 16.31% in-sample median (D55): the measured
+# effective rates are dominated by loss carry-forwards, one-off benefits and sector
+# regimes — CCL's ~0.2% is tonnage tax — which is exactly what a stress scenario must not
+# project forward. Fitting the median would fit five companies' tax accidents.
+default_tax_rate: 0.21
 
 # New-debt pricing for additional_debt (D53b). Resolution order:
 #   1. new_debt_rate, when set — explicit override wins

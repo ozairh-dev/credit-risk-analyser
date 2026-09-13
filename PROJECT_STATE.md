@@ -285,6 +285,18 @@ reasons, so the change is invisible in the grade and visible only in
   additional_debt: 0 deliberately; the ETR missing-inputs rule and the
   negative-base-margin path are now written in the methodology.
 
+- Phase 8 step one part two (2026-09-13, Opus) — remaining stress config
+  settled, engine still NOT built. D54: floating_share stays 1.0 but its
+  justification was *corrected* — the fixed/floating split is unreachable in
+  companyfacts (measured: no rate-split USD amount in any of the five), and
+  1.0 is not cheap conservatism since it moves the stressed grade in four
+  periods (CCL 2015/2018 fall 3->4 at Severe). D55: default_tax_rate stays
+  0.21 on statutory grounds against a 16.31% in-sample median, recorded so
+  the gap does not read as an error. D56: the stress fingerprint covers
+  policy keys only; per-run assumptions are columns — a value that varies per
+  run is not a config version. D57: stressed scores carry base trend
+  verdicts, and the liquidity exclusion is surfaced in the output.
+
 ## Stress coverage (Phase 8/10 input, measured 2026-09-12)
 
 **Stress is structurally impossible for JNJ and KHC.** Both EBITDA modes need
@@ -296,6 +308,13 @@ period.** Mode-comparable coverage: LUMN 18, CCL 15, F 9 periods (42 total).
 Implied new-debt rates are sensible in 59 of 65 measurable periods; the six
 outliers are Ford's three (captive finance, D25) and JNJ's three ZIRP-era
 lows — both directions, which is what made D53's band necessary.
+
+**The fixed/floating debt split is unreachable** (measured 2026-09-13): across
+all five payloads, zero `FloatingRate`/`VariableRate` tags and no
+USD-denominated rate-split amount anywhere, so `floating_share` cannot be
+derived per company from XBRL at all. **Effective tax rates are computable in
+only 39 of 87 periods**, and 10 of those 39 fall outside [0, 50%] — so
+`default_tax_rate` is reached in 48 of 87 periods (55%), the dominant path.
 
 ## Trends and warnings on real data (measured 2026-09-12)
 
@@ -486,10 +505,14 @@ investigation before KHC is relied on for anything revenue-derived.
 
 ## Next priorities
 - Phase 8 step two: the stress engine and the D20-deferred tables (stress_runs,
-  stress_results, stress_drivers). The config is now settled (D53) and the engine
-  carries two output duties recorded before the code exists: print fixed_cost_share in
-  every operating-leverage output, and name which new-debt rate was used and why. Note
-  stress is structurally impossible for JNJ and KHC (see Stress coverage).
+  stress_results, stress_drivers). The config is fully settled (D53-D57). The engine
+  carries **five output duties recorded before the code exists**: print ebitda_mode,
+  fixed_cost_share and floating_share; name which new-debt rate was used and why; say
+  the trend component carries its base verdict; and surface that liquidity is unstressed
+  so 20 of 100 points cannot move. It must also measure the fixed_cost_share x
+  floating_share **joint** worst case — both push the same direction and were measured
+  independently. Note stress is structurally impossible for JNJ and KHC (see Stress
+  coverage).
 - The company-selection work remains the blocker for *demonstrating* Phase 6: four of
   five companies can never score uncapped. See Open questions.
 
