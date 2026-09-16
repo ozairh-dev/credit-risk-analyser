@@ -122,5 +122,11 @@ checks (Phase 4) because the checks depend on them. See docs/build-plan.md.
       liquidity finding, including P&G
 - [ ] The four fail-severity integrity checks remain synthetic-only (D72c)
 
+## Phase 9
+- [x] Evidence export + memo validator (2026-09-16): export-evidence,
+      prompts/credit_memo.md, validate-memo. D73-D74. Five-violation reality test run;
+      invented figure and grade contradiction caught, legitimate rounding passes,
+      fabricated source and true-numbers-false-claim missed by design
+
 ## Later
 - See docs/build-plan.md

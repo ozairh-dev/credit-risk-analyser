@@ -82,6 +82,7 @@ credit-risk-platform/
 │   ├── scoring/            bands, weights, grades, explanations
 │   ├── trends/             trend classification + early warnings
 │   ├── stress/             scenario engine
+│   ├── export/             evidence pack + memo validator
 │   ├── store/              SQLite models and queries
 │   ├── pipeline.py         the stages in their one correct order
 │   └── cli.py

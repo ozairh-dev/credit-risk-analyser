@@ -127,6 +127,23 @@ because the integrity checks depend on the composites. See docs/build-plan.md.
   share 55% -> 24%, 113 of 776 periods move one grade worse. **D72** records
   four findings deliberately not fixed.
 
+- Phase 9 (2026-09-16, Opus) — evidence export and the memo validator, the
+  last unbuilt piece of v1. `credit-risk export-evidence <TICKER>` writes a
+  334-line pack for CCL 2019 carrying the grade with its cap line, every
+  REPORTED concept with a derived filing URL (D30b discharged), calculated
+  values with formulas and inputs, trends, warnings, stress with the five
+  duties verbatim, integrity results, the config-sourced assumption register
+  and an explicit "what this pack does not contain" boundary.
+  `credit-risk validate-memo <memo> <pack>` matches every figure at the
+  precision the memo states, lists low-confidence matches separately with the
+  reason, checks grades in context, gates REVIEWED and prints its limitations
+  ABOVE the results. D73-D74.
+  **The five-violation reality test found four defects in the validator
+  itself** — scale alternation, accession tokenising, grade-words firing on
+  ordinary English, and sentence-final figures — every one a matching bug that
+  would have made it useless or dangerous. Testing against a real pack rather
+  than fixtures is what found them.
+
 ## Company universe (adopted 2026-09-13, D65)
 
 **105 screened through the full pipeline over entire filing histories; 43 adopted (41%).**
@@ -554,7 +571,7 @@ never run for it and no revenue-based metric will ever compute. Worth a tag
 investigation before KHC is relied on for anything revenue-derived.
 
 ## Tests
-- 816 passing, 45 skipped (7 setup + 3 env + 6 ingest/tickers + 12 ingest/companyfacts (all
+- 844 passing, 45 skipped (7 setup + 3 env + 6 ingest/tickers + 12 ingest/companyfacts (all
   HTTP-mocked) + 4 cli wiring + 3 fixture guards + 31 selection + 10 mapping +
   42 composites (deviation edges, all four branches, guards, toggles, storage) +
   28 integrity (every check pass/fail/skip, the 1% boundary, D23's three codes,

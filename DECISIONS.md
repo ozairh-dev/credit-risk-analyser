@@ -594,7 +594,10 @@ monetary items and the dimension (`ratio`, `percent`) for everything else.
 function of `(cik, accession)`, both already columns on `facts`. A stored copy can only
 drift: if EDGAR's URL shape changes, every historic row is silently wrong and needs a
 migration, whereas a derived URL is corrected by editing one function.
-*Status (pre-Phase-6 audit, finding 7): this is an **obligation on the first exporter**,
+*Status (DISCHARGED at Phase 9, 2026-09-16): `store/provenance.py::filing_url` is the
+single derivation, and the evidence exporter is its only caller. The note below recorded
+the obligation while it was outstanding.*
+*Status (pre-Phase-6 audit, finding 7): this was an **obligation on the first exporter**,
 not a description of existing code. No exporter exists yet and nothing in `src/` derives
 a URL, so there is presently nothing to point a reader at. Whoever builds the first
 export path owes the derivation — this entry states the requirement, it does not record
@@ -2009,3 +2012,101 @@ saturated companies highest.
 the set rather than the engine.** The universe contains many strong companies, many leveraged
 ones and a clear deteriorator, but "weak at base yet robust under stress" is rare — and the
 obvious candidates by score are companies whose grades cannot fall further.
+
+## D73 — The evidence pack supplies four things docs/ai-governance.md predates
+Decision (owner-approved 2026-09-16, Phase 9). The governance doc was written before
+Phases 5-8 existed, and describes an evidence pack the engine has outgrown in four ways.
+
+**(a) The assumption register is built from config at export time, and the `assumptions`
+table stays deliberately unwired in v1.** The table exists from Task 8 but **nothing
+writes to it** — recorded explicitly so a future reader does not assume a write path
+exists. Meanwhile the ASSUMED values genuinely live in `config/`: `fixed_cost_share`,
+`floating_share`, `default_tax_rate`, `include_operating_leases`,
+`component_aggregate_tolerance` and the rest. The exporter reads them from config and
+marks each `source: config`. Building a write path nothing else needs, or shipping an
+empty register section, would both have been worse.
+
+**(b) The pack carries the five stress output duties and the cap line**, taken **verbatim**
+from `StressRun.assumptions` and D57's `_cap_line` generator, so the pack cannot disagree
+with the CLI. A pack carrying stressed figures without `fixed_cost_share`, `floating_share`,
+the resolved `new_debt_rate` and its reason, the liquidity-immobility statement and the
+trend-carry statement would let a model reason from numbers whose basis it cannot see; a
+grade without its cap line would read as judged when it is capped.
+
+**(c) Grade-label matching is longest-first.** "Very strong" contains "strong" and "Very
+high risk" contains "high risk", so naive matching classifies **every Grade 1 mention as
+Grade 2 and every Grade 6 as Grade 5** — silently inverting the check at both ends of the
+scale.
+
+**(d) D30(b)'s obligation fell due here.** `store/provenance.py::filing_url(cik, accession)`
+is the single place a filing URL is derived, per D30(b)'s original argument that a stored
+copy can only drift. This is the first exporter, so the obligation the decision recorded is
+now discharged.
+
+Also supplied beyond the doc: a **"what this pack does not contain"** section naming market
+data, management commentary, peer comparison, forward estimates and agency ratings. Stating
+the boundary explicitly is what makes the prompt's "Data not available" rule enforceable —
+otherwise the model must infer what it is missing.
+
+## D74 — Validator design: match at the memo's stated precision, and state the limits above the results
+Decision (owner-approved 2026-09-16). The validator is the control the entire AI workflow
+rests on, so both its method and its limits are recorded.
+
+**Number matching is at the precision the memo itself states.** The doc's literal reading —
+strip `£$%x,` and compare digits — is too weak to use: a pack holding `20,825,000,000` would
+flag a memo's `$20.8 billion`, which is correct and natural writing. **Every memo would be a
+wall of false positives, and a validator that cries wolf gets ignored.** A blanket tolerance
+is the opposite failure, letting a model shift figures for slack. Matching at the stated
+precision verifies the memo's own claim: **write more digits and you are held to more; write
+fewer and you are not punished for it.**
+
+Implemented as an **interval**, not by comparing rounded values, because rounding a tie is
+ambiguous: 20,825,000,000 to four significant figures is 20.82 under round-half-to-even and
+**20.83 under the round-half-up people are taught**. Comparing rounded values rejects one
+arbitrarily; asking whether the pack value falls inside the interval the memo's figure
+represents accepts both, which is what "rounds to this figure" actually means.
+
+**The low-confidence list, with its rule stated in the output.** A bare number below 100, or
+a four-digit year, will coincide with something in a pack of dozens by chance, so counting
+those as verified inflates the pass rate and makes the verified count meaningless. They are
+listed separately **with the reason printed**, because a reader seeing "3 verified, 12
+low-confidence" cannot otherwise tell whether that is good. Precision overrides magnitude —
+`2.0206` matching is not a coincidence — but **a year is always low-confidence regardless of
+precision**, since it is a date rather than a claim.
+
+**The limitation statement is printed ABOVE the results in every run.** A limitation placed
+below the verdict is one a reader can skip, and **a clean validation read as a clean memo is
+worse than no validation at all** — it converts an unchecked document into an apparently
+checked one.
+
+**Characterised limitations, asserted by test rather than assumed:**
+- **A figure cited under the wrong label passes.** Quoting the pack's `cfo` as EBITDA is
+  invisible: the validator reads numbers, not labels.
+- **True figures assembled into a false claim pass.** This was the expected result of the
+  five-violation test and is a **characterised limitation, not a defect** — the validator
+  reads numbers, not arguments.
+- **A fabricated source passes.** "Q4 2019 earnings call, CFO remarks" is caught by no
+  numeric check.
+All three are pinned by tests so the boundary cannot drift into being assumed narrower.
+
+**Five-violation reality test, run against a real CCL 2019 pack (334 lines, 541 numeric
+tokens):** invented figure **CAUGHT**; legitimate rounding **correctly passed** in both
+forms; grade contradiction **CAUGHT**; fabricated source **MISSED**; true-numbers-false-claim
+**MISSED**. `REVIEWED` correctly rejected, CLI exit 1.
+
+**The test found four defects in the validator itself**, every one a matching bug that would
+have made it useless or dangerous:
+1. **Scale alternation was first-match-wins**, so a bare `m` matched before `million`, the
+   suffix group failed on "illion", and the scale silently backtracked to None — turning
+   "$5,436 million" into 5,436 and reporting a **correct figure as unverified**. The same bug
+   class as D73c's grade labels, found twice in one phase.
+2. **Accession numbers were tokenised as figures**, reporting three phantom unverified
+   numbers per Source line.
+3. **The grade check fired on ordinary English** — "leverage is moderate" read as a Grade 3
+   claim, "cash flow was strong" as Grade 2 — producing three false positives that would
+   have buried the one real violation. Band labels now require a **grading context**.
+4. **A figure ending a sentence failed to parse**, because the lookahead rejected the
+   trailing full stop.
+Recorded because the instruction to "test against reality, not just fixtures" is what found
+all four: a fixture-only suite would have tested the matcher against strings the matcher was
+written to handle.

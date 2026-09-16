@@ -299,5 +299,50 @@ def stress(
                "rating.\n")
 
 
+@app.command("export-evidence")
+def export_evidence(
+    ticker: str,
+    period: str = typer.Option(None, "--period", help="Period end, YYYY-MM-DD."),
+    out: str = typer.Option("evidence", "--out", help="Output directory."),
+) -> None:
+    """Write the evidence pack for TICKER — the exclusive basis for a memo."""
+    from pathlib import Path
+    from credit_risk.export.evidence import build_pack
+
+    cik = ingest.ticker_to_cik(ticker)
+    raw = pipeline.load_cached(cik)
+    analysis = pipeline.analyse(raw)
+    ends = sorted({c.end for c in analysis[1].concepts})
+    if period and period not in ends:
+        raise typer.BadParameter(
+            f"{period} is not a period for {ticker.upper()}. "
+            f"Available: {', '.join(ends[-6:])}")
+    end = period or ends[-1]
+    pack = build_pack(raw, analysis, end, ticker.upper())
+    directory = Path(out)
+    directory.mkdir(parents=True, exist_ok=True)
+    path = directory / f"{ticker.upper()}_{end}.md"
+    path.write_text(pack, encoding="utf-8")
+    typer.echo(f"Evidence pack written to {path}")
+    typer.echo(f"  {len(pack.splitlines())} lines. This is the COMPLETE and "
+               f"EXCLUSIVE basis for any memo written from it.")
+    typer.echo(f"  Next: paste it with prompts/credit_memo.md, then run "
+               f"`credit-risk validate-memo <memo> {path}`")
+
+
+@app.command("validate-memo")
+def validate_memo(memo: str, pack: str) -> None:
+    """Check a memo against the evidence pack it was written from."""
+    from pathlib import Path
+    from credit_risk.export.validator import render, validate
+
+    memo_text = Path(memo).read_text(encoding="utf-8")
+    pack_text = Path(pack).read_text(encoding="utf-8")
+    report = validate(memo_text, pack_text)
+    typer.echo(render(report))
+    if report.reviewed_claimed and not report.may_be_reviewed:
+        raise typer.Exit(1)
+
+
 if __name__ == "__main__":
     app()

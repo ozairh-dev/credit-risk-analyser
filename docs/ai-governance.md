@@ -32,14 +32,27 @@ memo marked REVIEWED only after a human signs it off
 
 Everything the model is allowed to reason from, and nothing else:
 
-- Company identifiers and latest filing details
+- Company identifiers and the filing that **sourced this period's data** (not the
+  company's newest filing — in a period-specific pack that is misleading), with the
+  filing URL derived from `(cik, accession)` at export (D30b, D73d)
+- The grade **with its cap line**, so a capped grade never reads as a judged one (D73b)
+- The four engine config fingerprints, so a figure computed under different settings is
+  not silently compared with one computed under these
 - Every `REPORTED` concept used, with value, period, source tag and filing link
 - Every `CALCULATED` metric, with formula name and inputs
 - Trend classifications and early warnings, with evidence rows
-- Stress table and driver attribution
+- Stress table and driver attribution, **carrying the five stress output duties
+  verbatim** — `fixed_cost_share`, `floating_share` and the unreachability of the debt
+  split, the resolved `new_debt_rate` with its reason, the liquidity-immobility
+  statement and the trend-carry statement (D73b). Stressed figures without the
+  assumptions behind them let a model reason from numbers whose basis it cannot see
 - Score breakdown and explain output
 - Data-quality summary and integrity check results
-- The assumption register
+- The assumption register, **built from config at export time** — the `assumptions`
+  table exists but is deliberately unwired in v1 (D73a)
+- A **"what this pack does not contain"** section naming market data, management
+  commentary, peer comparison, forward estimates and agency ratings. Stating the
+  boundary is what makes the "Data not available" rule enforceable
 
 ### Prompt template (`prompts/credit_memo.md`)
 
@@ -66,13 +79,36 @@ Requires human review: Yes
 
 Deterministic checks on the pasted memo:
 
-- Every number in the memo text (after normalising £/$/%/x/commas) must appear in the
-  evidence pack. Any that don't are listed under **"Unverified figures"**.
-- Any sentence containing a grade word ("Grade", "strong", "high risk", etc.) is checked
-  against the pack's grade; mismatches are flagged.
+- Every number in the memo text must appear in the evidence pack, **matched at the
+  precision the memo states** (D74). Stripping `£$%x,` and comparing digits — the
+  original wording — flags "$20.8 billion" against a pack holding 20,825,000,000, so
+  every memo becomes a wall of false positives and the validator gets ignored. Any
+  figure that does not match is listed under **"Unverified figures"**.
+- Bare numbers below 100 and four-digit years go to a separate **low-confidence** list
+  rather than counting as verified: they coincide with something in a pack of dozens by
+  chance, and counting them inflates the pass rate (D74).
+- Any sentence claiming a grade other than the pack's is flagged. An explicit "Grade N"
+  always counts; a band label counts only **inside a grading context** — taken
+  literally, "any sentence containing a grade word" fires on "leverage is moderate" and
+  "cash flow was strong", burying real violations under false positives. Label matching
+  is **longest-first**: "Very strong" contains "strong" (D73c).
 - The memo cannot be marked `REVIEWED` while unverified figures exist.
 - Every section of the memo is stamped `AI_INTERPRETED` unless it is a verbatim copy of
   a pack table (then it keeps its original status).
+
+### What the validator cannot check
+
+Stated here and printed **above the results of every run** (D74), because a limitation
+below the verdict is one a reader can skip, and a clean validation read as a clean memo
+is worse than no validation:
+
+- **A figure cited under the wrong label passes.** Quoting the pack's cash-flow figure as
+  EBITDA is invisible — the validator reads numbers, not labels.
+- **True figures assembled into a false claim pass.** It reads numbers, not arguments.
+- **A fabricated source passes.** No numeric check sees it.
+
+All three are characterised limitations pinned by test, not defects. **A human signs off
+every memo.**
 
 ## What AI may and may not do (applies to v1 workflow and any future integration)
 
