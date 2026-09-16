@@ -79,11 +79,11 @@ def test_net_debt_to_ebitda_band_table(value, points):
 
 @pytest.mark.parametrize("value,points", [
     (0.5, 0), (0.99, 0),         # < 1.0x
-    (1.0, 2), (1.9, 2),          # 1.0-2.0x
-    (2.0, 4), (2.9, 4),          # 2.0-3.0x
-    (3.0, 6), (4.9, 6),          # 3.0-5.0x
-    (5.0, 8), (7.9, 8),          # 5.0-8.0x
-    (8.0, 10), (25.0, 10),       # >= 8.0x
+    (1.0, 2), (2.4, 2),          # 1.0-2.5x
+    (2.5, 4), (4.9, 4),          # 2.5-5.0x
+    (5.0, 6), (9.9, 6),          # 5.0-10.0x
+    (10.0, 8), (19.9, 8),        # 10.0-20.0x
+    (20.0, 10), (6307.0, 10),    # >= 20.0x  (max observed: 6,307x)
 ])
 def test_ebit_interest_cover_band_table(value, points):
     """Higher-is-better resolves the same way: direction lives in the points

@@ -163,7 +163,7 @@ three codes.
 | `FYE_DISAGREEMENT` | Accepted duration facts for a fiscal year disagree on `end`; the most common date wins and the period is flagged | D13 |
 | `FYE_TIE` | That disagreement has no single most-common date, so no anchor is chosen and nearby instants become `AMBIGUOUS_FYE` | D16(2) |
 | `SAME_DAY_REFILING_TIEBREAK` | Two filings share a `filed` date for the same fact, so accession order sequences them | D16(4) |
-| `CANDIDATE_TAG_DISAGREEMENT` | Two candidate tags for one concept both resolve for a period and disagree on value; the higher-priority tag is used | D17(1) |
+| `CANDIDATE_TAG_DISAGREEMENT` | Two candidate tags for one concept both resolve for a period and disagree on value. For concepts whose candidates name **different quantities** (`equity` with/without NCI, `interest_expense`, `short_term_debt`, `d_and_a`, `short_term_investments`) the higher-priority tag is used and this is informational. For concepts whose candidates name the **same quantity** (`refuse_on_candidate_disagreement` in `tag_map.yaml`) a disagreement beyond tolerance **refuses** — see `CANDIDATE_TAG_MISMATCH` | D17(1), D69 |
 | `ABNORMAL_MOVEMENT` | A core concept moves more than `abnormal_movement_threshold` year-on-year | D23 |
 | `ABNORMAL_SIGN_CHANGE` | A core concept changes sign between periods — flagged regardless of magnitude | D23 |
 | `ABNORMAL_FROM_ZERO` | A core concept's prior-period value is zero, so no percentage is defined | D23 |
@@ -176,6 +176,7 @@ three codes.
 | `AMBIGUOUS_FYE` | fact | Instant fact near a fiscal year end that `FYE_TIE` left unanchored | D16(2) |
 | `NO_FYE_ANCHOR` | fact | Instant fact whose fiscal year has no accepted duration fact to anchor it | D13 |
 | `NO_CANDIDATE_TAG` | concept | No candidate tag in `tag_map.yaml` resolved for the period | D17 |
+| `CANDIDATE_TAG_MISMATCH` | concept | Two candidate tags naming the **same quantity** disagree beyond `candidate_disagreement_tolerance`; neither is used, both figures recorded. Compute-and-flag would emit a plausible-looking wrong number | D69 |
 | `LEASES_NOT_SEPARABLE` | concept | Filer bundles debt and leases into one figure, so `total_debt_ex_leases` cannot be computed | D27 |
 | `COMPONENT_AGGREGATE_MISMATCH` | concept | Debt components and the reported aggregate disagree beyond tolerance; refuses rather than picking one. Both figures recorded | D26 |
 | `ST_DEBT_SCOPE_UNCERTAIN` | concept | `short_term_debt` resolved via `DebtCurrent` while `current_ltd` also resolves; the tag's filer-dependent scope makes double-counting unverifiable | D32 |

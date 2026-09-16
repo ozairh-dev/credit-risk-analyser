@@ -113,5 +113,14 @@ checks (Phase 4) because the checks depend on them. See docs/build-plan.md.
       diverge in direction for loss-makers (D63) and the base run is not a no-op for
       FCF metrics (D64). `credit-risk stress <TICKER> [--grid]`
 
+## From the demonstration run (docs/audits/2026-09-13-demonstration-run.md)
+- [x] D69 revenue refuse-on-disagreement + concept audit + ebitda_margin_plausible check
+- [x] D70 FCF metrics excluded from the stressed grade
+- [x] D71 ebit_interest_cover bands rebased on the observed distribution
+- [ ] Escalation threshold calibration (D72b) — 31% of periods, 64% of warnings
+- [ ] Sector thresholds (D48/D72a) — now two measured instances plus 7 companies on the
+      liquidity finding, including P&G
+- [ ] The four fail-severity integrity checks remain synthetic-only (D72c)
+
 ## Later
 - See docs/build-plan.md

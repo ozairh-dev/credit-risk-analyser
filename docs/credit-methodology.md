@@ -368,12 +368,18 @@ Defaults for the two headline metrics (others follow the same shape):
 
 | Value | Points |
 |---|---|
-| ≥ 8.0x | 10 |
-| 5.0–8.0x | 8 |
-| 3.0–5.0x | 6 |
-| 2.0–3.0x | 4 |
-| 1.0–2.0x | 2 |
+| ≥ 20.0x | 10 |
+| 10.0–20.0x | 8 |
+| 5.0–10.0x | 6 |
+| 2.5–5.0x | 4 |
+| 1.0–2.5x | 2 |
 | < 1.0x, or NEGATIVE_EARNINGS | 0 |
+
+*Rebased 2026-09-14 from ≥ 8.0x / 5–8 / 3–5 / 2–3 / 1–2 (D71). Measured across 640
+observations from the 43 adopted companies, the old top band held **55%** while p90 sits at
+**38.9x** — above 8x the metric carried no information. Moving the top edge alone still left
+47% in one band, so the intermediates were redistributed with it. New occupancy
+[23, 59, 112, 156, 143, 147], max share 24%.*
 
 ### Aggregation
 
@@ -574,6 +580,7 @@ in each cell. Nothing more elaborate in v1.
 | `cash_subset` | cash ≤ current_assets | fail |
 | `debt_subset` | total_debt_ex_leases ≤ total_liabilities | fail |
 | `revenue_non_negative` | revenue ≥ 0 | fail |
+| `ebitda_margin_plausible` | ebitda ≤ revenue | fail — a margin above 100% means an input is wrong, not that the company is unusual (D69). The second net behind the candidate-tag rule: it catches a **single** wrong tag, which no disagreement rule can see |
 | `period_continuity` | consecutive periods with no gap for trend use | warn, trend INSUFFICIENT_DATA |
 | Abnormal movement | any **core concept** (defined below) moves > 300% year-on-year | warn, surface for review |
 

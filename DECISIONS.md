@@ -1726,6 +1726,10 @@ silently folded into every stressed FCF figure and mistaken for a shock effect.
 Not fixed, deliberately: the alternative is to seed stressed CFO from reported CFO and
 adjust it, which would make the stressed figure depend on a working-capital movement the
 scenario has no view about — importing a real-world number into a hypothetical.
+**Amended by D70 (2026-09-14):** the gap is no longer carried into the stressed grade. At 43
+companies it changed the grade in 88 of 647 ZERO-shock runs and made 10 Severe runs look
+*better* than base, so the FCF-derived metrics are now reported but excluded from the
+stressed grade. The "do not seed from reported CFO" reasoning above stands and was kept.
 Consequences: the stress output must say that FCF metrics carry the approximation gap; a
 test pins the exact/drifting split so a future change to the CFO treatment shows up as a
 deliberate re-baseline rather than a silent improvement.
@@ -1861,3 +1865,147 @@ for it.
 Consequences: the suite runs 816 tests over 105 payloads. D65's thin-path claims are
 asserted rather than trusted — a test fails if `NO_DEBT` loses QCOM or
 `NON_POSITIVE_CAPITAL` loses YUM and MAR.
+
+## D69 — Refuse-on-disagreement generalised from debt to revenue; and the audit that found the rest
+Decision (owner-approved 2026-09-14, after the Phase 10 demonstration run): where a
+concept's candidate tags name the **same quantity** and resolve to materially different
+values in one period, the concept is **`UNAVAILABLE` with `CANDIDATE_TAG_MISMATCH`**, both
+figures recorded. It is no longer computed from the higher-priority tag and flagged.
+
+**The lesson, which matters more than the fix.** D26 replaced compute-and-flag with
+refuse-to-compute for the debt components-versus-aggregate case, on exactly this reasoning:
+*"the old rule flagged a number as suspect and then used it anyway... a plausible-looking
+wrong number stamped with full provenance."* **The identical exposure sat in revenue,
+unexamined, for eight phases.** D17's `CANDIDATE_TAG_DISAGREEMENT` fired 6 times for GIS
+revenue and the engine used the wrong value anyway, producing a **203% EBITDA margin**.
+**When a decision changes how a class of disagreement is handled, every other site with that
+shape must be checked at the same time.** D26 changed the class and only one member was
+updated.
+
+**The audit, and what it found — the concepts are NOT all the same pattern.** Eight of 34
+concepts carry multiple candidate tags; six showed real disagreements across the 43 adopted
+companies (324 beyond 5%, 30 companies). Measured, they split in two:
+
+| Class | Concepts | Disagreement profile | Treatment |
+|---|---|---|---|
+| **Same quantity, different taxonomy era** | `revenue`, `cost_of_revenue`, `dividends` | revenue is **bimodal**: p90 12.4%, p99 89.7% | **refuse** beyond tolerance |
+| **Deliberately different quantities** | `equity`, `interest_expense`, `short_term_debt`, `d_and_a`, `short_term_investments` | systematic, not sporadic | priority order **is** the answer |
+
+Class B is not a softer version of Class A — refusing there would **discard a correct
+value because a different measure disagrees**. `equity`'s candidates are
+`StockholdersEquity` (excludes non-controlling interests) and
+`...IncludingPortionAttributableToNoncontrollingInterest` (includes them): WYNN 2013 reports
+**-184.5m** and **+132.4m**, and both are right. `short_term_investments` disagrees by
+**98.1% at the median**. `d_and_a` reaches **60.6% at p90**. `short_term_debt`'s
+`DebtCurrent` case already has D32's targeted guard.
+
+**The tolerance was measured, not guessed (rule 14), and the first guess was badly wrong.**
+An initial 0.05 refused **65 concept-periods, nearly all legitimate** — it would have cost
+Ford 9 periods and LUMN 8. The disagreements there are real scope differences:
+**Ford's `Revenues` 170.6bn includes Ford Credit's financing revenue while `SalesRevenueNet`
+154.4bn is automotive only** (5-11% apart across 9 years); LUMN's `Revenues` exceeds ASC 606
+contract revenue by 6-10%. Genuine errors sit an order of magnitude away — **GIS tags a
+segment figure of 2.0bn against a true 19.9bn, 90% apart**. `0.50` separates them cleanly:
+GIS's 6 periods refuse, Ford's and LUMN's 17 are preserved.
+
+**A second net, because the tag rule cannot catch everything:** the new integrity check
+`ebitda_margin_plausible` FAILs when `ebitda > revenue`. **CAG needed it** — it resolves a
+single wrong `Revenues` tag (1.6bn against ~13bn actual) with **no second candidate to
+disagree with**, so no candidate-tag rule could ever catch it. Four CAG periods now FAIL and
+are excluded from scoring. FAIL rather than WARN: a margin above 100% means an input is
+wrong, not that the company is unusual.
+Consequences: `tag_map.yaml` gains two settings keys, filtered out of `config.tag_map()` so
+the concept-count invariant and completeness counts are untouched.
+
+## D70 — FCF-derived metrics are excluded from the stressed grade
+Decision (owner call, 2026-09-14): `fcf_to_debt` and `fcf_margin` are **reported in the
+stress results but excluded from the stressed grade**, which now covers **leverage, coverage
+and margin only**. Stated in every stress output. Stressed CFO is **not** seeded from
+reported CFO — D64 was right that importing a real number into a hypothetical is worse.
+
+Reason, measured at 43 companies: D64 recorded that the base scenario is not a no-op for
+cash-flow metrics and judged the gap acceptable on five. At scale that judgement does not
+hold — **88 of 647 base runs (14%) showed a different grade at ZERO shock**, and **10 runs
+showed the grade IMPROVING under Severe stress, BKNG 2013 and 2014 by two full grades
+(3 -> 1)**. A company cannot get safer under a -20% revenue, -5pp margin, +200bps scenario;
+that was the approximation gap overwhelming the shock.
+
+Measured effect of the fix: base-run grade changes **88 -> 1**, Severe improvements
+**10 -> 0**. Mean Severe grade move settles at +0.56.
+
+**D64's judgement was not wrong on its evidence — it was made on a sample too small to show
+the frequency.** Five companies could not distinguish "occasionally noticeable" from "one in
+seven". That is a standing argument for **re-testing accepted trade-offs when the sample
+grows**, not for doubting the original call.
+
+## D71 — ebit_interest_cover rebased on the observed distribution
+Decision (owner-approved 2026-09-14): band edges move from **[1, 2, 3, 5, 8]** to
+**[1, 2.5, 5, 10, 20]**. Points unchanged.
+
+Evidence: across 640 observations from the 43 adopted companies, the old top band (>= 8.0x)
+held **354 of 640 (55%)** while **p90 is 38.9x** and the maximum is 6,307x. Above 8x the
+metric carried **no information** — a company covering interest 8x scored identically to one
+covering it 39x.
+
+**Moving the top edge alone was insufficient**, which the measurement showed before anything
+was pinned: `[1, 2, 3, 5, 20]` still left **47%** in one band. The intermediates had to move
+with it. New occupancy **[23, 59, 112, 156, 143, 147]**, max share **24%** — all six bands
+populated, the best spread of any candidate tested.
+
+Grade impact, measured before pinning: **113 of 776 scored periods (14.6%) move, every one
+by exactly one grade worse.** Grade 1 falls 51 -> 38, grade 2 117 -> 98, grade 5 rises
+77 -> 98. The rebase is a pure tightening at the top, which is what it was meant to be; the
+distribution stays well-shaped and single-peaked.
+Consequences: the score fingerprint (D45) changes, so every stored score is correctly
+distinguishable from one computed under the old bands. CCL's pinned arc and the other
+fixture pins are re-baselined deliberately.
+
+## D72 — Four findings recorded from the demonstration run, deliberately not fixed
+
+**(a) The liquidity band effect is a business-model effect, not a cruise quirk.** D48
+recorded CCL scoring 0 liquidity points in its good years and framed it as a sector finding.
+Measured across 43 companies: **7 (16%) have a median `current_ratio` below the first band
+edge of 0.8** — RCL 0.21, CCL 0.29, CHTR 0.31, MAR 0.50, GIS 0.72, TXRH 0.74, **PG 0.79**.
+That spans cruise, cable, hotels, packaged food, restaurants and household products:
+**negative-working-capital businesses that collect from customers before paying suppliers.**
+**Procter & Gamble appearing on the list is the clearest evidence that a sub-0.8 current
+ratio is not a distress marker in this universe.** D48's framing is widened accordingly. The
+bands are not changed — that remains the post-MVP sector-thresholds item.
+
+**(b) Escalation fires in 31% of periods.** 245 of 780 company-periods trigger it, escalating
+**989 of 1,539 warnings (64%)**. Implemented exactly as specified, but CLAUDE.md rule 12's
+principle applies directly: *a signal that fires constantly is indistinguishable from no
+signal.* With seven trend-deterioration indicators able to fire together, a threshold of 3 is
+low. Recorded for a calibration decision, not changed here.
+
+**(c) Four fail-severity integrity checks have never fired on real data.**
+`current_assets_subset`, `current_liabilities_subset`, `cash_subset` and `debt_subset`
+produced **zero FAILs across 780 company-periods**. Stated plainly rather than read as a
+clean bill of health: **they remain validated only by synthetic fixtures**, and after 780
+periods the honest description is that no real violation has ever exercised them. They are
+accounting identities a filer would have to mis-tag to break, so this may be correct — but it
+is not evidence that they work. (`ebitda_margin_plausible`, added by D69, fires on 4 real
+periods and is the first fail-severity check with a real witness.)
+
+**(d) The four demonstration cases, chosen by measurement.**
+
+| Role | Company | Evidence |
+|---|---|---|
+| **Strong** | **SYK** | mean grade 1.84, 84% at grades 1-2, median leverage 1.28x, coverage 10.2x, 17 of 19 periods uncapped |
+| **Deteriorating** | **LYB** | 13 consecutive periods 2013-2025: score -62.5, grade 1 -> 5, leverage 0.23 -> 7.70x, margin 13.9% -> 3.2%, 36 deterioration warnings |
+| **Leveraged** | **CHTR** | mean grade 5.31, 81% at grades 5-6, median leverage 4.69x, coverage 1.1x |
+| **Resilient** | **TXRH** | 5 of 6 weak base periods hold grade under Severe, score 54.5 -> 52.4 |
+
+**FAST was rejected for the strong role despite a better mean grade (1.79 vs 1.84):** its
+median coverage is **125.5x** and leverage **0.16x**, making it a **debt-free company rather
+than a strong borrower**. It demonstrates the top band, not credit analysis.
+
+**CHTR scores best on the resilience measurement and was rejected for it.** It holds grade in
+14 of 16 weak periods only because it already sits at grades 5-6 — **floor effect, not
+strength**. The measure reached for first, "holds grade under stress", accidentally ranks
+saturated companies highest.
+
+**The resilient case is the weakest of the four in this universe, and that is a property of
+the set rather than the engine.** The universe contains many strong companies, many leveraged
+ones and a clear deteriorator, but "weak at base yet robust under stress" is rare — and the
+obvious candidates by score are companies whose grades cannot fall further.

@@ -29,8 +29,15 @@ bands:
     edges: [1.0, 2.0, 3.0, 4.0, 5.0]
     points: [10, 8, 6, 4, 2, 0]
   ebit_interest_cover:
+    # Rebased 2026-09-13 from [1, 2, 3, 5, 8] on measured distribution (D71).
+    # The old top edge of 8.0x absorbed 354 of 640 observations (55%) while p90
+    # sits at 38.9x — above 8x the metric carried no information, scoring a
+    # company covering interest 8x identically to one covering it 39x.
+    # New occupancy: [23, 59, 112, 156, 143, 147], max share 24%.
+    # Moving the top edge alone was not enough: [1,2,3,5,20] still left 47%
+    # in one band, so the intermediates were redistributed too.
     direction: higher_better
-    edges: [1.0, 2.0, 3.0, 5.0, 8.0]
+    edges: [1.0, 2.5, 5.0, 10.0, 20.0]
     points: [0, 2, 4, 6, 8, 10]
   debt_to_capital:
     direction: lower_better

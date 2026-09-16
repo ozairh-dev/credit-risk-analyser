@@ -109,6 +109,24 @@ because the integrity checks depend on the composites. See docs/build-plan.md.
   forced the test split: pinned assertions follow the fixtures, structural
   invariants run over all 105 payloads (D68).
 
+- Demonstration-run fixes (2026-09-14, Opus) — three defects the 43-company
+  run exposed, each fixed and recorded. **D69**: refuse-on-disagreement
+  generalised from debt to revenue; D26 changed how a CLASS of disagreement is
+  handled and only one member was updated, leaving the same exposure in
+  revenue for eight phases. The audit found 8 concepts with multiple candidate
+  tags, splitting into same-quantity (refuse) and deliberately-different
+  (priority order is the answer) — refusing on the latter would discard
+  correct values. Tolerance MEASURED at 0.50, not guessed: a 5% guess would
+  have refused 65 mostly-legitimate periods, costing Ford 9 and LUMN 8, whose
+  `Revenues`-vs-`SalesRevenueNet` gaps are real scope differences (Ford Credit
+  financing revenue). New `ebitda_margin_plausible` integrity check is the
+  second net — CAG needed it, having a single wrong tag with nothing to
+  disagree with. **D70**: FCF-derived metrics excluded from the stressed
+  grade; zero-shock grade changes 88 -> 1, Severe improvements 10 -> 0.
+  **D71**: coverage bands rebased [1,2,3,5,8] -> [1,2.5,5,10,20]; top-band
+  share 55% -> 24%, 113 of 776 periods move one grade worse. **D72** records
+  four findings deliberately not fixed.
+
 ## Company universe (adopted 2026-09-13, D65)
 
 **105 screened through the full pipeline over entire filing histories; 43 adopted (41%).**
@@ -581,7 +599,14 @@ investigation before KHC is relied on for anything revenue-derived.
 - none
 
 ## Open questions
-- none. The v1 universe question — open since Phase 0 — was closed on 2026-09-13 by D65.
+- **Escalation threshold** (D72b): fires in 31% of periods, escalating 64% of warnings.
+  Implemented as specified; rule 12's principle says a signal that fires constantly is
+  indistinguishable from none. A calibration decision, not a defect.
+- **Sector thresholds** (D48, widened by D72a): 7 of 43 companies score zero liquidity
+  points on a negative-working-capital business model, including P&G. Post-MVP item.
+- **The four fail-severity integrity checks** (D72c) have never fired on real data across
+  780 periods. Validated by synthetic fixtures only.
+- none blocking. The v1 universe question — open since Phase 0 — was closed on 2026-09-13 by D65.
 
 ## Next priorities
 - Phase 9 (evidence pack / AI governance workflow) and Phase 10 (company universe).

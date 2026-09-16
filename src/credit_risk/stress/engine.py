@@ -33,6 +33,15 @@ STRESSED_METRICS = (
     "ebitda_interest_cover", "fcf_to_debt", "fcf_margin", "ebitda_margin",
 )
 
+# FCF-derived metrics are REPORTED in the stress results but excluded from the
+# stressed GRADE (D70). The propagation approximates CFO as
+# ebitda - interest - tax with working capital flat, while the base composite
+# uses reported CFO — so at zero shock they are different quantities, not the
+# same quantity unshocked (D64). Measured at 43 companies: 88 of 647 base runs
+# changed grade at ZERO shock, and 10 runs IMPROVED under Severe, BKNG by two
+# grades. Scoring them means scoring the approximation gap.
+FCF_DERIVED = ("fcf_to_debt", "fcf_margin")
+
 EXPLICIT, IMPLIED, SUBSTITUTED, NOT_NEEDED = (
     "explicit", "implied", "default_substituted", "not_needed")
 
@@ -224,6 +233,11 @@ def _assumptions(mode, fcs, floating, rate, source, reason):
     lines.append(
         "the trend component carries its BASE-period verdict — a trend is "
         "history, not a hypothetical (D57a)")
+    lines.append(
+        "the stressed GRADE covers leverage, coverage and margin only: "
+        "FCF-derived metrics are reported below but excluded from it, because "
+        "the CFO approximation makes them incomparable with their base values "
+        "(D70)")
     lines.extend(f"simplification: {s}" for s in SIMPLIFICATIONS)
     return lines
 
@@ -247,9 +261,12 @@ def run_scenario(period_end, values, base_metrics, scenario, shocks,
 
     stressed = stressed_metrics(sv, period_end)
     # base metrics carry through for anything stress does not touch, so the
-    # stressed score uses the same category structure as the base one
+    # stressed score uses the same category structure as the base one.
+    # FCF-derived metrics are excluded from the GRADE (D70) but still reported
+    # in the results table below — the figures are informative, the grade
+    # contribution is not.
     merged = dict(base_metrics)
-    merged.update(stressed)
+    merged.update({k: v for k, v in stressed.items() if k not in FCF_DERIVED})
     score = score_period(period_end, merged, thresholds, trends=trends)
 
     results = {}

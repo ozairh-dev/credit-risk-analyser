@@ -1,3 +1,32 @@
+# Candidate-tag disagreement (D69). For concepts whose candidate tags name the SAME
+# quantity in different taxonomy eras, two tags resolving to materially different values
+# means one is wrong or partial — so the concept REFUSES rather than computing from the
+# higher-priority tag and flagging (D26's rule, generalised from debt to revenue).
+#
+# Concepts NOT listed here have candidate tags that are DELIBERATELY different quantities
+# — equity with and without non-controlling interests, interest_expense at different
+# scopes, short_term_debt's DebtCurrent (already guarded by D32). Refusing there would
+# discard a correct value because a different measure disagrees.
+# Tolerance MEASURED, not guessed (rule 14). Across the 43 adopted companies the
+# revenue disagreement distribution is bimodal: legitimate scope differences reach
+# 12.4% at p90 — Ford's `Revenues` includes Ford Credit's financing revenue while
+# `SalesRevenueNet` is automotive only (5-11%); LUMN's `Revenues` exceeds ASC 606
+# contract revenue (6-10%) — while genuine errors sit at ~90% (GIS tags a segment
+# figure of 2.0bn against a true 19.9bn). 0.50 separates them cleanly. A 5% tolerance
+# would have refused 65 concept-periods, nearly all of them legitimate.
+candidate_disagreement_tolerance: 0.50
+
+# Only concepts whose candidates name the SAME quantity. Measured exclusions:
+#   d_and_a                p90 60.6% — Depreciation vs Depreciation+Amortization+Accretion
+#   short_term_investments p50 98.1% — ShortTermInvestments vs MarketableSecuritiesCurrent
+#   equity / interest_expense / short_term_debt — different scopes by definition
+# For those the priority order IS the answer, and refusing would discard a correct
+# value because a different measure disagrees.
+refuse_on_candidate_disagreement:
+  - revenue
+  - cost_of_revenue
+  - dividends
+
 # Ordered candidate us-gaap tags per internal concept. First present wins.
 # Record source_tag on every REPORTED value. Extend per company; never guess.
 revenue: [Revenues, RevenueFromContractWithCustomerExcludingAssessedTax, SalesRevenueNet]

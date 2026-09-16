@@ -15,6 +15,33 @@ from dataclasses import dataclass
 
 from credit_risk import config
 from credit_risk.normalise import quality
+
+CANDIDATE_TAG_DISAGREEMENT = "CANDIDATE_TAG_DISAGREEMENT"
+
+
+def tag_map_config() -> dict:
+    """D69 settings: which concepts refuse on a material candidate disagreement."""
+    s = config.tag_map_settings()
+    return {
+        "tolerance": s["candidate_disagreement_tolerance"],
+        "refuse": set(s["refuse_on_candidate_disagreement"]),
+    }
+
+
+def _materially_differs(concept, used, other, cfg) -> bool:
+    """True when this concept refuses on a disagreement this large (D69).
+
+    Only concepts whose candidate tags name the SAME quantity are listed;
+    equity (with/without NCI), interest_expense and short_term_debt carry
+    candidates that are deliberately different measures, where the priority
+    order is the answer and refusing would discard a correct value.
+    """
+    if concept not in cfg["refuse"]:
+        return False
+    base = max(abs(used), abs(other))
+    if base == 0:
+        return used != other
+    return abs(used - other) / base > cfg["tolerance"]
 from credit_risk.normalise.quality import DataQualityEvent
 from credit_risk.normalise.selection import SelectionResult
 
@@ -71,9 +98,11 @@ def map_concepts(selection: SelectionResult, tag_map: dict | None = None) -> Map
     for f in selection.selected:
         facts_by_tag[f.tag][f.end] = f
 
+    cfg = tag_map_config()
     concepts: list[MappedConcept] = []
     unavailable: list[UnavailableConcept] = []
     warnings: list[DataQualityEvent] = []
+    disagreed: dict = {}
 
     for concept, candidates in tag_map.items():
         # canonical fiscal year ends, plus any period a candidate actually has,
@@ -90,6 +119,12 @@ def map_concepts(selection: SelectionResult, tag_map: dict | None = None) -> Map
                     continue
                 if chosen is None:
                     chosen = fact
+                elif _materially_differs(concept, chosen.val, fact.val, cfg):
+                    # D69: for a concept whose candidates name the SAME quantity,
+                    # a material disagreement means one tag is wrong or partial.
+                    # Refuse rather than compute from the winner and flag it —
+                    # D26's rule, which sat unapplied here for eight phases.
+                    disagreed[(concept, end)] = (chosen, fact)
                 elif fact.val != chosen.val:
                     warnings.append(
                         DataQualityEvent(
@@ -104,7 +139,26 @@ def map_concepts(selection: SelectionResult, tag_map: dict | None = None) -> Map
                             ),
                         )
                     )
-            if chosen is None:
+            if (concept, end) in disagreed:
+                # D69: refuse, and record BOTH figures so the disagreement is
+                # reviewable — the same shape D26 requires for debt.
+                a, b = disagreed[(concept, end)]
+                unavailable.append(
+                    UnavailableConcept(concept, end, "CANDIDATE_TAG_MISMATCH")
+                )
+                warnings.append(
+                    DataQualityEvent(
+                        code=quality.CANDIDATE_TAG_DISAGREEMENT,
+                        concept=concept, tag=a.tag, period_end=end,
+                        accession=a.accn,
+                        detail=(
+                            f"{concept} {end}: REFUSED — {a.tag}={a.val} and "
+                            f"{b.tag}={b.val} disagree beyond tolerance; neither "
+                            f"is used (D69)"
+                        ),
+                    )
+                )
+            elif chosen is None:
                 unavailable.append(
                     UnavailableConcept(concept, end, "NO_CANDIDATE_TAG")
                 )

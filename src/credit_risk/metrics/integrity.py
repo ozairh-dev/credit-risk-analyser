@@ -44,6 +44,7 @@ INTEGRITY_CHECKS = (
     "cash_subset",
     "debt_subset",
     "revenue_non_negative",
+    "ebitda_margin_plausible",
     "period_continuity",
 )
 
@@ -119,6 +120,35 @@ def _revenue_non_negative(end, values):
         "revenue_non_negative", end, PASS if ok else FAIL,
         detail=None if ok else f"revenue={revenue:,.0f} is negative",
         lhs=revenue, rhs=0.0,
+    )
+
+
+def _ebitda_margin_plausible(end, values):
+    """EBITDA margin cannot exceed 100% for an operating company (D69).
+
+    A second net, not a substitute for the tag fix: CAG resolves a single
+    wrong `Revenues` tag with no second candidate to disagree with it, so no
+    candidate-tag rule can catch it. An arithmetic impossibility can.
+
+    FAIL rather than WARN: a margin above 100% means an input is wrong, not
+    that the company is unusual.
+    """
+    gone = _missing(values, "revenue", "ebitda")
+    if gone:
+        return _skip("ebitda_margin_plausible", end, gone)
+    revenue = values["revenue"]
+    if revenue <= 0:
+        return IntegrityResult("ebitda_margin_plausible", end, SKIP,
+                               detail="ZERO_DENOMINATOR: revenue is not positive")
+    margin = values["ebitda"] / revenue
+    ok = margin <= 1.0
+    return IntegrityResult(
+        "ebitda_margin_plausible", end, PASS if ok else FAIL,
+        detail=None if ok else (
+            f"ebitda={values['ebitda']:,.0f} exceeds revenue={revenue:,.0f} "
+            f"({margin:.1%} margin); an input is wrong"
+        ),
+        lhs=values["ebitda"], rhs=revenue, deviation=margin,
     )
 
 
@@ -234,6 +264,7 @@ def run_integrity_checks(mapping, composites, cfg: dict | None = None) -> Integr
         results.append(_subset_check("debt_subset", end, values,
                                      "total_debt_ex_leases", "total_liabilities"))
         results.append(_revenue_non_negative(end, values))
+        results.append(_ebitda_margin_plausible(end, values))
     results.extend(_continuity(trend_ends, window))
     for end in ends:
         if not by_period[end]:
