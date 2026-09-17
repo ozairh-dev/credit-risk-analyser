@@ -502,6 +502,11 @@ concept->fact provenance lookup in `_store_concepts` also matches on period type
 with identity widened both shapes can be CURRENT and provenance must point at the fact the
 value actually came from.
 
+**Status note (2026-09-17):** the counts above were **measured at five companies** (F,
+JNJ, LUMN, CCL, KHC), before the 43-company universe was adopted (D67). The reasoning is
+unaffected; the evidence statement is provisional. **Re-measure before relying on any
+count here.**
+
 ## D24 — Rule 5 classifies units three ways; FOREIGN_UNIT is for currencies only
 Decision (owner call, 2026-09-10, after measuring the three cached companies): rule 5
 splits units into monetary-USD (selected), monetary-non-USD (`UNAVAILABLE`,
@@ -675,6 +680,22 @@ Consequences: a new reason code in the vocabulary (docs/data-sources.md); the gu
 in `metrics/composites.py` before branch-1 assembly; unit-tested on synthetic data since
 no cached company exercises it.
 
+**Status note (2026-09-17, v1 final audit finding 5):** the "fires zero times" statement
+above is **stale**. `ST_DEBT_SCOPE_UNCERTAIN` is now a live path:
+
+- **Across the 43 adopted companies: 9 company-periods, 3 companies** — BDX 6, ECL 2,
+  MPC 1. Those 9 refusals appear as **18 composite rows**, because a refused
+  `total_debt` propagates to `net_debt`; that is the 18 the audit reported, and the two
+  figures count different things rather than disagreeing.
+- **Across all 105 screened companies: 62 company-periods, 14 companies** — MRK 13, QCOM
+  9, HPQ 8, HAL 7, BDX 6, IBM 5, DLTR 4, COR/ECL/OXY 2 each, HCA/MPC/MTN/VZ 1 each.
+
+**The decision itself is unchanged and correct** — the guard was right and the universe
+grew into it — but the D29 latent-hole comparison no longer applies. Recorded with both
+scopes because the first measurement taken for this note was run over all 105 and
+reported as though it were the adopted 43, which would have overstated the adopted-set
+figure roughly sevenfold. **A count is only meaningful with its population attached.**
+
 ## D33 — Four Task 9 spec gaps resolved (owner-approved 2026-09-11)
 The methodology left four points underdetermined; each resolution is also written into
 the docs rather than living only here. In D16's mould: each defaults fail-safe unless
@@ -708,6 +729,11 @@ D26's own consequences table rather than as a new call: within the plain
 present — JNJ's 18-period expectation in that table is only reachable on that reading
 (7 of its periods are noncurrent-only with no aggregate) — and the lease composites sum
 their split halves under the same zero-by-absence recording.
+
+**Status note (2026-09-17):** the counts above were **measured at five companies** (F,
+JNJ, LUMN, CCL, KHC), before the 43-company universe was adopted (D67). The reasoning is
+unaffected; the evidence statement is provisional. **Re-measure before relying on any
+count here.**
 
 ## D34 — Deviation edge semantics: agreement computes, contradiction refuses, bad input refuses
 Decision (owner, Task 9, 2026-09-11): `_deviation(components, aggregate)` in
@@ -801,6 +827,11 @@ conceptually the same question asked of different objects (a fact's duration, a 
 between periods) and may legitimately diverge. A test pins a real 52/53-week sequence so
 the finding is defended by test rather than by argument.
 
+**Status note (2026-09-17):** the counts above were **measured at five companies** (F,
+JNJ, LUMN, CCL, KHC), before the 43-company universe was adopted (D67). The reasoning is
+unaffected; the evidence statement is provisional. **Re-measure before relying on any
+count here.**
+
 ## D37 — Integrity results get their own table, not data_quality_events
 Decision (owner-approved 2026-09-11): integrity check outcomes are rows in a new
 `integrity_results` table — `(cik, period_end, check, outcome, detail, lhs, rhs,
@@ -829,6 +860,11 @@ period verdict as a column (rule 13); put only failures in events and drop passe
 (loses the evidence-versus-gap distinction that makes witness coverage measurable).
 Consequences: `store/queries.py` gains the verdict derivation; Phase 6 reads the table,
 not free text.
+
+**Status note (2026-09-17):** the counts above were **measured at five companies** (F,
+JNJ, LUMN, CCL, KHC), before the 43-company universe was adopted (D67). The reasoning is
+unaffected; the evidence statement is provisional. **Re-measure before relying on any
+count here.**
 
 ## D38 — Integrity thresholds live in config/integrity.yaml, outside the D18 fingerprint
 Decision (owner-approved 2026-09-11): `balance_sheet_tolerance` (0.01),
@@ -981,6 +1017,11 @@ witnesses and are synthetic-only — `interest_expense` resolves positively in a
 cached company-periods, `total_debt` is never exactly zero, and `current_liabilities` is
 never zero or negative. Recorded in PROJECT_STATE.md beside Task 10's witness table.
 
+**Status note (2026-09-17):** the counts above were **measured at five companies** (F,
+JNJ, LUMN, CCL, KHC), before the 43-company universe was adopted (D67). The reasoning is
+unaffected; the evidence statement is provisional. **Re-measure before relying on any
+count here.**
+
 ## D42 — Five calls completing Phase 5's metric set
 Decision (owner-approved 2026-09-12, Phase 5 completion). The remaining fourteen ratios
 follow Task 11's pattern unchanged; these five points were underdetermined by the
@@ -1040,6 +1081,11 @@ later reader does not try to deduplicate them: **the check asks whether the data
 possible; the metric asks whether it can be computed.** They are different questions about
 the same fact, and both answers are wanted — one marks the period unfit for scoring, the
 other explains why a particular number is absent. Zero witnesses in the cache.
+
+**Status note (2026-09-17):** the counts above were **measured at five companies** (F,
+JNJ, LUMN, CCL, KHC), before the 43-company universe was adopted (D67). The reasoning is
+unaffected; the evidence statement is provisional. **Re-measure before relying on any
+count here.**
 
 ## D43 — revenue_growth pairs on eligibility AND window; citing a decision is not implementing it
 Decision (pre-Phase-6 audit, finding 2, 2026-09-12): `revenue_growth` pairs each period
@@ -2110,3 +2156,88 @@ have made it useless or dangerous:
 Recorded because the instruction to "test against reality, not just fixtures" is what found
 all four: a fixture-only suite would have tested the matcher against strings the matcher was
 written to handle.
+
+## D75 — A metric UNAVAILABLE at base is UNAVAILABLE under stress (v1 final audit, finding 1)
+Decision (owner-approved 2026-09-17): `stressed_metrics()` inherits every base refusal,
+carrying the **same reason code**. The inheritance is applied last, after all seven
+recomputations, so no branch can bypass it. The stress engine must not be able to
+manufacture availability.
+
+Reason — the gates are asymmetric and always will be. The stress engine works from
+propagated figures (`StressedValues`), not from resolved concepts and the D41 coverage
+gates, so its preconditions are necessarily weaker than the metric engine's. Without
+inheritance it computes values the base pipeline refused, and a stressed grade then scores
+a category the base grade could not — which is not a stress result at all, it is a
+different company. Carrying the base reason code rather than inventing a stress-specific
+one means the stressed result says *why* it is absent, and says the same thing the base
+run said.
+
+**This corrects D70, which fixed the symptoms and left the mechanism live.** D70 measured
+its own success honestly — zero-shock grade changes 88 → 1, Severe improvements 10 → 0 —
+but it suppressed the two FCF-derived metrics, not the ability to manufacture a metric.
+The witness is **AZO 2011-08-27**, the single residual: base capped at four categories
+scored, stressed uncapped at five, the fifth arriving through `ebit_interest_cover`. **No
+FCF was involved**, so D70's rule could not have caught it and the residual had a
+completely different cause from the one D70 addressed.
+
+**The general lesson, and the reason this entry is longer than the fix: this is the third
+time in this project that a fix aimed at an instance left the mechanism live.** D69 fixed
+the revenue disagreement but not the precondition that let it through; D26's
+refuse-on-disagreement shape had to be rediscovered for revenue after being solved once
+for debt. **When a defect is fixed, check what class it belongs to, not just where it
+appeared.** The audit found this one only because it re-verified against current data
+rather than against the fix report.
+
+Measured across the 43 adopted companies, before → after: metrics manufactured from a base
+refusal **118 → 0**; base runs changing grade at zero shock **1 → 0**; Severe runs
+improving a grade **0 → 0** (already clean).
+
+**D70 was re-measured afterwards and is still load-bearing — it is not redundant, and is
+kept unchanged.** With D75's inheritance in place but `FCF_DERIVED` suppression disabled,
+**71** base runs change grade at zero shock (Severe improvements stay at 0). The two rules
+address different causes: D75 stops the engine inventing a metric the base refused, D70
+stops D64's CFO-approximation gap moving a grade at zero shock. Neither subsumes the other.
+
+Alternatives: let the stress engine compute what it can and flag the divergence (rejected —
+CLAUDE.md rule 3, and a flagged manufactured metric still enters the stressed score);
+strengthen the stress engine's own gates to match the metric engine's (rejected — that is
+CLAUDE.md rule 13, one invariant in two layers, and the two would drift apart).
+Consequences: a stressed run can now score fewer categories than before, so some stressed
+grades are capped where they previously were not — correctly, since the base grade was
+capped for the same reason.
+
+## D76 — A period that FAILS a fail-severity integrity check computes no metrics (v1 final audit, finding 3)
+Decision (owner-approved 2026-09-17): `compute_metrics()` takes `failed_periods` and emits
+`UNAVAILABLE / INTEGRITY_FAILED` for **all 17 metrics** in any period that FAILED a
+fail-severity integrity check. `INTEGRITY_FAILED` is a **GAP** kind (D9/D41a): an input is
+provably wrong, so nothing derived from it is knowable — that is not evidence about the
+company, it is an absence of knowledge, and it caps the grade rather than scoring zero.
+
+Reason — the cleaner option was chosen over the marking one. An arithmetically impossible
+figure should not be **reachable**, not merely reachable-behind-a-marker. Marking it makes
+every downstream consumer responsible for honouring the marker, and the one that forgets
+prints the wrong number; the evidence pack was exactly that consumer, publishing CAG's
+**122.5% EBITDA margin** to a model that is instructed the pack is its complete and
+exclusive basis. A marker would also have required extending the validator to honour it,
+which is a second place the rule has to be remembered (CLAUDE.md rule 13).
+
+**All 17 metrics refuse, not just the one that tripped the check.** `_ebitda_margin_plausible`
+proves `ebitda` and `revenue` disagree but not **which** is wrong, so `debt_to_ebitda` and
+`ebitda_interest_cover` are equally unsafe. **Failed periods are also removed from the
+`revenue_growth` pairing anchors** — growth measured against an impossible base is itself
+impossible, and without this the wrongness escapes the suppressed period into a healthy one.
+
+Measured blast radius across the 43 adopted companies: **4 periods, 1 company, 67 computed
+metric values suppressed** — CAG 2012-05-27, 2013-05-26, 2014-05-25 and 2016-05-29, all
+from `ebitda_margin_plausible`, the only fail-severity check with a live witness (D69).
+16 values for 2012-05-27 and 17 for the rest; the earliest has no prior revenue anchor so
+`revenue_growth` was already absent. **Nothing else in the universe is affected.** CAG's
+122.5% is confirmed gone from the evidence pack.
+
+Alternatives: mark the figures and leave them (above); suppress only `ebitda_margin`
+(rejected — the check does not identify which input is wrong); exclude the period from the
+pipeline entirely (rejected — the integrity results themselves must still be exported, and
+a silently absent period is less honest than a visibly refused one).
+Consequences: scoring already excluded integrity-FAIL periods, so no grade changes; the
+evidence pack's metrics table now shows `INTEGRITY_FAILED` for these periods; the trends
+engine sees fewer resolved points for CAG, which is correct.

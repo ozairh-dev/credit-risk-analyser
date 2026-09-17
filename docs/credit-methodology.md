@@ -600,7 +600,7 @@ Every check yields exactly one of four outcomes per period:
 |---|---|
 | `PASS` | the comparison ran and held |
 | `WARN` | it ran and did not hold, but the rule says don't reject |
-| `FAIL` | it ran and did not hold; the period is excluded from scoring |
+| `FAIL` | it ran and did not hold; **every metric for the period refuses**, and the period is excluded from scoring (D76) |
 | `SKIP` | an input was `UNAVAILABLE`, so the comparison could not run |
 
 **`SKIP` is not a pass.** A missing input is a data gap, not a violation — the same
@@ -616,6 +616,16 @@ A zero or negative `total_assets` makes the balance-sheet check `SKIP`, not a di
 "Fail" means the period is stored but marked `integrity = FAIL` and **excluded from
 scoring until the underlying data is corrected and re-ingested** — v1 has no interactive
 review path, and a FAIL period gets no score row at all (D45). Never silently accepted.
+
+**A FAIL also suppresses every metric for that period** (D76). The check proves an input
+is wrong but not *which* one, so all seventeen metrics return `UNAVAILABLE /
+INTEGRITY_FAILED` rather than only the metric that tripped the check, and the period is
+removed from the `revenue_growth` pairing anchors so growth is never measured against an
+impossible base. The reasoning is that an arithmetically impossible figure should not be
+**reachable**, not merely reachable behind a marker: the evidence pack is an exclusive
+input to an AI workflow, and a marker every consumer must remember to honour is one a
+consumer will eventually forget.
+
 The `overrides` table is value-scoped by design; overriding a *verdict* would be a new
 table and a new workflow, and is a v2 feature if ever wanted.
 

@@ -120,13 +120,27 @@ checks (Phase 4) because the checks depend on them. See docs/build-plan.md.
 - [ ] Escalation threshold calibration (D72b) — 31% of periods, 64% of warnings
 - [ ] Sector thresholds (D48/D72a) — now two measured instances plus 7 companies on the
       liquidity finding, including P&G
-- [ ] The four fail-severity integrity checks remain synthetic-only (D72c)
+- [ ] The never-failing fail-severity integrity checks remain synthetic-only (D72c) —
+      measured 2026-09-17: **five of the six** never fail on real data; only
+      `ebitda_margin_plausible` has a witness (4 CAG periods)
 
 ## Phase 9
 - [x] Evidence export + memo validator (2026-09-16): export-evidence,
       prompts/credit_memo.md, validate-memo. D73-D74. Five-violation reality test run;
       invented figure and grade contradiction caught, legitimate rounding passes,
       fabricated source and true-numbers-false-claim missed by design
+
+## v1 final audit (docs/audits/2026-09-14-v1-final-audit.md)
+- [x] Finding 1 — stressed metrics inherit base refusals (D75). D70 re-measured after
+      and kept: still load-bearing, 71 zero-shock grade changes without it
+- [x] Finding 2 — the evidence exporter has tests: 16, one per D73 duty plus the
+      no-artefact checks, every one sabotage-verified
+- [x] Finding 3 — a fail-severity integrity FAIL suppresses every metric for the
+      period (D76). CAG's 122.5% margin confirmed gone from the pack
+- [x] Finding 5 — D32 status note corrected with its population; D29/D33/D36/D37/D41/
+      D42 annotated as five-company-era counts
+- [x] Finding 6 — README rewritten against measured numbers, calibration sentence intact
+- [ ] Finding 4 was the three parked calibration items — still parked, see above
 
 ## Later
 - See docs/build-plan.md

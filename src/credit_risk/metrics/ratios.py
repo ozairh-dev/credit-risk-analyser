@@ -32,6 +32,7 @@ NO_DEBT = "NO_DEBT"
 NON_POSITIVE_CAPITAL = "NON_POSITIVE_CAPITAL"
 INSUFFICIENT_DATA = "INSUFFICIENT_DATA"
 INVENTORY_UNKNOWN = "INVENTORY_UNKNOWN"
+INTEGRITY_FAILED = "INTEGRITY_FAILED"
 
 _KINDS = {
     NEGATIVE_EBITDA: EVIDENCE,
@@ -44,6 +45,9 @@ _KINDS = {
     ZERO_DENOMINATOR: GAP,
     NEGATIVE_DENOMINATOR: GAP,
     NON_POSITIVE_CAPITAL: GAP,
+    # an input is provably wrong, so nothing derived from it is knowable.
+    # A gap — we do not know — not evidence about the company (D76).
+    INTEGRITY_FAILED: GAP,
     INSUFFICIENT_DATA: GAP,
     INVENTORY_UNKNOWN: GAP,
 }
@@ -283,8 +287,16 @@ class MetricsReport:
     events: list[DataQualityEvent]    # NEGATIVE_DENOMINATOR warnings (D41e)
 
 
-def compute_metrics(mapping, composites, cfg: dict | None = None) -> MetricsReport:
+def compute_metrics(mapping, composites, cfg: dict | None = None,
+                    failed_periods=()) -> MetricsReport:
     """Every Phase 5 ratio for every period the company has.
+
+    A period in `failed_periods` — one that FAILED a fail-severity integrity
+    check — computes no metric at all (D76). Its inputs are not merely
+    missing, they are arithmetically impossible, and a figure derived from
+    an impossible input must not be reachable: marking it and leaving it in
+    place would make every downstream consumer responsible for honouring
+    the marker, and one that forgets prints a wrong number.
 
     `company_reports_inventory` is the one company-wide fact any metric needs
     (D42b), computed once here rather than threaded through as a flag.
@@ -310,12 +322,20 @@ def compute_metrics(mapping, composites, cfg: dict | None = None) -> MetricsRepo
     # Periods that actually resolve revenue, in order. revenue_growth pairs
     # against the most recent of these, never against whichever row precedes
     # it — a phantom period between two real ones is not a link (D43/D40).
-    revenue_ends = [e for e in ends if "revenue" in by_period[e]]
+    failed = set(failed_periods)
+    # A failed period is not a pairing anchor either: growth measured
+    # against an impossible base is itself impossible (D76).
+    revenue_ends = [e for e in ends
+                    if "revenue" in by_period[e] and e not in failed]
 
     metrics: list[MetricResult] = []
     events: list[DataQualityEvent] = []
 
     for end in ends:
+        if end in failed:
+            metrics.extend(_unavailable(m, end, INTEGRITY_FAILED)
+                           for m in METRICS)
+            continue
         values = by_period[end]
         earlier = [e for e in revenue_ends if e < end]
         prior_end = earlier[-1] if earlier else None

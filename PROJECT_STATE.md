@@ -3,9 +3,11 @@
 _Update at the end of every working session._
 
 ## Phase
-Phases 1-3 complete — Tasks 1-8 done. Task 9 (composite concepts, Phase 5) next, then
-Task 10 (integrity + data quality, Phase 4): task order interleaves the phases there
-because the integrity checks depend on the composites. See docs/build-plan.md.
+**v1 complete (2026-09-17).** All ten phases are built, run on real data and are
+committed: ingestion, normalisation, composites, integrity checks, ratios, scoring,
+trends and warnings, stress, and the evidence export with its memo validator. 905 tests.
+The v1 final audit (`docs/audits/2026-09-14-v1-final-audit.md`) and its fixes are the
+last work in v1; everything beyond is a v2 question in docs/build-plan.md.
 
 ## Completed
 - Specification: CLAUDE.md, docs/, DECISIONS.md D1-D10
@@ -99,6 +101,21 @@ because the integrity checks depend on the composites. See docs/build-plan.md.
   string->structured refactor: selection and mapping warnings are now
   DataQualityEvent records (normalise/quality.py) persisted to
   data_quality_events, so only one shape exists in the codebase.
+
+- v1 final audit fixes (2026-09-17, Opus) — five findings closed, two of which
+  changed behaviour. **D75**: stressed metrics now inherit base refusals, so the
+  stress engine can no longer manufacture availability its weaker gates were not
+  entitled to; 118 manufactured metrics went to 0 and the last zero-shock grade move
+  (AZO 2011-08-27) resolved. D70 was re-measured afterwards and is **still
+  load-bearing** — disabling it reintroduces 71 zero-shock grade changes — so it was
+  kept. **D76**: a period failing a fail-severity integrity check now computes no
+  metric at all, removing CAG's 122.5% EBITDA margin from the evidence pack; blast
+  radius is 4 periods, 1 company, 67 values, and no grade changed. Also: the evidence
+  exporter went from 0 tests to 16, all sabotage-verified — one of which was found
+  passing against a deliberately broken exporter because it searched the whole pack
+  instead of the section it was guarding. D28-D42 swept for five-company-era counts
+  and annotated; D32's "fires zero times" corrected to 9 company-periods on the
+  adopted 43 (62 across all 105). README rewritten to describe the actual system.
 
 - Phase 10 universe adopted (2026-09-13, Opus) — 105 companies screened
   through the full pipeline, 43 adopted, 5 retained as fixtures. Closed the

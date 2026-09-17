@@ -30,7 +30,10 @@ def analyse(raw: dict):
     mapping = map_concepts(selection)
     composites = compute_composites(mapping)
     integrity = run_integrity_checks(mapping, composites)
-    metrics = compute_metrics(mapping, composites)
+    # Integrity runs before metrics so a period whose inputs are provably
+    # wrong refuses every metric rather than computing from them (D76).
+    failed = {r.period_end for r in integrity.results if r.outcome == "FAIL"}
+    metrics = compute_metrics(mapping, composites, failed_periods=failed)
     # trends run BEFORE scoring: the ebitda_margin_trend component consumes a
     # verdict from here (D50)
     trends = analyse_trends(mapping, composites, metrics)

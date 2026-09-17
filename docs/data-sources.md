@@ -192,6 +192,7 @@ three codes.
 | `NON_POSITIVE_CAPITAL` | metric | `total_debt + equity <= 0`, so `debt_to_capital` has no meaningful base. Distinct from a bare zero denominator | — |
 | `INVENTORY_UNKNOWN` | metric | `quick_ratio`: the company reports inventory in some period but not this one, so it can be neither subtracted nor assumed zero | D42b |
 | `INSUFFICIENT_DATA` | metric | `revenue_growth`: no prior period within `continuity_window_days` to compare against | D42c |
+| `INTEGRITY_FAILED` | metric | The period FAILED a fail-severity integrity check, so an input is provably wrong and **every** metric for the period refuses. **Kind GAP** — an input is wrong, so nothing derived from it is knowable | D76 |
 
 A refused value is never approximated from a neighbouring period, a related tag, or
 subtraction from another figure (CLAUDE.md rule 11).

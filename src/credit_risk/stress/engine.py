@@ -40,6 +40,14 @@ STRESSED_METRICS = (
 # same quantity unshocked (D64). Measured at 43 companies: 88 of 647 base runs
 # changed grade at ZERO shock, and 10 runs IMPROVED under Severe, BKNG by two
 # grades. Scoring them means scoring the approximation gap.
+#
+# Re-measured after D75's refusal inheritance landed, to check whether this rule
+# had become redundant: it has NOT. With inheritance in place but this
+# suppression disabled, 71 base runs still change grade at zero shock. The two
+# rules address different causes — D75 stops the engine inventing a metric the
+# base refused, this stops D64's CFO approximation gap moving a grade — and
+# neither subsumes the other. Do not remove it on the assumption that D75
+# covers it.
 FCF_DERIVED = ("fcf_to_debt", "fcf_margin")
 
 EXPLICIT, IMPLIED, SUBSTITUTED, NOT_NEEDED = (
@@ -184,8 +192,16 @@ def _metric(name, end, value, reason=None):
                         data_status="CALCULATED")
 
 
-def stressed_metrics(sv: StressedValues, end: str) -> dict:
-    """The seven recomputed metrics. Liquidity is absent by design (D57b)."""
+def stressed_metrics(sv: StressedValues, end: str, base_metrics=None) -> dict:
+    """The seven recomputed metrics. Liquidity is absent by design (D57b).
+
+    **A metric UNAVAILABLE at base is UNAVAILABLE under stress, carrying the
+    same reason code (D75).** The stress engine must not be able to manufacture
+    availability: its gates are necessarily weaker than the metric engine's —
+    it works from propagated figures, not from the resolved concepts and the
+    D41 coverage gates — so without this it computes values the base pipeline
+    refused, and a stressed grade scores a category the base grade could not.
+    """
     out = {}
     neg_ebitda = sv.ebitda <= 0
     for name, numerator in (("net_debt_to_ebitda", sv.net_debt),
@@ -211,6 +227,13 @@ def stressed_metrics(sv: StressedValues, end: str) -> dict:
     if sv.revenue > 0:
         out["ebitda_margin"] = _metric("ebitda_margin", end,
                                        sv.ebitda / sv.revenue)
+
+    # Inherit every base refusal (D75). Applied last so no branch above can
+    # bypass it, and carrying the base reason code so the stressed result says
+    # why rather than inventing a stress-specific explanation.
+    for name, base in (base_metrics or {}).items():
+        if name in out and base is not None and base.data_status == "UNAVAILABLE":
+            out[name] = _metric(name, end, None, base.reason_code)
     return out
 
 
@@ -259,7 +282,7 @@ def run_scenario(period_end, values, base_metrics, scenario, shocks,
     if sv is None:
         return None
 
-    stressed = stressed_metrics(sv, period_end)
+    stressed = stressed_metrics(sv, period_end, base_metrics)
     # base metrics carry through for anything stress does not touch, so the
     # stressed score uses the same category structure as the base one.
     # FCF-derived metrics are excluded from the GRADE (D70) but still reported
@@ -314,7 +337,7 @@ def attribute_drivers(period_end, values, base_metrics, shocks, trends,
                          default_tax_rate=stress_cfg["default_tax_rate"])
     if baseline is None:
         return {}
-    base_vals = stressed_metrics(baseline, period_end)
+    base_vals = stressed_metrics(baseline, period_end, base_metrics)
 
     drivers = {}
     for shock in SHOCKS:
@@ -328,7 +351,8 @@ def attribute_drivers(period_end, values, base_metrics, shocks, trends,
                        floating_share=stress_cfg["floating_share"],
                        new_debt_rate=rate,
                        default_tax_rate=stress_cfg["default_tax_rate"])
-        for name, m in stressed_metrics(sv, period_end).items():
+        for name, m in stressed_metrics(sv, period_end,
+                                        base_metrics).items():
             b = base_vals.get(name)
             if (m.data_status == "CALCULATED" and b is not None
                     and b.data_status == "CALCULATED"):
@@ -361,7 +385,7 @@ def sensitivity_grid(period_end, values, base_metrics, trends=None,
             if sv is None:
                 continue
             merged = dict(base_metrics)
-            merged.update(stressed_metrics(sv, period_end))
+            merged.update(stressed_metrics(sv, period_end, base_metrics))
             score = score_period(period_end, merged, thresholds, trends=trends)
             leverage = merged.get("net_debt_to_ebitda")
             cells.append({
