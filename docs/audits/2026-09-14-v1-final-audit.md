@@ -10,7 +10,38 @@ described to other people.
 **Report only.** Nothing changed, nothing committed.
 
 **State audited:** `41fcd1b`, 844 passing / 45 skipped, working tree clean. Evidence base:
-43 adopted companies, **781 company-periods**, 780 scored, 647 stressable.
+43 adopted companies, **781 company-periods**†, 780 scored†, 647 stressable†.
+
+---
+
+> ### † Correction appended 2026-09-20 — the evidence base predates D69 and D71
+>
+> **The figures in this audit are left exactly as written.** They were accurate for the
+> state they were measured at; the error is that the state is not the one the header
+> names. This note records the discrepancy rather than editing the report around it.
+>
+> The four evidence-base figures below — and the grade distribution in §"What can honestly
+> be claimed" — were **carried forward from the 2026-09-13 demonstration run at `0fa0897`**,
+> which is *before* commit `8828aef` (D69–D72). The header says `41fcd1b`, which is after
+> it. Every figure was reproduced exactly at `0fa0897` on 2026-09-20 by re-running the
+> pipeline in a worktree at that commit, so the attribution is measured, not inferred:
+>
+> | Figure | As printed (`0fa0897`) | Current (`ce0fc56`) | What moved it |
+> |---|---|---|---|
+> | company-periods with ≥1 computed metric | **781** | **777** | D76 — CAG's 4 integrity-FAIL periods now compute nothing |
+> | scored periods | **780** | **776** | D69 — the same 4 periods now FAIL a fail-severity check, and D45 excludes a FAIL period from scoring |
+> | stressable periods | **647** | **630** | D69 — revenue refuse-on-disagreement means revenue and EBITDA no longer co-resolve in 17 periods |
+> | capped grade distribution 1→6 | **51/120/286/202/76/45** | **38/98/273/221/98/48** | D71 — the coverage-band rebase moves **114** periods, every one by exactly one grade worse |
+>
+> **D75 and D76 changed no grade at all**: the distribution measured at `8828aef` is
+> identical to the one at `ce0fc56`.
+>
+> **This audit's own finding 5 is the finding it fell to.** Finding 5 says a decision's
+> recorded measurement can go stale while its reasoning stays sound, and recommends
+> treating in-sample counts as provisional. The audit then reported a carried-forward
+> evidence base under a newer commit hash. The rule that prevents it is the one D32's
+> status note now states: **a count is only meaningful with its population and its commit
+> attached.**
 
 ---
 
@@ -190,11 +221,11 @@ concept-periods.
 | Claim | Evidence |
 |---|---|
 | Ingests and normalises SEC XBRL for arbitrary US filers | 105 companies fetched and run end to end; 43 adopted after screening |
-| Computes 17 credit metrics with full provenance to tag and filing | 781 company-periods; every metric traceable through `metric_inputs → concepts → concept_inputs → facts` |
+| Computes 17 credit metrics with full provenance to tag and filing | 781 company-periods†; every metric traceable through `metric_inputs → concepts → concept_inputs → facts` |
 | Refuses rather than guessing when inputs conflict or are missing | **18 distinct reason codes with real witnesses**, 2,241 `MISSING_INPUT` refusals, 70 `COMPONENT_AGGREGATE_MISMATCH`, 13 `CANDIDATE_TAG_MISMATCH` |
-| Scores and grades with a visible, attributed cap | 780 scored periods; grade distribution 51/120/286/202/76/45 across grades 1–6 |
+| Scores and grades with a visible, attributed cap | 780 scored periods†; grade distribution 51/120/286/202/76/45† across grades 1–6 — see the † correction note at the top |
 | Classifies trends and raises early warnings | 5,544 trend verdicts, 1,539 warnings across 11 indicators |
-| Runs deterministic stress with driver attribution | 647 stressable periods × 3 scenarios; driver isolation verified on real runs |
+| Runs deterministic stress with driver attribution | 647 stressable periods† × 3 scenarios; driver isolation verified on real runs |
 | Detects a known class of tagging error | GIS 90% revenue disagreement caught; CAG single-tag error caught by the margin check |
 | Produces an evidence pack and validates a memo against it | One real pack (334 lines, 541 numeric tokens); five-violation test |
 

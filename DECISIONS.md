@@ -1966,6 +1966,15 @@ wrong, not that the company is unusual.
 Consequences: `tag_map.yaml` gains two settings keys, filtered out of `config.tag_map()` so
 the concept-count invariant and completeness counts are untouched.
 
+**Coverage cost, measured 2026-09-20 and not recorded at the time:** refusing costs **17
+stressable periods, 647 -> 630** (2.6%) across five companies — GIS 6, CAG 4, HAS 3, PG 3,
+DVN 1 — and **nothing is gained back**. Both EBITDA modes need revenue and EBITDA in the
+same period (D53e), so a refused revenue takes the period's stress run with it. It also
+costs 4 scored periods (780 -> 776), the CAG periods D45 excludes on their integrity FAIL.
+**This is the intended trade and it is still right** — the alternative was stressing GIS
+off a revenue figure 90% wrong — but a refusal rule's cost belongs in its own entry rather
+than being discovered three commits later while reconciling something else.
+
 ## D70 — FCF-derived metrics are excluded from the stressed grade
 Decision (owner call, 2026-09-14): `fcf_to_debt` and `fcf_margin` are **reported in the
 stress results but excluded from the stressed grade**, which now covers **leverage, coverage
@@ -2005,6 +2014,15 @@ Grade impact, measured before pinning: **113 of 776 scored periods (14.6%) move,
 by exactly one grade worse.** Grade 1 falls 51 -> 38, grade 2 117 -> 98, grade 5 rises
 77 -> 98. The rebase is a pure tightening at the top, which is what it was meant to be; the
 distribution stays well-shaped and single-peaked.
+
+**Correction 2026-09-20:** re-measured directly, by scoring all 43 companies under both
+band sets and comparing period by period rather than differencing the distributions:
+**114** periods move, not 113, and grade 5 rises **76 -> 98**, not 77 -> 98. A single
+arithmetic slip, propagated — 77 and 113 are consistent with each other, and both are one
+out. **The claim that matters is confirmed exactly:** all 114 movers go one grade worse and
+**not one improves**, which is what "a pure tightening at the top" asserts. Grade 1
+51 -> 38 and grade 2 117 -> 98 are confirmed unchanged. Basis for both figures: the 43
+adopted companies, capped grades, 776 scored periods, post-D69.
 Consequences: the score fingerprint (D45) changes, so every stored score is correctly
 distinguishable from one computed under the old bands. CCL's pinned arc and the other
 fixture pins are re-baselined deliberately.

@@ -68,19 +68,26 @@ Then, outside the engine, a manual AI workflow: **export** an evidence pack and
 
 ## Measured behaviour
 
-All figures below were measured across the **43 adopted companies** on 2026-09-17 by
-running the full pipeline over each company's entire filing history. Where a number is
-scoped to the larger screened set, it says so.
+**Basis for every figure below: the 43 adopted companies, capped grades, all periods of
+each company's filing history, measured at commit `ce0fc56` on 2026-09-20.** Where a number
+is scoped to the larger screened set, it says so.
+
+The basis is stated because it is load-bearing rather than pedantic. The same pipeline over
+the same filings produced **780 scored periods and a 51/120/286/202/76/45 grade
+distribution** three commits ago; D69 removed 4 periods from scoring and D71's band rebase
+moved 114 periods one grade worse. Neither set of numbers is wrong — they answer the same
+question at different commits. A distribution quoted without its commit and its population
+is a true statement that means something other than it appears to.
 
 | | |
 |---|---|
 | Companies screened end to end | **105** (43 adopted, a 41% pass rate) |
-| Company-periods with metrics | **792** |
+| Company-periods analysed | **792** (**777** with at least one computed metric) |
 | Metric values computed | **10,848** |
 | Metric values **refused** | **2,616** |
 | Distinct reason codes with real witnesses | **14** on the adopted set |
 | Periods scored | **776**, of which **316** carry a cap |
-| Grade distribution 1→6 | **38 / 98 / 273 / 221 / 98 / 48** |
+| Grade distribution 1→6 (capped grades) | **38 / 98 / 273 / 221 / 98 / 48** |
 | Trend verdicts | **5,544** |
 | Early warnings | **1,505** across **11** indicators |
 | Stressable periods | **630**, each run under 3 scenarios (**1,890** runs) |

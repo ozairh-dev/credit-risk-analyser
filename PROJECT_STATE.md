@@ -141,7 +141,8 @@ last work in v1; everything beyond is a v2 question in docs/build-plan.md.
   disagree with. **D70**: FCF-derived metrics excluded from the stressed
   grade; zero-shock grade changes 88 -> 1, Severe improvements 10 -> 0.
   **D71**: coverage bands rebased [1,2,3,5,8] -> [1,2.5,5,10,20]; top-band
-  share 55% -> 24%, 113 of 776 periods move one grade worse. **D72** records
+  share 55% -> 24%, 114 of 776 periods move one grade worse (corrected from 113
+  on 2026-09-20; see D71). **D72** records
   four findings deliberately not fixed.
 
 - Phase 9 (2026-09-16, Opus) — evidence export and the memo validator, the
@@ -638,8 +639,11 @@ investigation before KHC is relied on for anything revenue-derived.
   indistinguishable from none. A calibration decision, not a defect.
 - **Sector thresholds** (D48, widened by D72a): 7 of 43 companies score zero liquidity
   points on a negative-working-capital business model, including P&G. Post-MVP item.
-- **The four fail-severity integrity checks** (D72c) have never fired on real data across
-  780 periods. Validated by synthetic fixtures only.
+- **The never-failing fail-severity integrity checks** (D72c): five of the six have never
+  fired on real data. Basis: the 43 adopted companies, 776 scored periods at `ce0fc56`
+  (the "780 periods" previously recorded here was the pre-D69 count at `0fa0897`).
+  `ebitda_margin_plausible` is the exception and has 4 CAG witnesses. Validated by
+  synthetic fixtures only.
 - none blocking. The v1 universe question — open since Phase 0 — was closed on 2026-09-13 by D65.
 
 ## Next priorities
