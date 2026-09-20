@@ -3,7 +3,7 @@
 _Update at the end of every working session._
 
 ## Phase
-**v1 complete (2026-09-20).** All eleven phases are built, run on real data and are
+**v1 complete (2026-09-20, `a5035a6`).** All eleven phases are built, run on real data and are
 committed: ingestion, normalisation, composites, integrity checks, ratios, scoring,
 trends and warnings, stress, the evidence export with its memo validator, and the
 documentation set. 930 tests — 886 pass, 44 skip by design, 17 of them the golden set (D77).
@@ -651,7 +651,7 @@ misrepresents both.
 One correction worth keeping visible, since it is the kind this project keeps re-learning:
 **the sector-threshold item has two different seven-company measurements behind it, and
 they are not the same seven.** D72a measured median `current_ratio` below 0.8 (RCL, CCL,
-CHTR, MAR, GIS, TXRH, PG, at adoption); a 2026-09-20 measurement at `ce0fc56` found zero
+CHTR, MAR, GIS, TXRH, PG, at adoption); a measurement at `a5035a6` found zero
 liquidity points in the most recent scored period (CHTR, GIS, MAR, PG, RCL, SBUX, WMT).
 Five overlap. Both support the same conclusion; quoting either without its definition
 would be the D32 mistake again. Recorded in `docs/risk-scoring.md`.
@@ -688,7 +688,7 @@ mistakes them for unfinished work; the evidence is in D72 and the v1 final audit
 themselves: CCL FY2019, YUM FY2023, MCK FY2023, BDX FY2009. 17 enforcing tests that parse
 the evidence files rather than restating them. It was the only test in the plan that would
 catch the engine misreading a filing *consistently*, and on first contact with real filings
-it found **four engine defects** — a `cfo` tag-map gap costing 74 periods across 19
+it found **five engine defects** — a `cfo` tag-map gap costing 75 periods across 19
 companies, two `total_debt` double-counts, and a `d_and_a` rank-order error understating
 MCD by 80-86%. It also confirmed D32's refusal prevents a 13% overstatement of BDX's debt.
 
@@ -713,10 +713,11 @@ correctly. See `tests/golden/README.md`.
 
 ### What v2 would take up, in order
 
-1. **The four engine defects the golden set found** (D77, listed in TODO.md). These are
-   arithmetic errors in published figures, so they outrank everything below.
-2. **Extend the golden set.** Four companies found four defects; there is no reason to
-   think the eighth would find none.
-3. Sector-specific thresholds (above).
-4. The dashboard, monitoring and quarterly data listed in `docs/build-plan.md`.
+1. **Extend the golden set.** Four companies found five defects, all of them arithmetic
+   errors in published figures and none reachable by the 860 tests that existed at the
+   time. There is no reason to think the eighth company would find none. This outranks
+   everything below, because it is the only check that can find this class of error at all.
+   *(The five it already found are fixed — D78-D80, 2026-09-20.)*
+2. Sector-specific thresholds (above).
+3. The dashboard, monitoring and quarterly data listed in `docs/build-plan.md`.
 

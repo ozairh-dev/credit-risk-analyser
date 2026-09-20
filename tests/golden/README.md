@@ -18,7 +18,7 @@ two cannot drift apart.
 
 ## What it established
 
-Immediately, on first contact with real filings: **four engine defects that no other test
+Immediately, on first contact with real filings: **five engine defects that no other test
 could have found**, and one confirmation that matters as much.
 
 | Finding | Reach across the adopted 43 | Status |
@@ -31,7 +31,8 @@ could have found**, and one confirmation that matters as much.
 | **`ST_DEBT_SCOPE_UNCERTAIN` (D32) vindicated** | the refusal prevented a **13%** overstatement of BDX's debt | no change needed |
 | YUM FY2023 `total_debt`, 0.36pp outside the tolerance | 1 period | **open by decision** |
 
-Combined effect of the fixes: metric values **10,848 → 10,975**, refusals **2,616 → 2,489**,
+Combined effect of the fixes, measured across the 43 adopted companies, `e9bee36` →
+`a5035a6`: metric values **10,848 → 10,975**, refusals **2,616 → 2,489**,
 periods carrying a grade cap **316 → 267**, grade distribution
 **38/98/273/221/98/48 → 43/110/259/217/101/46**.
 

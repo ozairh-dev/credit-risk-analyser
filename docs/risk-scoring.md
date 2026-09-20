@@ -230,7 +230,8 @@ metric refuses with `INTEGRITY_FAILED` (kind GAP), and the period gets no score 
 ## What this produces on real data
 
 **Basis: the 43 adopted companies, capped grades, 776 scored periods, measured at commit
-2026-09-20, after D78-D80.** Stated in full because the same pipeline over the same filings
+at commit `a5035a6` on 2026-09-20, after D78-D80.** Stated in full because the same
+pipeline over the same filings
 produced a different distribution three commits earlier, and a distribution without its
 basis is a true statement that means something other than it appears to.
 
@@ -260,7 +261,7 @@ shape validates the model — it shows the bands discriminate, not that they dis
     CCL 0.29, CHTR 0.31, MAR 0.50, GIS 0.72, TXRH 0.74, PG 0.79 (D72a, measured at
     adoption).
   - **Zero liquidity points in the most recent scored period**: 7 of 43 — CHTR, GIS, MAR,
-    PG, RCL, SBUX, WMT (measured 2026-09-20, after D78-D80). Five companies appear on both
+    PG, RCL, SBUX, WMT (measured at `a5035a6`, 2026-09-20). Five companies appear on both
     lists; CCL and TXRH only on the first, SBUX and WMT only on the second.
 
   Either way the effect is the same: these are negative-working-capital businesses that

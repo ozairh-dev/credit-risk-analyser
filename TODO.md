@@ -162,7 +162,7 @@ checks (Phase 4) because the checks depend on them. See docs/build-plan.md.
 - [x] CLAUDE.md, PROJECT_STATE.md and TODO.md describe the finished state
 - [x] **`tests/golden/` built 2026-09-20 (D77)** — CCL FY2019, YUM FY2023, MCK FY2023,
       BDX FY2009, read from the filing documents rather than the XBRL. 17 enforcing tests,
-      sabotage-verified. Found four engine defects no other test could detect
+      sabotage-verified. Found five engine defects no other test could detect
 
 ## Engine defects found by the golden set — ALL FIXED 2026-09-20 (D78-D80)
 - [x] **`d_and_a` rank order** (D80) — `prefer_largest_candidate` added; rank order assumed

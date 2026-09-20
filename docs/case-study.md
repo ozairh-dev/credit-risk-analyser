@@ -71,19 +71,20 @@ and tax is floored, so the drivers genuinely do not sum.
 ## At scale
 
 **Basis: the 43 adopted companies, capped grades, all periods of each company's filing
-history, measured 2026-09-20 after D78-D80.** Every figure below carries that
+history, measured at commit `a5035a6` on 2026-09-20, after D78-D80 fixed the five defects
+the golden set found.** Every figure below carries that
 basis, for a reason given under *Limitations*.
 
 | | |
 |---|---|
 | Companies screened end to end | **105** — 43 adopted, a 41% pass rate |
-| Company-periods analysed | **792** |
+| Company-periods analysed | **792** (**777** with at least one computed metric) |
 | Metric values computed | **10,975** |
-| Metric values **refused** | **2,489**, across **14** reason codes with real witnesses |
+| Metric values **refused** | **2,489**, across **15** reason codes with real witnesses |
 | Periods scored | **776**, of which **267** carry a cap |
 | Grade distribution 1→6 | 43 / 110 / 259 / 217 / 101 / 46 |
 | Trend verdicts | **5,544** |
-| Early warnings | **1,505** across 11 indicators |
+| Early warnings | **1,522** across 11 indicators |
 | Stress runs | **630** periods × 3 scenarios = **1,890** |
 | Tests | **930** — 886 pass, 44 skip by design. **17 of them are the golden set**: four company-years checked against the filing documents rather than against the engine |
 
@@ -112,6 +113,70 @@ all.
 A second company was caught a different way: two revenue tags disagreeing by 90%, refused
 on the disagreement itself. **The same class of error, caught by two independent
 mechanisms.**
+
+## Checking the engine against something other than itself
+
+Every test in the suite compared the engine to hand-built fixtures or to its own prior
+output. All of them shared one blind spot: **if the engine misread a filing consistently,
+nothing would notice.** Expected values taken from the same XBRL the engine reads inherit
+that blind spot exactly.
+
+So the last thing built was a **golden set**: four company-years — CCL FY2019, YUM FY2023,
+MCK FY2023, BDX FY2009 — where every figure was read from the income statement, balance
+sheet, cash-flow statement and footnotes of the filing documents as a person reads them.
+Not from the SEC's API, not from the cached data, not from any pipeline output.
+
+**It found five engine defects within an hour, and not one was reachable by the 860 tests
+that already existed.** Among them: a missing cash-flow tag that cost 75 company-periods
+their operating cash flow and everything derived from it; two places where debt was counted
+twice, because a component was added to a figure that already contained it; and a
+depreciation tag that understated McDonald's EBITDA by **80-86%**, enough to move a grade.
+
+Fixing them changed real numbers: 127 more metric values computed, **49 fewer periods
+carrying a grade cap**, and a grade distribution that shifted measurably toward the strong
+end.
+
+### The pairing that says the most
+
+Two moments in this project turned on reasoning without evidence, and they went opposite
+ways. Both were settled by measurement, and neither would have been settled by argument.
+
+**The one that was wrong.** After screening 77 companies and finding no instance of a
+particular code path, I reported it as *"structurally unwitnessable"* and supplied a
+mechanism: a debt-free filer reports nothing rather than zero, so a different refusal fires
+first. **Both halves were false, and both were checkable in one query.** Filers tag explicit
+zeros routinely — 213 of them across the data. And one company reports zero short-term
+*and* zero long-term debt, so the path fires exactly as designed. It is simply rare: **2
+occurrences in 1,028 resolved values**, which is why 77 companies were not enough. The claim
+**survived review** — a plausible mechanism attached to a true observation is unusually
+persuasive.
+
+**The one that was right.** A rule was written refusing to compute total debt whenever one
+particular tag appeared alongside another, on the suspicion that the first might already
+contain the second. The tag's scope is filer-dependent and undetectable from the data, so
+the rule refused rather than guess. **It had no witness at the time** — nothing in the data
+demonstrated the overlap was real, and it could reasonably have been called
+over-engineering.
+
+Then the golden set read BDX's debt footnote:
+
+```
+Loans Payable — Domestic                 $ 200,000
+Loans Payable — Foreign                      2,880
+Current portion of long-term debt          200,085
+                                         $ 402,965
+```
+
+The 402,965 the engine would have used **does** contain the 200,085 it would have added to
+it. Had it added both, it would have overstated BDX's debt by **13%**. A rule written on
+suspicion, with nothing to point at, was right about a real company — and the same hazard
+turned out to be live in two other code paths that had no such guard.
+
+**What distinguishes the two is not confidence — both claims were confidently made.** It is
+that one was a negative claim ("this cannot happen") resting on absence, and the other was a
+refusal to assert in the face of ambiguity. The first needed evidence it never had; the
+second cost nothing while it waited for evidence, and was vindicated when the evidence
+arrived. Recording both is more honest than recording either.
 
 ## Limitations
 
@@ -147,7 +212,7 @@ anywhere it appears. Specifically:
   ones that carry the claims above. Nearly every test compares the engine against itself:
   if it misread a filing *consistently*, almost nothing would notice. **The exception is
   the golden set** — four company-years read from the filing documents themselves. It found
-  **four engine defects on first contact with real filings**, including a depreciation tag
+  **five engine defects on first contact with real filings**, including a depreciation tag
   that understates one company's EBITDA by 80-86%, and two places where debt is counted
   twice. Those defects are measured and recorded, not yet fixed. **Four companies is four
   companies**: the set proves the engine reads those four filings correctly and nothing
@@ -181,8 +246,8 @@ anywhere it appears. Specifically:
   resolved values. **It survived review**, because a plausible mechanism attached to a true
   observation is unusually persuasive. It is written up in full rather than quietly fixed.
 - **Build the hand-verified golden set first.** It was the last thing built and the most
-  informative: four companies, four defects, each invisible to a suite of 900 other tests
-  because those tests all compare the engine to itself.
+  informative: four companies, five defects, each invisible to the 860 tests that already
+  existed, because every one of them compared the engine to itself.
 
 ## Stack
 

@@ -69,8 +69,9 @@ Then, outside the engine, a manual AI workflow: **export** an evidence pack and
 ## Measured behaviour
 
 **Basis for every figure below: the 43 adopted companies, capped grades, all periods of
-each company's filing history, measured 2026-09-20 after D78-D80.** Where a number
-is scoped to the larger screened set, it says so.
+each company's filing history, measured at commit `a5035a6` on 2026-09-20 (after D78-D80
+fixed the five defects the golden set found).** Where a number is scoped to the larger
+screened set, it says so.
 
 The basis is stated because it is load-bearing rather than pedantic. The same pipeline over
 the same filings has produced three different grade distributions in five commits:
@@ -124,13 +125,13 @@ forced, because the fixed/floating split is unreachable from XBRL — `default_t
 `new_debt_rate_default` 0.06, and the preset shock magnitudes), the trend materiality
 thresholds, and the liquidity bands for negative-working-capital businesses — 7 of the 43
 companies (CHTR, GIS, MAR, PG, RCL, SBUX, WMT) score **zero** liquidity points in their most
-recent scored period, re-measured after D78-D80. That is a business model the bands do not
+recent scored period, re-measured at `a5035a6`. That is a business model the bands do not
 model, not a finding about those companies. See `docs/risk-scoring.md`, which also records
 D72a's separate seven — a different set, on a different measurement.
 
 **930 tests is not 930 units of real-world validation.** Most assert engine behaviour
 against hand-computed or fixture data. The real-data assertions are narrower, and they are
-the ones that carry the claims above. The 45 skips are not gaps: they are tests
+the ones that carry the claims above. The 44 skips are not gaps: they are tests
 parameterised over the five fixture companies that apply to one of them and skip for the
 other four — a witness-specific assertion, not an unrun one.
 

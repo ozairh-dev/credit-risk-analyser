@@ -6,7 +6,7 @@ do differently.
 
 Numbers carry their basis. Where a figure has no basis I can state, it is not here.
 **Basis for engine-wide figures: the 43 adopted companies, capped grades, 776 scored
-periods, measured 2026-09-20 after D78-D80.**
+periods, measured at commit `a5035a6` on 2026-09-20, after D78-D80.**
 
 The arguments behind every choice are in `DECISIONS.md` (76 entries). This file does not
 repeat them — it points.
@@ -279,6 +279,92 @@ is the thing most likely to be misread by someone summarising the tool rather th
 
 ---
 
+## 6. The golden set
+
+**What was built.** Four company-years — CCL FY2019, YUM FY2023, MCK FY2023, BDX FY2009 —
+where every figure was read from the income statement, balance sheet, cash-flow statement
+and footnotes of the filing documents, and a test suite that enforces them by **parsing the
+evidence files** rather than restating their numbers.
+
+**Why.** Every other test compared the engine to hand-built fixtures or to its own prior
+output. All **860 of them** — the whole suite as it stood at `d7de044`, before this was
+built — shared one blind spot: **if the engine misread a filing consistently, nothing would
+notice.** Expected values taken from the same XBRL the engine
+reads inherit that blind spot exactly, which is why the independence constraint is the whole
+exercise rather than a detail of it.
+
+**How it works.** The four cases were chosen to span all three debt-assembly branches,
+fallback tags at rank 1 and rank 2, and a real refusal. Each markdown file records the
+filing figure, the statement and line it came from, the engine's value, and a verdict.
+Rows that agree are asserted to keep agreeing; rows that differ are **pinned as they are**,
+so fixing one makes the test fail loudly and forces the evidence file to be updated rather
+than the defect quietly disappearing.
+
+**Financial concept.** Tying out to the source document — the thing a credit analyst does
+before trusting any spreadsheet.
+
+**Technical concept.** Constructing an oracle that is genuinely independent of the system
+under test, and noticing that a test suite can be large, green, and systematically blind.
+
+**Hardest problem — five defects, and the temptation to make one of them go away.** The set
+found five engine defects on first contact with real filings: a missing cash-flow tag
+costing **75 company-periods** their operating cash flow; a missing short-term-investments
+tag; two independent double-counts of debt; and a depreciation tag understating
+**McDonald's EBITDA by 80–86%**.
+
+The hard part was the fix, not the finding. Two of the five were one mechanism —
+`short_term_debt` added to a figure that already contained it — and fixing them separately
+would have been the fourth time in this project that a fix aimed at an instance left the
+mechanism live. The fix generalised an existing rule to the two branches that lacked it.
+
+**Then the motivating case refused to be fixed cleanly.** YUM's overlap sits **5.36%** apart
+— 0.36pp outside the tolerance the rule reuses — and its only reconciling aggregate is a
+gross figure that answers backwards. I measured the deviation distribution across 95
+periods looking for a threshold: it runs **continuously from 0% to 100% with no bimodal
+gap**, so unlike an earlier tolerance in this project, nothing could be derived from the
+data. Widening the constant until YUM passed would have been fitting to the test — the
+inverse of the rule that says measure before pinning. **So the defect is recorded as open,
+in the decision log and in the evidence file, rather than tuned away.**
+
+**What I would improve.** Build it first. Four companies found five defects; there is no
+reason to think the eighth would find none, and everything the project claimed before it
+existed was claimed on the strength of tests that could not have caught these.
+
+---
+
+## The pairing worth more than either half
+
+Two moments in this project turned on reasoning without evidence. They went opposite ways,
+and measurement — not argument — settled both.
+
+**Wrong: the NO_DEBT claim.** After 77 companies produced no instance of a code path, I
+reported it **"structurally unwitnessable"** and supplied a mechanism. Both halves were
+false and both were checkable in one query: filers tag explicit zeros routinely (213 across
+the data), and QCOM FY2014 fires the path exactly as designed. It is simply rare — **2
+occurrences in 1,028 resolved values**. **The claim survived review**, because a plausible
+mechanism attached to a true observation ("we found none") is unusually persuasive.
+
+**Right: D32's refusal.** A rule refused to compute total debt whenever `DebtCurrent`
+appeared alongside `current_ltd`, on the suspicion that the first might already contain the
+second — filer-dependent, undetectable from the data. **It had no witness.** Nothing
+demonstrated the overlap was real, and it could fairly have been called over-engineering
+for a hazard nobody had seen.
+
+Then the golden set read BDX's debt footnote: *Loans Payable Domestic 200,000 + Foreign
+2,880 + Current portion of long-term debt 200,085 = **402,965***. The `DebtCurrent` figure
+the engine would have used **does** contain the `current_ltd` it would have added to it.
+Adding both would have overstated BDX's debt by **13%** — and the same hazard proved live
+in two other branches that had no such guard.
+
+**The difference is not confidence.** Both claims were made confidently. One was a
+**negative claim resting on absence** — "this cannot happen" — which needed evidence it
+never had and was false. The other was a **refusal to assert under ambiguity**, which cost
+nothing while it waited and was vindicated when evidence finally arrived. That asymmetry is
+the most useful thing this project taught me, and it took an independent check to surface
+both halves of it.
+
+---
+
 ## If I started again
 
 - **Design the tag map for period-scoped candidates from the start.** Ford needs it; one
@@ -290,7 +376,7 @@ is the thing most likely to be misread by someone summarising the tool rather th
   investigations ended in the same place: D32's stale "fires zero times", and a grade
   distribution that could not be reconciled until the commit it was measured at was found.
 - **Build the hand-verified golden set early, not last.** It was specified in the original
-  plan, built only at the very end, and found **four engine defects within an hour** — a
+  plan, built only at the very end, and found **five engine defects within an hour** — a
   missing cash-flow tag costing 74 company-periods, two independent double-counts of debt,
   and a depreciation tag that understates McDonald's EBITDA by more than 80%. Every one was
   invisible to the other 900 tests, because those tests compare the engine to itself. It
