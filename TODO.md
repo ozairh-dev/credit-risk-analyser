@@ -160,10 +160,25 @@ checks (Phase 4) because the checks depend on them. See docs/build-plan.md.
 - [x] `docs/interview-notes.md` — five components, each with its hardest problem
 - [x] `docs/case-study.md` — readable without the repo, calibration sentence verbatim
 - [x] CLAUDE.md, PROJECT_STATE.md and TODO.md describe the finished state
-- [ ] **`tests/golden/` is still empty** — the one v1 definition-of-done specified and not
-      built. Four companies hand-checked against their 10-Ks. It is the only test that
-      would catch the engine misreading a filing *consistently*; every other test compares
-      the engine against itself. Recorded in `docs/build-plan.md`, not dropped
+- [x] **`tests/golden/` built 2026-09-20 (D77)** — CCL FY2019, YUM FY2023, MCK FY2023,
+      BDX FY2009, read from the filing documents rather than the XBRL. 17 enforcing tests,
+      sabotage-verified. Found four engine defects no other test could detect
+
+## Engine defects found by the golden set (D77) — measured, not yet fixed
+Each changes published figures across the adopted 43, so each needs its own decision with a
+before/after measurement. Listed in the order I would take them.
+- [ ] **`d_and_a` rank order** — `DepreciationDepletionAndAmortization` ranked above
+      `DepreciationAndAmortization` though it is the narrower tag for some filers.
+      16 periods, 2 companies; **MCD understated 80-86%**, material to a grade. Smallest
+      fix, largest per-period error
+- [ ] **`cfo` tag-map gap** — `NetCashProvidedByUsedInOperatingActivitiesContinuingOperations`
+      not carried. **74 periods across 19 of 43 companies** lose cfo, fcf, fcf_margin,
+      fcf_to_debt and cfo_to_debt
+- [ ] **`total_debt` double-count, two branches** — `short_term_debt` added to a
+      current-maturities figure that already contains it. Confirmed on YUM (+56) and MCK
+      (+202); up to 65 periods across 8 companies exposed, not all wrong. **D32 guards this
+      exact hazard on the components branch; these two branches have no equivalent** — the
+      fourth instance of fixing an instance rather than a mechanism (see D75)
 
 ## Later
 - See docs/build-plan.md. First two items for v2: sector thresholds (D48/D72a), then the

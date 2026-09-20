@@ -85,7 +85,7 @@ basis, for a reason given under *Limitations*.
 | Trend verdicts | **5,544** |
 | Early warnings | **1,505** across 11 indicators |
 | Stress runs | **630** periods × 3 scenarios = **1,890** |
-| Tests | **905** — 860 pass, 45 skip by design |
+| Tests | **922** — 877 pass, 45 skip by design. **17 of them are the golden set**: four company-years checked against the filing documents rather than against the engine |
 
 **The refusal count is the number worth looking at**, because it is the part that is
 measured rather than asserted. The bulk are ordinary missing inputs. The informative ones
@@ -140,12 +140,16 @@ anywhere it appears. Specifically:
   a set-level target took the universe from 19 to 43 and removed the cluster. **The
   generalisable point: a check that not every filer can witness must never be a per-company
   selection gate** — it silently narrows the universe along a dimension nobody chose.
-- **905 tests is not 905 units of real-world validation.** Most assert engine behaviour
+- **922 tests is not 922 units of real-world validation.** Most assert engine behaviour
   against hand-computed or fixture data. The real-data assertions are narrower and are the
-  ones that carry the claims above. Worse, nearly every test compares the engine against
-  itself: if it misread a filing *consistently*, almost nothing here would notice. A
-  hand-verified set checked against the source documents is the one thing specified in the
-  v1 plan and not built — recorded as an unmet requirement rather than quietly dropped.
+  ones that carry the claims above. Nearly every test compares the engine against itself:
+  if it misread a filing *consistently*, almost nothing would notice. **The exception is
+  the golden set** — four company-years read from the filing documents themselves. It found
+  **four engine defects on first contact with real filings**, including a depreciation tag
+  that understates one company's EBITDA by 80-86%, and two places where debt is counted
+  twice. Those defects are measured and recorded, not yet fixed. **Four companies is four
+  companies**: the set proves the engine reads those four filings correctly and nothing
+  wider, and four of four turning up defects is not a reassuring ratio.
 - **A validated memo is not a checked memo.** The validator confirms figures *appear* in the
   evidence pack at the memo's stated precision. It cannot confirm they are used correctly: a
   figure cited under the wrong label passes, true figures assembled into a false claim pass,
@@ -174,7 +178,9 @@ anywhere it appears. Specifically:
   checkable in one query — the path fires, it is simply rare, at 2 occurrences in 1,028
   resolved values. **It survived review**, because a plausible mechanism attached to a true
   observation is unusually persuasive. It is written up in full rather than quietly fixed.
-- **Build the hand-verified golden set first**, for the reason under *Limitations*.
+- **Build the hand-verified golden set first.** It was the last thing built and the most
+  informative: four companies, four defects, each invisible to a suite of 900 other tests
+  because those tests all compare the engine to itself.
 
 ## Stack
 
@@ -182,5 +188,5 @@ Python 3.11, SQLite via stdlib `sqlite3`, pandas, pydantic, typer, pytest, PyYAM
 framework, no ORM, no Docker, no cloud. Thresholds, weights and stress defaults live in
 YAML; a missing key raises rather than defaulting.
 
-5,469 lines of source and 6,239 of tests (905 tests), built across eleven phases with a
+5,469 lines of source and 6,800 of tests (922 tests), built across eleven phases with a
 decision log kept alongside.

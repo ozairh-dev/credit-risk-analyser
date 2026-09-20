@@ -2259,3 +2259,79 @@ a silently absent period is less honest than a visibly refused one).
 Consequences: scoring already excluded integrity-FAIL periods, so no grade changes; the
 evidence pack's metrics table now shows `INTEGRITY_FAILED` for these periods; the trends
 engine sees fewer resolved points for CAG, which is correct.
+
+## D77 — The golden set: four company-years hand-verified against their filings
+Decision (owner-approved 2026-09-20, Phase 11 follow-on): **CCL FY2019, YUM FY2023, MCK
+FY2023 and BDX FY2009** are hand-verified against the human-readable statements and
+footnotes of their filing documents, stored as evidence in `tests/golden/*.md` and enforced
+by `tests/test_golden.py`, which **parses those files rather than restating their numbers**
+so evidence and enforcement cannot drift (CLAUDE.md rule 13).
+
+**The independence constraint is the whole point.** Every other test in the suite compares
+the engine to hand-built fixtures or to its own prior output, so all of them share one
+failure mode: if the engine misreads a filing consistently, nothing notices. Expected values
+taken from the same XBRL payload the engine reads would inherit that blind spot exactly. So
+every figure was read from the income statement, balance sheet, cash-flow statement and
+notes — never from `companyfacts`, the cached JSON, or any pipeline output.
+
+Selection covers all three `total_debt` branches (components/CCL, lease-inclusive/YUM,
+aggregate/MCK), fallback tags at rank 1 and rank 2, and a real refusal. **All four are
+adopted companies, not fixtures**: the lease-inclusive branch turned out to be exercised by
+20 adopted companies, so D27 did not need LUMN or KHC as the brief assumed.
+
+**Four engine defects found, none of which any other test could have detected.** Each is
+recorded with its measured exposure across the adopted 43 and **deliberately not fixed
+here** — every one changes published figures, and each deserves its own decision with its
+own before/after measurement, in the D72 mould:
+
+1. **`cfo` tag-map gap.** `tag_map.yaml` carries only `NetCashProvidedByUsedInOperatingActivities`.
+   BDX tags `...ContinuingOperations` = 1,691,520k, plainly on the cash-flow statement.
+   **74 periods across 19 of 43 companies** lose `cfo`, and with it `fcf`, `fcf_margin`,
+   `fcf_to_debt` and `cfo_to_debt`.
+2. **`total_debt` double-count in `debt_from_lease_inclusive_ltd`.** YUM's Note 11 shows the
+   balance-sheet "Short-term borrowings 53" **is** the 56 of current maturities net of 3 of
+   issuance costs; the engine adds both. Overstates by 56 (0.5%). **Up to 65 periods across
+   8 companies** are exposed — not all wrong, since KO has genuine commercial paper.
+3. **`total_debt` double-count in `debt_from_aggregate`.** MCK's lease note shows finance
+   lease liabilities are presented *within* "Current portion of long-term debt" and
+   "Long-term debt", so the 202 is already inside `LongTermDebt` 5,594; the engine adds it
+   again. Overstates by 202 (2.8%).
+4. **`d_and_a` rank order.** The map ranks `DepreciationDepletionAndAmortization` above
+   `DepreciationAndAmortization`, assuming the first is broader. For MCK it is narrower —
+   272 against 608, the latter tying exactly to the cash-flow statement. **16 periods, 2
+   companies; MCD is understated 80–86%**, which is material to a grade.
+
+Findings 2 and 3 are **one shape**: `short_term_debt` overlapping a current-maturities
+figure. **D32 already guards exactly this hazard on the components branch.** The
+lease-inclusive and aggregate branches have no equivalent. That is the same
+fix-the-instance-not-the-mechanism pattern recorded at D75 — now the **fourth** occurrence,
+and the first found by an external check rather than an audit.
+
+**D32 is vindicated, and the golden set quantified what it prevents.** BDX FY2009 refuses
+`total_debt` because `DebtCurrent` (402,965) may already contain `current_ltd` (200,085).
+The filing's debt note settles it: *Loans Payable Domestic 200,000 + Foreign 2,880 + Current
+portion of long-term debt 200,085 = 402,965.* **It does contain it.** Adding both would have
+double-counted 200,085 — a **13% overstatement** of BDX's total debt. A rule written on
+suspicion, with no witness at the time, turns out to have been right about a real company.
+
+**The restatement finding, which shapes what any golden test can assert.** BDX restated
+FY2009 in its FY2010 10-K after a divestment: revenue 7,160,874 → 6,986,722, operating
+income 1,650,353 → 1,589,682, CFO 1,691,520 → 1,658,486. The engine reports the restated
+figures and is **right** to (D14/D15). Five of BDX's ten disagreements are therefore neither
+defects nor tagging artefacts. The general consequence: **"verify the engine against the
+filing" is ambiguous whenever a period has been restated**, and a golden file must name
+which filing it means. BDX was kept in the set precisely because it forces that question.
+
+**A limit on the method, found by using it.** Two figures needed a footnote rather than the
+face of a statement — YUM's gross interest (602, Note 11 prose, against 513 presented net on
+the income statement) and MCK's finance-lease split. Footnotes are still the filing, so both
+remain independently verified. But **where a figure exists only as an XBRL fact with no
+human-readable presentation, this method has nothing to check it against.** Recorded as a
+limit rather than worked around, per the brief.
+
+Consequences: `tests/golden/` holds 4 evidence files plus a README stating what the set does
+and does not establish; 17 tests enforce it; sabotage-verified three ways (breaking a tag
+fires the AGREES assertions on all four files; fixing either recorded defect fires the
+DIFFERS pin and demands the evidence file be updated). The unmet Phase 10 definition-of-done
+recorded in `docs/build-plan.md` is now met. **Four companies is four companies** — the set
+verifies that the engine reads these four filings correctly and nothing wider.

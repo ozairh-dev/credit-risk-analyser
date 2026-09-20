@@ -182,3 +182,9 @@ before a task is called done.
   fingerprint means a config change; same fingerprint means a filing change.
 - **"Was this rule considered, and what was measured?"** → `DECISIONS.md`. It is searchable
   by reason code, by concept name and by ticker.
+- **"Does the engine actually read filings correctly?"** → `tests/golden/`. Four
+  company-years hand-read from the filing documents, with every disagreement classified as
+  an engine defect, a restatement effect, or a legitimate difference in what a tag means.
+  Its README states what it does and does not establish (D77). **Every other test in the
+  suite compares the engine to itself**, so this is the only external check — and the four
+  defects it found are the argument for extending it.

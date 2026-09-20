@@ -3,7 +3,7 @@
 ## Status
 
 **v1 is complete (2026-09-20).** All eleven phases built, run on real data, committed.
-860 tests pass, 45 skip by design. Anything beyond v1 is a v2 question — see
+877 tests pass, 45 skip by design. Anything beyond v1 is a v2 question — see
 `docs/build-plan.md`, whose first two items are sector thresholds and the hand-verified
 golden set. The three parked calibration items are **decisions with their measurements
 recorded**, not gaps: see `PROJECT_STATE.md` "Next priorities".
@@ -101,6 +101,8 @@ credit-risk-platform/
 │   └── cli.py
 ├── tests/
 │   ├── fixtures/           hand-built statements with known answers
+│   ├── golden/             four company-years read from the FILINGS, not the XBRL —
+│   │                       the only check against something other than the engine (D77)
 │   └── ...
 └── data/
     ├── raw/                cached companyfacts JSON (gitignored)

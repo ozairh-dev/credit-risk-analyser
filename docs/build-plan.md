@@ -91,9 +91,20 @@ Severe stress.
 
 **Phase 11 — Docs and write-up.** README, methodology finalised, decisions log complete.
 
-### Definition-of-done not met, recorded rather than deleted (2026-09-20)
+### Definition-of-done MET 2026-09-20 (was unmet; history kept below)
 
-**`tests/golden/` is empty.** Phase 10 above and the Testing strategy below both require
+**Built.** `tests/golden/` now holds four hand-verified company-years — CCL FY2019, YUM
+FY2023, MCK FY2023, BDX FY2009 — read from the filing documents themselves, with 17 tests
+enforcing them and a README stating what the set does and does not establish (D77). It
+found **four engine defects on first contact with real filings**, none of which any other
+test in the suite could have detected, and it confirmed that D32's refusal prevents a 13%
+overstatement of BDX's debt.
+
+The original entry is kept below because the reasoning is what made it worth building.
+
+---
+
+**`tests/golden/` was empty.** Phase 10 above and the Testing strategy below both require
 "four real companies with 10-K-verified numbers in `tests/golden/`" — metrics checked **by
 hand against the filing**. That was never done. The directory has held only `.gitkeep`
 since the repo was created.
@@ -166,7 +177,7 @@ the task order is the one to follow.
   EBITDA, negative FCF, negative equity, zero debt, zero and missing interest expense,
   restated value, missing middle year, duplicate fact, a 300%+ jump.
 - **Golden tests**: four real companies with 10-K-verified numbers in `tests/golden/`.
-  **Not built — see "Definition-of-done not met" above.**
+  **Built 2026-09-20 (D77).**
 - **Integrity tests**: each check has a passing and a failing fixture.
 - **Config tests**: changing a band edge in YAML changes the score; nothing is hard-coded.
 

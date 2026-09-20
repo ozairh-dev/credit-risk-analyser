@@ -92,7 +92,7 @@ is a true statement that means something other than it appears to.
 | Early warnings | **1,505** across **11** indicators |
 | Stressable periods | **630**, each run under 3 scenarios (**1,890** runs) |
 | Integrity check results | **6,336**, of which **4** are fail-severity failures |
-| Tests | **905** — 860 pass, 45 skip by design |
+| Tests | **922** — 877 pass, 45 skip by design. **17 of them are the golden set**: four company-years checked against the filing documents rather than against the engine |
 
 The refusal count is the number worth looking at. `MISSING_INPUT` (2,608) and
 `NO_CANDIDATE_TAG` (9,873 at the mapping layer) dominate, but the informative ones are
@@ -126,7 +126,7 @@ recent scored period, measured at `ce0fc56`. That is a business model the bands 
 model, not a finding about those companies. See `docs/risk-scoring.md`, which also records
 D72a's separate seven — a different set, on a different measurement.
 
-**905 tests is not 905 units of real-world validation.** Most assert engine behaviour
+**922 tests is not 922 units of real-world validation.** Most assert engine behaviour
 against hand-computed or fixture data. The real-data assertions are narrower, and they are
 the ones that carry the claims above. The 45 skips are not gaps: they are tests
 parameterised over the five fixture companies that apply to one of them and skip for the
@@ -163,7 +163,7 @@ are blocked. That is what `.env` is for. There are no other credentials, and no 
 services — the project runs at £0.
 
 ```bash
-pytest                             # 860 passed, 45 skipped
+pytest                             # 877 passed, 45 skipped
 credit-risk version
 ```
 

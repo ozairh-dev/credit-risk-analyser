@@ -6,7 +6,7 @@ _Update at the end of every working session._
 **v1 complete (2026-09-20).** All eleven phases are built, run on real data and are
 committed: ingestion, normalisation, composites, integrity checks, ratios, scoring,
 trends and warnings, stress, the evidence export with its memo validator, and the
-documentation set. 905 tests — 860 pass, 45 skip by design.
+documentation set. 922 tests — 877 pass, 45 skip by design, 17 of them the golden set (D77).
 The v1 final audit (`docs/audits/2026-09-14-v1-final-audit.md`) and its fixes are the
 last work in v1; everything beyond is a v2 question in docs/build-plan.md.
 
@@ -590,7 +590,7 @@ never run for it and no revenue-based metric will ever compute. Worth a tag
 investigation before KHC is relied on for anything revenue-derived.
 
 ## Tests
-- **860 passing, 45 skipped (905 collected)** at `ce0fc56`. The 45 skips are
+- **877 passing, 45 skipped (922 collected)**. The 45 skips are
   fixture-parameterised tests that apply to one of the five fixture companies and skip
   for the other four — witness-specific assertions, not unrun ones. The breakdown below
   predates Phases 9-11 and is kept as the record of what each area covered at the time.
@@ -682,16 +682,29 @@ mistakes them for unfinished work; the evidence is in D72 and the v1 final audit
    changed the call, and it did not: these are accounting identities a filer would have to
    mis-tag to break. The case for leaving them alone is now empirical rather than assumed.
 
-### Known gap, recorded rather than closed
+### The golden set — closed 2026-09-20 (D77)
 
-**`tests/golden/` is empty.** Phase 10's definition-of-done required four companies
-hand-checked against their 10-Ks. It was never done, and it is the only test in the plan
-that would catch the engine misreading a filing *consistently* — every other test compares
-the engine against itself. Recorded in `docs/build-plan.md` rather than deleted.
+**`tests/golden/` is built.** Four company-years hand-verified against the filing documents
+themselves: CCL FY2019, YUM FY2023, MCK FY2023, BDX FY2009. 17 enforcing tests that parse
+the evidence files rather than restating them. It was the only test in the plan that would
+catch the engine misreading a filing *consistently*, and on first contact with real filings
+it found **four engine defects** — a `cfo` tag-map gap costing 74 periods across 19
+companies, two `total_debt` double-counts, and a `d_and_a` rank-order error understating
+MCD by 80-86%. It also confirmed D32's refusal prevents a 13% overstatement of BDX's debt.
+
+**The four defects are measured and deliberately unfixed** — each changes published figures
+and needs its own decision. They are the top of TODO.md.
+
+**Scope, stated plainly: four companies is four companies.** The set verifies that the
+engine reads these four filings correctly. It does not verify that it reads all filings
+correctly. See `tests/golden/README.md`.
 
 ### What v2 would take up, in order
 
-1. Sector-specific thresholds (above).
-2. A hand-verified golden set (above) — arguably before anything else.
-3. The dashboard, monitoring and quarterly data listed in `docs/build-plan.md`.
+1. **The four engine defects the golden set found** (D77, listed in TODO.md). These are
+   arithmetic errors in published figures, so they outrank everything below.
+2. **Extend the golden set.** Four companies found four defects; there is no reason to
+   think the eighth would find none.
+3. Sector-specific thresholds (above).
+4. The dashboard, monitoring and quarterly data listed in `docs/build-plan.md`.
 

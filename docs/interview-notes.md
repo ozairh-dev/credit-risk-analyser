@@ -286,6 +286,11 @@ is the thing most likely to be misread by someone summarising the tool rather th
 - **Attach a population and a commit to every count, from the first one.** Two separate
   investigations ended in the same place: D32's stale "fires zero times", and a grade
   distribution that could not be reconciled until the commit it was measured at was found.
-- **Build the hand-verified golden set early.** It is the one thing in the v1 plan that was
-  specified and not built, and it is the only test that would catch the engine misreading a
-  filing *consistently* — every other test compares the engine against itself.
+- **Build the hand-verified golden set early, not last.** It was specified in the original
+  plan, built only at the very end, and found **four engine defects within an hour** — a
+  missing cash-flow tag costing 74 company-periods, two independent double-counts of debt,
+  and a depreciation tag that understates McDonald's EBITDA by more than 80%. Every one was
+  invisible to the other 900 tests, because those tests compare the engine to itself. It
+  also proved a rule written on suspicion (D32) was right about a real company, preventing
+  a 13% debt overstatement. **The cheapest test in the project was the one that found the
+  most, and I built it last.**
