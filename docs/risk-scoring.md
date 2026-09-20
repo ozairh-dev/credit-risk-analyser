@@ -218,7 +218,7 @@ itself**, rather than in a footnote a reader can skip. The cap line is generated
 engine and travels with the grade everywhere it appears — CLI, evidence pack, stress output
 (D57, D73b).
 
-Capping is **systematic here, not exceptional**: 316 of 776 scored periods carry a cap.
+Capping is **systematic here, not exceptional**: 267 of 776 scored periods carry a cap.
 
 ### A period with an integrity failure scores nothing
 
@@ -230,15 +230,15 @@ metric refuses with `INTEGRITY_FAILED` (kind GAP), and the period gets no score 
 ## What this produces on real data
 
 **Basis: the 43 adopted companies, capped grades, 776 scored periods, measured at commit
-`ce0fc56` on 2026-09-20.** Stated in full because the same pipeline over the same filings
+2026-09-20, after D78-D80.** Stated in full because the same pipeline over the same filings
 produced a different distribution three commits earlier, and a distribution without its
 basis is a true statement that means something other than it appears to.
 
 | Grade | 1 | 2 | 3 | 4 | 5 | 6 |
 |---|---|---|---|---|---|---|
-| Periods | 38 | 98 | 273 | 221 | 98 | 48 |
+| Periods | 43 | 110 | 259 | 217 | 101 | 46 |
 
-Single-peaked at grade 3, all six bands populated, 316 of 776 capped. Nothing about that
+Single-peaked at grade 3, all six bands populated, 267 of 776 capped. Nothing about that
 shape validates the model — it shows the bands discriminate, not that they discriminate
 *correctly*.
 
@@ -260,7 +260,7 @@ shape validates the model — it shows the bands discriminate, not that they dis
     CCL 0.29, CHTR 0.31, MAR 0.50, GIS 0.72, TXRH 0.74, PG 0.79 (D72a, measured at
     adoption).
   - **Zero liquidity points in the most recent scored period**: 7 of 43 — CHTR, GIS, MAR,
-    PG, RCL, SBUX, WMT (measured 2026-09-20 at `ce0fc56`). Five companies appear on both
+    PG, RCL, SBUX, WMT (measured 2026-09-20, after D78-D80). Five companies appear on both
     lists; CCL and TXRH only on the first, SBUX and WMT only on the second.
 
   Either way the effect is the same: these are negative-working-capital businesses that

@@ -36,13 +36,13 @@ All figures below are in **dollars** (the filing presents thousands; converted h
 | `d_and_a` | 470,193,000 | 464,604,000 | DIFFERS | Consolidated Statements of Cash Flows — *Depreciation and amortization* |
 | `interest_expense` | 40,389,000 | 40,389,000 | AGREES | Consolidated Statements of Income — *Interest expense* |
 | `cash` | 1,394,244,000 | 1,394,244,000 | AGREES | Consolidated Balance Sheets — *Cash and equivalents* |
-| `short_term_investments` | 551,561,000 | — | DIFFERS | Consolidated Balance Sheets — *Short-term investments* |
+| `short_term_investments` | 551,561,000 | 551,561,000 | AGREES | Consolidated Balance Sheets — *Short-term investments* |
 | `short_term_debt` | 402,965,000 | 402,965,000 | AGREES | Consolidated Balance Sheets — *Short-term debt* |
 | `noncurrent_ltd` | 1,488,460,000 | 1,488,460,000 | AGREES | Consolidated Balance Sheets — *Long-Term Debt* |
 | `current_assets` | 4,646,954,000 | 4,646,954,000 | AGREES | Consolidated Balance Sheets — *Total Current Assets* |
 | `current_liabilities` | 1,777,093,000 | 1,777,093,000 | AGREES | Consolidated Balance Sheets — *Total Current Liabilities* |
 | `equity` | 5,142,712,000 | 5,142,712,000 | AGREES | Consolidated Balance Sheets — *Total Shareholders' Equity* |
-| `cfo` | 1,691,520,000 | — | DIFFERS | Consolidated Statements of Cash Flows — *Net Cash Provided by Continuing Operating Activities* |
+| `cfo` | 1,691,520,000 | 1,658,486,000 | DIFFERS | Consolidated Statements of Cash Flows — *Net Cash Provided by Continuing Operating Activities* |
 | `capex` | 591,103,000 | 585,196,000 | DIFFERS | Consolidated Statements of Cash Flows — *Capital expenditures* |
 | `inventory` | 1,156,762,000 | 1,156,762,000 | AGREES | Consolidated Balance Sheets — *Inventories* |
 
@@ -53,7 +53,7 @@ All figures below are in **dollars** (the filing presents thousands; converted h
 | `total_debt` | 1,891,425,000 | ST_DEBT_SCOPE_UNCERTAIN | DIFFERS | 402,965 short-term debt + 1,488,460 long-term debt. Note 'Debt' shows the 402,965 ALREADY INCLUDES 200,085 of current portion of long-term debt |
 | `net_debt` | -54,380,000 | MISSING_INPUT:total_debt | DIFFERS | 1,891,425 - 1,394,244 cash - 551,561 short-term investments: BDX was net cash |
 | `ebitda` | 2,120,546,000 | 2,054,286,000 | DIFFERS | 1,650,353 operating income + 470,193 D&A |
-| `fcf` | 1,100,417,000 | MISSING_INPUT:cfo | DIFFERS | 1,691,520 CFO - 591,103 capital expenditures |
+| `fcf` | 1,100,417,000 | 1,073,290,000 | DIFFERS | 1,691,520 CFO - 591,103 capital expenditures |
 
 ## Disagreements, classified
 
@@ -63,7 +63,7 @@ The FY2009 10-K reports 7,160,874. BDX restated FY2009 in its FY2010 10-K after 
 
 ### `ebit` — LEGITIMATE — restatement
 
-As first reported 1,650,353; restated to 1,589,682 in the FY2010 10-K. 60,671 was reclassified to discontinued operations. **Engine correct.**
+As first reported 1,650,353; restated to 1,589,682. 60,671 was reclassified to discontinued operations. **Engine correct.**
 
 ### `d_and_a` — LEGITIMATE — restatement
 
@@ -73,27 +73,23 @@ As first reported 470,193; restated to 464,604. **Engine correct.**
 
 As first reported 591,103; restated to 585,196. **Engine correct.**
 
+### `cfo` — LEGITIMATE — restatement
+
+**Previously an engine defect, now fixed (D79).** BDX tags operating cash flow as `NetCashProvidedByUsedInOperatingActivitiesContinuingOperations`, which `tag_map.yaml` did not carry, so `cfo` did not resolve at all. It now does — at 1,658,486, the **restated** figure. The original filing reports 1,691,520, so what remains is a restatement difference, not a gap. **Engine correct.**
+
 ### `ebitda` — CONSEQUENT
 
 Follows the restated `ebit` and `d_and_a`. **Engine correct.**
 
-### `short_term_investments` — ENGINE DEFECT
-
-**Tag-map gap.** BDX tags short-term investments as `OtherShortTermInvestments` (551,561), which `tag_map.yaml` does not carry — it lists only `ShortTermInvestments` and `MarketableSecuritiesCurrent`. The figure is plainly on the balance sheet.
-
-### `cfo` — ENGINE DEFECT
-
-**Tag-map gap.** BDX tags operating cash flow as `NetCashProvidedByUsedInOperatingActivitiesContinuingOperations` (1,691,520), which the map does not carry — it lists only `NetCashProvidedByUsedInOperatingActivities`. The figure is plainly on the cash-flow statement.
-
 ### `fcf` — CONSEQUENT
 
-Follows the `cfo` gap above.
+Follows the restated `cfo` and `capex`: 1,658,486 - 585,196 = 1,073,290. **Engine correct**, and it now computes at all only because of the D79 fix.
 
 ### `total_debt` — ENGINE CORRECT — refusal vindicated
 
-**This is the most valuable single result in the golden set.** The engine refuses with `ST_DEBT_SCOPE_UNCERTAIN` because `short_term_debt` resolved via the `DebtCurrent` tag (402,965) may already contain `current_ltd` (200,085), and XBRL cannot settle it. The Note 'Debt' table settles it for a human reader: *Loans Payable Domestic 200,000 + Foreign 2,880 + Current portion of long-term debt 200,085 = 402,965*. **It does contain it.** Had the engine added both it would have double-counted 200,085 — a 13% overstatement of BDX's total debt. D32's refusal prevented exactly that.
+**The most valuable single result in the golden set.** The engine refuses with `ST_DEBT_SCOPE_UNCERTAIN` because `short_term_debt` resolved via the `DebtCurrent` tag (402,965) may already contain `current_ltd` (200,085), and XBRL cannot settle it. The Note 'Debt' table settles it for a human reader: *Loans Payable Domestic 200,000 + Foreign 2,880 + Current portion of long-term debt 200,085 = 402,965.* **It does contain it.** Had the engine added both it would have double-counted 200,085 — a 13% overstatement of BDX's total debt. D32's refusal prevented exactly that, and D78 has now generalised the rule to the two branches that lacked it.
 
 ### `net_debt` — CONSEQUENT
 
-Follows the `total_debt` refusal. The filing-derived figure shows BDX was **net cash** in FY2009.
+Follows the `total_debt` refusal. The filing-derived figure shows BDX was **net cash** in FY2009 — computable now that `short_term_investments` resolves (D79), had `total_debt` not been refused.
 

@@ -32,15 +32,26 @@ def stress() -> dict:
     return load("stress")
 
 
+# Keys in tag_map.yaml that configure behaviour rather than name a concept.
+# Kept as a SET rather than excluded by name inline: the single-name form broke
+# the moment D69 added a settings key, and again when D80 added a second.
+TAG_MAP_SETTING_KEYS = frozenset({
+    "candidate_disagreement_tolerance",
+    "refuse_on_candidate_disagreement",
+    "prefer_largest_candidate",
+})
+
+
 def tag_map() -> dict:
     """Concept -> ordered candidate tags.
 
-    Settings keys in tag_map.yaml (D69's disagreement tolerance and refuse
-    list) are filtered out here: every caller treats this as a pure
-    concept-to-tags mapping, and the concept count is pinned by test.
+    Settings keys in tag_map.yaml are filtered out here: every caller treats
+    this as a pure concept-to-tags mapping, and the concept count is pinned by
+    test. Add new settings to TAG_MAP_SETTING_KEYS above, not inline.
     """
-    return {k: v for k, v in load("tag_map").items() if isinstance(v, list)
-            and v and isinstance(v[0], str) and k != "refuse_on_candidate_disagreement"}
+    return {k: v for k, v in load("tag_map").items()
+            if isinstance(v, list) and v and isinstance(v[0], str)
+            and k not in TAG_MAP_SETTING_KEYS}
 
 
 def tag_map_settings() -> dict:
@@ -51,6 +62,8 @@ def tag_map_settings() -> dict:
             loaded.get("candidate_disagreement_tolerance", 0.05),
         "refuse_on_candidate_disagreement":
             tuple(loaded.get("refuse_on_candidate_disagreement", ())),
+        "prefer_largest_candidate":
+            tuple(loaded.get("prefer_largest_candidate", ())),
     }
 
 

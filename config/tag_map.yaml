@@ -39,7 +39,11 @@ pretax_income: [IncomeLossFromContinuingOperationsBeforeIncomeTaxesExtraordinary
 tax_expense: [IncomeTaxExpenseBenefit]
 net_income: [NetIncomeLoss]
 cash: [CashAndCashEquivalentsAtCarryingValue]
-short_term_investments: [ShortTermInvestments, MarketableSecuritiesCurrent]
+# OtherShortTermInvestments ranked last: it is the only tag BDX, KO and SYK
+# offer in 26 periods, where net_debt was otherwise overstated by the whole
+# investment balance. Same class as the cfo gap (D79).
+short_term_investments: [ShortTermInvestments, MarketableSecuritiesCurrent,
+                         OtherShortTermInvestments]
 receivables: [AccountsReceivableNetCurrent]
 inventory: [InventoryNet]
 current_assets: [AssetsCurrent]
@@ -66,8 +70,24 @@ finance_lease_liab_noncurrent: [FinanceLeaseLiabilityNoncurrent]
 operating_lease_liab_current: [OperatingLeaseLiabilityCurrent]
 operating_lease_liab_noncurrent: [OperatingLeaseLiabilityNoncurrent]
 equity: [StockholdersEquity, StockholdersEquityIncludingPortionAttributableToNoncontrollingInterest]
-cfo: [NetCashProvidedByUsedInOperatingActivities]
+# The continuing-operations variant is ranked SECOND, not first: where a filer
+# reports the total it is the complete figure and must keep winning. It is the
+# only tag 19 of the 43 companies offer for some periods, and without it they
+# lose cfo, fcf, fcf_margin, fcf_to_debt and cfo_to_debt entirely (D79).
+cfo: [NetCashProvidedByUsedInOperatingActivities,
+      NetCashProvidedByUsedInOperatingActivitiesContinuingOperations]
 capex: [PaymentsToAcquirePropertyPlantAndEquipment]
 dividends: [PaymentsOfDividends, PaymentsOfDividendsCommonStock]
 debt_issued: [ProceedsFromIssuanceOfLongTermDebt]
 debt_repaid: [RepaymentsOfLongTermDebt]
+
+# Concepts where a later candidate tag WINS if it is larger (D80).
+# Rank order assumes earlier candidates are at least as complete as later
+# ones. For d_and_a that is false and filer-dependent: MCD tags
+# DepreciationDepletionAndAmortization at 382m (an income-statement line)
+# while DepreciationAndAmortization carries the full 1,978m cash-flow
+# add-back; YUM and SBUX are the other way round. Both were checked against
+# the filings. D&A is an add-back, so completeness is the criterion and the
+# larger figure is the right one — a narrower tag means the filer split D&A
+# across elements.
+prefer_largest_candidate: [d_and_a]

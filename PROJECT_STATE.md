@@ -6,7 +6,7 @@ _Update at the end of every working session._
 **v1 complete (2026-09-20).** All eleven phases are built, run on real data and are
 committed: ingestion, normalisation, composites, integrity checks, ratios, scoring,
 trends and warnings, stress, the evidence export with its memo validator, and the
-documentation set. 922 tests — 877 pass, 45 skip by design, 17 of them the golden set (D77).
+documentation set. 930 tests — 886 pass, 44 skip by design, 17 of them the golden set (D77).
 The v1 final audit (`docs/audits/2026-09-14-v1-final-audit.md`) and its fixes are the
 last work in v1; everything beyond is a v2 question in docs/build-plan.md.
 
@@ -590,7 +590,7 @@ never run for it and no revenue-based metric will ever compute. Worth a tag
 investigation before KHC is relied on for anything revenue-derived.
 
 ## Tests
-- **877 passing, 45 skipped (922 collected)**. The 45 skips are
+- **886 passing, 44 skipped (930 collected)**. The 44 skips are
   fixture-parameterised tests that apply to one of the five fixture companies and skip
   for the other four — witness-specific assertions, not unrun ones. The breakdown below
   predates Phases 9-11 and is kept as the record of what each area covered at the time.
@@ -692,8 +692,20 @@ it found **four engine defects** — a `cfo` tag-map gap costing 74 periods acro
 companies, two `total_debt` double-counts, and a `d_and_a` rank-order error understating
 MCD by 80-86%. It also confirmed D32's refusal prevents a 13% overstatement of BDX's debt.
 
-**The four defects are measured and deliberately unfixed** — each changes published figures
-and needs its own decision. They are the top of TODO.md.
+**All five defects are now fixed** (D78-D80, 2026-09-20), each with its own decision and a
+before/after measurement across the 43. D77's summary said four; the BDX evidence file
+classified five, and the `short_term_investments` gap was the one the summary dropped —
+recorded in D79 because it is exactly the kind of discrepancy D77 itself warns about.
+
+Combined effect: metric values **10,848 -> 10,975**, refusals **2,616 -> 2,489**, periods
+carrying a grade cap **316 -> 267**, `total_debt` values **666 -> 654** (the new guards
+correctly refusing), grade distribution **38/98/273/221/98/48 -> 43/110/259/217/101/46**.
+
+**One known defect remains, deliberately.** YUM FY2023's `total_debt` is still overstated by
+56 (0.5%): its deviation sits 0.36pp outside the component/aggregate tolerance, and there is
+no measured basis for a different threshold — the distribution is continuous with no bimodal
+gap. Widening a constant until one known case passes is fitting to the test. Recorded in D78
+and in `tests/golden/YUM_FY2023.md`.
 
 **Scope, stated plainly: four companies is four companies.** The set verifies that the
 engine reads these four filings correctly. It does not verify that it reads all filings

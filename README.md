@@ -69,36 +69,38 @@ Then, outside the engine, a manual AI workflow: **export** an evidence pack and
 ## Measured behaviour
 
 **Basis for every figure below: the 43 adopted companies, capped grades, all periods of
-each company's filing history, measured at commit `ce0fc56` on 2026-09-20.** Where a number
+each company's filing history, measured 2026-09-20 after D78-D80.** Where a number
 is scoped to the larger screened set, it says so.
 
 The basis is stated because it is load-bearing rather than pedantic. The same pipeline over
-the same filings produced **780 scored periods and a 51/120/286/202/76/45 grade
-distribution** three commits ago; D69 removed 4 periods from scoring and D71's band rebase
-moved 114 periods one grade worse. Neither set of numbers is wrong — they answer the same
-question at different commits. A distribution quoted without its commit and its population
-is a true statement that means something other than it appears to.
+the same filings has produced three different grade distributions in five commits:
+**51/120/286/202/76/45** over 780 periods before D69 and D71, **38/98/273/221/98/48** after
+them, and the figures below after D78-D80. None of the three is wrong — they answer the
+same question at different commits, as a band rebase, a refusal rule and five engine fixes
+landed. **A distribution quoted without its commit and its population is a true statement
+that means something other than it appears to.**
 
 | | |
 |---|---|
 | Companies screened end to end | **105** (43 adopted, a 41% pass rate) |
 | Company-periods analysed | **792** (**777** with at least one computed metric) |
-| Metric values computed | **10,848** |
-| Metric values **refused** | **2,616** |
-| Distinct reason codes with real witnesses | **14** on the adopted set |
-| Periods scored | **776**, of which **316** carry a cap |
-| Grade distribution 1→6 (capped grades) | **38 / 98 / 273 / 221 / 98 / 48** |
+| Metric values computed | **10,975** |
+| Metric values **refused** | **2,489** |
+| Distinct reason codes with real witnesses | **15** on the adopted set |
+| Periods scored | **776**, of which **267** carry a cap |
+| Grade distribution 1→6 (capped grades) | **43 / 110 / 259 / 217 / 101 / 46** |
 | Trend verdicts | **5,544** |
-| Early warnings | **1,505** across **11** indicators |
+| Early warnings | **1,522** across **11** indicators |
 | Stressable periods | **630**, each run under 3 scenarios (**1,890** runs) |
 | Integrity check results | **6,336**, of which **4** are fail-severity failures |
-| Tests | **922** — 877 pass, 45 skip by design. **17 of them are the golden set**: four company-years checked against the filing documents rather than against the engine |
+| Tests | **930** — 886 pass, 44 skip by design. **17 of them are the golden set**: four company-years checked against the filing documents rather than against the engine |
 
-The refusal count is the number worth looking at. `MISSING_INPUT` (2,608) and
-`NO_CANDIDATE_TAG` (9,873 at the mapping layer) dominate, but the informative ones are
-smaller and deliberate: **70** `COMPONENT_AGGREGATE_MISMATCH`, **148**
-`LEASES_NOT_SEPARABLE`, **68** `INTEGRITY_FAILED`, **13** `CANDIDATE_TAG_MISMATCH`. Each is
-a case where a plausible number could have been produced and was not.
+The refusal count is the number worth looking at. `MISSING_INPUT` (2,419) and
+`NO_CANDIDATE_TAG` (9,772 at the mapping layer) dominate, but the informative ones are
+smaller and deliberate: **70** `COMPONENT_AGGREGATE_MISMATCH`, **141**
+`LEASES_NOT_SEPARABLE`, **68** `INTEGRITY_FAILED`, **42** `ST_DEBT_SCOPE_UNCERTAIN` and
+`LEASE_CONTAINMENT_UNVERIFIABLE` together, **13** `CANDIDATE_TAG_MISMATCH`. Each is a case
+where a plausible number could have been produced and was not.
 
 ## What is validated against real data, and what is not
 
@@ -122,11 +124,11 @@ forced, because the fixed/floating split is unreachable from XBRL — `default_t
 `new_debt_rate_default` 0.06, and the preset shock magnitudes), the trend materiality
 thresholds, and the liquidity bands for negative-working-capital businesses — 7 of the 43
 companies (CHTR, GIS, MAR, PG, RCL, SBUX, WMT) score **zero** liquidity points in their most
-recent scored period, measured at `ce0fc56`. That is a business model the bands do not
+recent scored period, re-measured after D78-D80. That is a business model the bands do not
 model, not a finding about those companies. See `docs/risk-scoring.md`, which also records
 D72a's separate seven — a different set, on a different measurement.
 
-**922 tests is not 922 units of real-world validation.** Most assert engine behaviour
+**930 tests is not 930 units of real-world validation.** Most assert engine behaviour
 against hand-computed or fixture data. The real-data assertions are narrower, and they are
 the ones that carry the claims above. The 45 skips are not gaps: they are tests
 parameterised over the five fixture companies that apply to one of them and skip for the
@@ -163,7 +165,7 @@ are blocked. That is what `.env` is for. There are no other credentials, and no 
 services — the project runs at £0.
 
 ```bash
-pytest                             # 877 passed, 45 skipped
+pytest                             # 886 passed, 44 skipped
 credit-risk version
 ```
 

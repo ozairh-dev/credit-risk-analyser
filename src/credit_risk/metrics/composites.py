@@ -22,6 +22,12 @@ DEBT_FROM_COMPONENTS = "debt_from_components"
 DEBT_FROM_AGGREGATE = "debt_from_aggregate"
 DEBT_FROM_LEASE_INCLUSIVE_LTD = "debt_from_lease_inclusive_ltd"
 
+# D78: a component must never be added to a figure that may already contain it.
+# D32 established this for DebtCurrent vs current_ltd; these are the same
+# mechanism in the other two branches, found by the golden set rather than by
+# an audit.
+LEASE_CONTAINMENT_UNVERIFIABLE = "LEASE_CONTAINMENT_UNVERIFIABLE"
+
 
 @dataclass
 class CompositeConcept:
@@ -145,6 +151,20 @@ def _pair_sum(per, current_name, noncurrent_name):
     return value, inputs, zeroed
 
 
+def _lease_containment(per, base, fin, tolerance=0.02):
+    """Does `base` already contain the finance-lease liabilities (D78b)?
+
+    Cross-check only, never a value source (D27(4)). `ltd_incl_leases_aggregate`
+    is debt INCLUDING leases, so if it sits at `base` the leases are already in
+    `base`; if it sits at `base + fin` they are separate. Returns None when no
+    cross-check is available — the caller must then refuse rather than guess.
+    """
+    agg2 = per.get("ltd_incl_leases_aggregate")
+    if agg2 is None or not base:
+        return None
+    return _deviation(base, agg2.value) < _deviation(base + fin, agg2.value)
+
+
 def _total_debt(per, end, include_leases, tolerance):
     """One period's total_debt and total_debt_ex_leases (methodology branches)."""
     current = per.get("current_ltd")
@@ -195,8 +215,28 @@ def _total_debt(per, end, include_leases, tolerance):
             zeroed.append("short_term_debt")
         fin, fin_inputs, fin_zeroed = _pair_sum(
             per, "finance_lease_liab_current", "finance_lease_liab_noncurrent")
+        if fin is not None and method == DEBT_FROM_AGGREGATE:
+            # D78(b). `LongTermDebt` is filer-dependent on whether it already
+            # contains finance leases: measured across the adopted 43, where a
+            # cross-check exists it says "already contained" 6 times and
+            # "separate" 7 — a coin flip, so it cannot be assumed either way.
+            # The component pair tags (LongTermDebtCurrent/Noncurrent) do NOT
+            # have this problem: 1 anomaly in 81, so only this branch is guarded.
+            contained = _lease_containment(per, aggregate.value, fin)
+            if contained is None:
+                detail = (f"total_ltd_aggregate={aggregate.value} may already "
+                          f"contain finance_lease_liab={fin}; no "
+                          f"ltd_incl_leases_aggregate to reconcile against")
+                return (_unavailable("total_debt", end,
+                                     LEASE_CONTAINMENT_UNVERIFIABLE, detail),
+                        _unavailable("total_debt_ex_leases", end,
+                                     LEASE_CONTAINMENT_UNVERIFIABLE, detail))
+            if contained:
+                fin = None          # already inside the aggregate; do not add
+                zeroed.append("finance_lease_liab[already in aggregate]")
         if fin is None:
-            zeroed.append("finance_lease_liab")
+            if not any(z.startswith("finance_lease_liab") for z in zeroed):
+                zeroed.append("finance_lease_liab")
         else:
             value += fin
             inputs += fin_inputs
@@ -247,6 +287,36 @@ def _total_debt(per, end, include_leases, tolerance):
                                      "COMPONENT_AGGREGATE_MISMATCH", detail),
                         _unavailable("total_debt_ex_leases", end,
                                      "COMPONENT_AGGREGATE_MISMATCH", detail))
+        # D78(a). `ltd_incl_leases_current` IS a current-maturities figure, so
+        # adding short_term_debt to it can count the same debt twice — YUM's
+        # Note 11 shows its "Short-term borrowings 53" IS the 56 of current
+        # maturities net of issuance costs, and 13 periods (MPC x7, RCL x4,
+        # WBD x2) carry the two as IDENTICAL values.
+        #
+        # Three tests, most reliable first. Refusing whenever the overlap is
+        # merely *possible* was tried and over-refuses badly: KHC carries
+        # short_term_debt at 0.6% of its current maturities, and one period at
+        # zero, none of which can double-count anything.
+        if std is not None and std.value != 0:
+            contained = _lease_containment(per, pair, std.value)
+            if contained is True:
+                std = None                      # verifiably already inside
+            elif contained is None and _deviation(std.value, li_cur.value) <= tolerance:
+                # No aggregate to reconcile against, and the two agree closely
+                # enough to be the same figure. There is no measured threshold
+                # available here — the deviation runs continuously from 0% to
+                # 100% across 95 periods with no bimodal gap, unlike D69 — so
+                # this reuses the existing component/aggregate tolerance rather
+                # than inventing a second constant (D36's precedent).
+                detail = (f"short_term_debt={std.value} agrees with "
+                          f"ltd_incl_leases_current={li_cur.value} within "
+                          f"{tolerance:.0%} and no ltd_incl_leases_aggregate "
+                          f"reconciles them; the same current maturities "
+                          f"tagged twice, overlap unverifiable")
+                return (_unavailable("total_debt", end,
+                                     "ST_DEBT_SCOPE_UNCERTAIN", detail),
+                        _unavailable("total_debt_ex_leases", end,
+                                     "ST_DEBT_SCOPE_UNCERTAIN", detail))
         inputs = [("ltd_incl_leases_current", end), ("ltd_incl_leases_noncurrent", end)]
         value, zeroed = pair, []
         if std is not None:

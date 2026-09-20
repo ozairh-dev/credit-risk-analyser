@@ -2335,3 +2335,148 @@ fires the AGREES assertions on all four files; fixing either recorded defect fir
 DIFFERS pin and demands the evidence file be updated). The unmet Phase 10 definition-of-done
 recorded in `docs/build-plan.md` is now met. **Four companies is four companies** — the set
 verifies that the engine reads these four filings correctly and nothing wider.
+
+## D78 — A component is never added to a figure that may already contain it (golden-set defects 2 and 3)
+Decision (owner-approved 2026-09-20): D32's containment rule is generalised from the
+components branch to the other two. **Fixed as one mechanism, not two defects** — fixing
+them separately would have been the fifth instance of the pattern they demonstrate.
+
+**The mechanism.** `short_term_debt` and a current-maturities figure may be the same debt
+tagged twice; `total_ltd_aggregate` may already contain the finance leases added to it.
+D32 guarded the first case for `DebtCurrent` only. The golden set found the same hazard
+live in both other branches:
+
+- **YUM FY2023** — the balance-sheet "Short-term borrowings 53" **is** the 56 of current
+  maturities net of 3 of issuance costs (Note 11); the engine added both.
+- **MCK FY2023** — the lease note shows finance leases are presented *within* "Current
+  portion of long-term debt" (29) and "Long-term debt" (173), so the 202 was already inside
+  `LongTermDebt` 5,594; the engine added it again.
+
+**This is the fourth occurrence of fixing an instance rather than a mechanism** (D69's
+precondition, D26's shape in revenue, D75's stress inheritance) — and **the first found
+outside an audit**, by a test that checks the engine against a source document rather than
+against itself.
+
+**The rule, in order of reliability.** A cross-check where one exists; refusal where the
+overlap is merely possible was tried and rejected:
+
+1. `short_term_debt == 0` → nothing to double-count, proceed.
+2. `ltd_incl_leases_aggregate` present → it reconciles the question. Sitting at the pair
+   means the component is already inside; sitting at pair + component means they are
+   disjoint. Cross-check only, never a value source (D27(4)).
+3. No cross-check, and the two agree within `component_aggregate_tolerance` → the same
+   figure twice → refuse.
+4. Otherwise → distinct magnitudes → add.
+
+**Refusing on possibility alone was measured and abandoned.** The first implementation
+refused whenever no cross-check existed. It cost **9 of KHC's 12** lease-inclusive periods,
+where `short_term_debt` runs at **0.6% of current maturities** and one period tags it at
+**exactly zero** — none of which can double-count anything. A guard that fires on ordinary
+reporting behaviour is CLAUDE.md rule 12's failure, and this one did.
+
+**No threshold could be measured, and none was invented.** The deviation between
+`short_term_debt` and `ltd_incl_leases_current` runs **continuously from 0% to 100% across
+95 periods with no bimodal gap** — so unlike D69, where 0.50 came from a measured
+bimodality, there is nothing here to derive a number from. The existing
+`component_aggregate_tolerance` is reused rather than a second constant invented (D36's
+precedent).
+
+**The cost of that honesty, stated plainly: YUM FY2023 is still wrong.** Its deviation is
+**5.36%**, 0.36pp outside the tolerance, and its only aggregate is the *gross* figure before
+issuance costs, which sits closer to pair+std than to pair and would answer backwards. YUM
+FY2019, FY2020, FY2022 and FY2025 are caught; FY2023 is not. **The tolerance was not widened
+to capture it** — tuning a constant until one known case passes is fitting to the test, the
+inverse of rule 14. What would settle it is footnote prose XBRL does not carry, which is a
+real limit on a deterministic XBRL engine.
+
+Measured across the 43 adopted companies, before → after:
+- `total_debt` values **666 → 654**: 7 periods refuse under (a) — RCL 4, YUM 2, GIS 1 — and
+  5 under (b) — LUV 4, MCK 1. New reason code `LEASE_CONTAINMENT_UNVERIFIABLE`.
+- **6 MCK periods keep `total_debt` but correctly drop the finance leases** the aggregate
+  already contained, which is the fix rather than a refusal.
+
+Alternatives: refuse whenever both resolve (measured above — over-refuses badly); widen the
+tolerance until YUM FY2023 passes (fitting to the test); use the gross aggregate as a
+discriminator (answers backwards for the one case that needs it).
+Consequences: `debt_from_components` is deliberately untouched — `LongTermDebtCurrent`/
+`Noncurrent` exclude finance leases by element definition, and the measurement bears that
+out at **1 anomaly in 81 periods**, against a 6-vs-7 coin flip on the aggregate branch.
+
+## D79 — Two tag-map gaps the golden set found, and why each sits where it does
+Decision (owner-approved 2026-09-20): two candidate tags added, both ranked **last**.
+
+**`cfo` gains `NetCashProvidedByUsedInOperatingActivitiesContinuingOperations`.** Where a
+filer reports the total, that is the complete figure and must keep winning — so the new tag
+is a fallback, not a promotion. It is the only operating-cash-flow tag **19 of the 43
+companies** offer in some periods. Measured: **75 periods across 19 companies** now resolve
+`cfo`, and with it `fcf`, `fcf_margin`, `fcf_to_debt` and `cfo_to_debt`.
+
+**`short_term_investments` gains `OtherShortTermInvestments`**, same reasoning, **26 periods
+across 3 companies** (BDX 18, KO 5, SYK 3). Without it `net_debt` was overstated by the
+whole investment balance in those periods — BDX FY2009 carries 551,561k of short-term
+investments plainly on the face of its balance sheet.
+
+**D77 undercounted.** It summarised four engine defects; the BDX evidence file classified
+**five**, and `short_term_investments` was the one the summary dropped. Recorded because the
+discrepancy is exactly the kind D77 itself warns about — a count stated without being
+re-derived from the evidence behind it.
+
+Consequences: **LUMN gains 3 uncapped periods** (2011-2013, where the continuing-operations
+tag resolves and the cash-flow category can finally score). It previously had none, so the
+fixtures that can never score uncapped go from four of five to **three** — F, JNJ and KHC.
+Verified: LUMN 3, CCL 13, F 0, JNJ 0, KHC 0.
+`TAG_MAP_SETTING_KEYS` replaces the inline single-name exclusion in `config.tag_map()`,
+which broke when D69 added a settings key and broke again here; a named set makes the next
+addition safe (CLAUDE.md rule 13).
+
+## D80 — d_and_a takes the largest candidate, not the first (golden-set defect 4)
+Decision (owner-approved 2026-09-20): `tag_map.yaml` gains
+`prefer_largest_candidate: [d_and_a]`, and `map_concepts` honours it.
+
+**Rank order assumes earlier candidates are at least as complete as later ones. For
+`d_and_a` that is false, and filer-dependent in both directions:**
+
+| | `DepreciationDepletionAndAmortization` | `DepreciationAndAmortization` |
+|---|---|---|
+| MCD FY2023 | 382m — an income-statement expense line | **1,978m — the cash-flow add-back** |
+| MCK FY2023 | 272m — depreciation 248 + finance-lease ROU 24 | **608m — depreciation 248 + amortisation 360** |
+| YUM FY2009 | **580m** | 553m |
+| SBUX FY2024 | **1,592m** | 1,513m |
+
+**A reorder would fix MCD and MCK and break YUM and SBUX** — measured, rank-0 is larger in
+25 periods and rank-1 larger in 16. So the fix is a selection rule, not a ranking one.
+**Both directions were verified against the filings**: MCK's 608 is Depreciation 248 +
+Amortization 360 on its cash-flow statement, and MCD's 1,978.2 is the operating-activities
+add-back while 381.7 is a separate income-statement line.
+
+**Why "largest" is the right criterion for this concept specifically:** D&A is an add-back
+to EBIT, so completeness is what matters. A narrower tag means the filer split D&A across
+elements, and the narrower figure understates EBITDA. This is a deliberate departure from
+pure rank order, scoped to one concept by config rather than applied globally.
+
+Measured: **16 periods across 2 companies** change — MCD 8, MCK 8. **MCD's D&A was
+understated by 80-86%**, which moves EBITDA by ~13% and is material to a grade.
+
+Alternatives: reorder (breaks YUM and SBUX, above); refuse on disagreement (D69's shape, but
+these tags are *deliberately different* measures where D69 itself says priority is the
+answer — here the priority was simply wrong); take the largest across all three candidates
+(pulls in `DepreciationAmortizationAndAccretionNet`, which includes accretion and is not
+D&A).
+
+## Combined effect of D78-D80 across the 43 adopted companies
+Basis: 43 adopted companies, capped grades, 776 scored periods, before `e9bee36` → after.
+
+| | before | after | delta |
+|---|---|---|---|
+| Metric values computed | 10,848 | **10,975** | **+127** |
+| Metric values refused | 2,616 | **2,489** | **-127** |
+| Scored periods **carrying a cap** | 316 | **267** | **-49** |
+| `total_debt` values | 666 | **654** | **-12** |
+| Warnings | 1,505 | **1,522** | +17 |
+| Distinct reason codes | 14 | **15** | +1 |
+| Grade distribution 1→6 | 38/98/273/221/98/48 | **43/110/259/217/101/46** | |
+
+**49 periods escape the grade cap** because a category that could not be scored now can —
+overwhelmingly cash flow, from D79's `cfo`. The grade distribution shifts modestly toward
+the strong end, which is the expected direction: the fixes add coverage and correct an
+understated EBITDA, and both raise scores.

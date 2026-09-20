@@ -56,9 +56,15 @@ All figures below are in **dollars** (the filing presents millions; converted he
 
 ## Disagreements, classified
 
-### `total_debt` — ENGINE DEFECT
+### `total_debt` — KNOWN LIMITATION — not fixed
 
-**Double-count.** The engine's `debt_from_lease_inclusive_ltd` branch adds `short_term_debt` (53) to `ltd_incl_leases_current` (56) and `ltd_incl_leases_noncurrent` (11,142). Note 11 shows the balance-sheet line "Short-term borrowings 53" **is** the 56 of current maturities net of 3 of issuance costs — the same debt, counted twice. Overstates total debt by 56 (0.5%).
+**The one engine defect the D78 fix does not reach.** The `debt_from_lease_inclusive_ltd` branch adds `short_term_debt` (53) to `ltd_incl_leases_current` (56); Note 11 shows the 53 IS the 56 net of 3 of issuance costs, so the same debt is counted twice and total debt is overstated by 56 (0.5%).
+
+D78 refuses this pattern when the two agree within the component/aggregate tolerance, or when a lease-inclusive aggregate reconciles them. YUM FY2023 satisfies neither: the deviation is **5.36%**, 0.36pp outside the 5% tolerance, and YUM's only aggregate (`...IncludingCurrentMaturities` = 11,269) is the **gross** figure before issuance costs, so it sits closer to pair+std than to pair and would give the wrong answer.
+
+**The tolerance was not widened to capture this case.** There is no measured basis for a different number — the deviation between the two tags runs continuously from 0% to 100% across 95 periods with no bimodal gap, so unlike D69 no threshold can be derived from the data. Tuning a constant until one known case passes is fitting to the test. YUM FY2022, FY2019, FY2020 and FY2025 are caught; FY2023 is not.
+
+**What would actually settle it is footnote prose that XBRL does not carry** — which is a real limit on a deterministic XBRL engine, recorded rather than papered over.
 
 ### `net_debt` — CONSEQUENT
 

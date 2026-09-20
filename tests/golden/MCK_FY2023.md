@@ -33,7 +33,7 @@ All figures below are in **dollars** (the filing presents millions; converted he
 |---|---|---|---|---|
 | `revenue` | 276,711,000,000 | 276,711,000,000 | AGREES | Consolidated Statements of Operations — *Revenues* |
 | `ebit` | 4,381,000,000 | 4,381,000,000 | AGREES | Consolidated Statements of Operations — *Gross profit 12,358 less total operating expenses 7,977* |
-| `d_and_a` | 608,000,000 | 272,000,000 | DIFFERS | Consolidated Statements of Cash Flows — *Depreciation 248 + Amortization 360* |
+| `d_and_a` | 608,000,000 | 608,000,000 | AGREES | Consolidated Statements of Cash Flows — *Depreciation 248 + Amortization 360* |
 | `interest_expense` | 248,000,000 | 248,000,000 | AGREES | Consolidated Statements of Operations — *Interest expense* |
 | `cash` | 4,678,000,000 | 4,678,000,000 | AGREES | Consolidated Balance Sheets — *Cash and cash equivalents* |
 | `current_assets` | 44,292,000,000 | 44,292,000,000 | AGREES | Consolidated Balance Sheets — *Total current assets* |
@@ -52,26 +52,12 @@ All figures below are in **dollars** (the filing presents millions; converted he
 
 | Composite | Filing-derived | Engine | Verdict | How the filing figure is built |
 |---|---|---|---|---|
-| `total_debt` | 7,295,000,000 | 7,497,000,000 | DIFFERS | 5,594 debt (which the lease note shows ALREADY contains the 202 of finance leases) + 1,701 operating lease liabilities |
-| `net_debt` | 2,617,000,000 | 2,819,000,000 | DIFFERS | 7,295 - 4,678 cash |
-| `ebitda` | 4,989,000,000 | 4,653,000,000 | DIFFERS | 4,381 operating income + 608 D&A |
+| `total_debt` | 7,295,000,000 | 7,295,000,000 | AGREES | 5,594 debt (which the lease note shows ALREADY contains the 202 of finance leases) + 1,701 operating lease liabilities |
+| `net_debt` | 2,617,000,000 | 2,617,000,000 | AGREES | 7,295 - 4,678 cash |
+| `ebitda` | 4,989,000,000 | 4,989,000,000 | AGREES | 4,381 operating income + 608 D&A |
 | `fcf` | 4,769,000,000 | 4,769,000,000 | AGREES | 5,159 CFO - 390 capex |
 
 ## Disagreements, classified
 
-### `d_and_a` — ENGINE DEFECT
-
-**Tag rank order.** `tag_map.yaml` ranks `DepreciationDepletionAndAmortization` (272) above `DepreciationAndAmortization` (608). For McKesson the rank-0 tag is the NARROWER figure — depreciation 248 plus finance-lease ROU amortisation 24 — and excludes 360 of intangible amortisation. The rank-1 tag ties exactly to the cash-flow statement. Understates EBITDA by 336 (6.7%).
-
-### `total_debt` — ENGINE DEFECT
-
-**Double-count.** The `debt_from_aggregate` branch adds all four lease components to `total_ltd_aggregate` (5,594). The lease note shows finance lease liabilities are *presented within* "Current portion of long-term debt" (29) and "Long-term debt" (173) — so the 202 is already inside the 5,594. Overstates total debt by 202 (2.8%).
-
-### `net_debt` — CONSEQUENT
-
-Follows `total_debt` above.
-
-### `ebitda` — CONSEQUENT
-
-Follows `d_and_a` above.
-
+**None.** Every reported line item, every composite and every item of filing
+metadata matches the engine exactly.

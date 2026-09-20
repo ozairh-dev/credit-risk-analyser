@@ -71,21 +71,21 @@ and tax is floored, so the drivers genuinely do not sum.
 ## At scale
 
 **Basis: the 43 adopted companies, capped grades, all periods of each company's filing
-history, measured at commit `ce0fc56` on 2026-09-20.** Every figure below carries that
+history, measured 2026-09-20 after D78-D80.** Every figure below carries that
 basis, for a reason given under *Limitations*.
 
 | | |
 |---|---|
 | Companies screened end to end | **105** — 43 adopted, a 41% pass rate |
 | Company-periods analysed | **792** |
-| Metric values computed | **10,848** |
-| Metric values **refused** | **2,616**, across **14** reason codes with real witnesses |
-| Periods scored | **776**, of which **316** carry a cap |
-| Grade distribution 1→6 | 38 / 98 / 273 / 221 / 98 / 48 |
+| Metric values computed | **10,975** |
+| Metric values **refused** | **2,489**, across **14** reason codes with real witnesses |
+| Periods scored | **776**, of which **267** carry a cap |
+| Grade distribution 1→6 | 43 / 110 / 259 / 217 / 101 / 46 |
 | Trend verdicts | **5,544** |
 | Early warnings | **1,505** across 11 indicators |
 | Stress runs | **630** periods × 3 scenarios = **1,890** |
-| Tests | **922** — 877 pass, 45 skip by design. **17 of them are the golden set**: four company-years checked against the filing documents rather than against the engine |
+| Tests | **930** — 886 pass, 44 skip by design. **17 of them are the golden set**: four company-years checked against the filing documents rather than against the engine |
 
 **The refusal count is the number worth looking at**, because it is the part that is
 measured rather than asserted. The bulk are ordinary missing inputs. The informative ones
@@ -94,8 +94,10 @@ not produced:
 
 - **70** `COMPONENT_AGGREGATE_MISMATCH` — debt components and the reported aggregate
   disagree beyond tolerance, so `total_debt` refuses rather than picking one
-- **148** `LEASES_NOT_SEPARABLE` — lease liabilities cannot be separated from the debt
+- **141** `LEASES_NOT_SEPARABLE` — lease liabilities cannot be separated from the debt
   figure, so a lease-adjusted number is not offered
+- **42** `ST_DEBT_SCOPE_UNCERTAIN` / `LEASE_CONTAINMENT_UNVERIFIABLE` — a debt component
+  may already sit inside the figure it would be added to, and the XBRL cannot settle it
 - **13** `CANDIDATE_TAG_MISMATCH` — two tags for the same quantity disagree
 - **68** `INTEGRITY_FAILED` — an arithmetic check proved an input wrong, so **every** metric
   for that period refuses
@@ -140,7 +142,7 @@ anywhere it appears. Specifically:
   a set-level target took the universe from 19 to 43 and removed the cluster. **The
   generalisable point: a check that not every filer can witness must never be a per-company
   selection gate** — it silently narrows the universe along a dimension nobody chose.
-- **922 tests is not 922 units of real-world validation.** Most assert engine behaviour
+- **930 tests is not 930 units of real-world validation.** Most assert engine behaviour
   against hand-computed or fixture data. The real-data assertions are narrower and are the
   ones that carry the claims above. Nearly every test compares the engine against itself:
   if it misread a filing *consistently*, almost nothing would notice. **The exception is
@@ -188,5 +190,5 @@ Python 3.11, SQLite via stdlib `sqlite3`, pandas, pydantic, typer, pytest, PyYAM
 framework, no ORM, no Docker, no cloud. Thresholds, weights and stress defaults live in
 YAML; a missing key raises rather than defaulting.
 
-5,469 lines of source and 6,800 of tests (922 tests), built across eleven phases with a
+5,500 lines of source and 6,900 of tests (930 tests), built across eleven phases with a
 decision log kept alongside.

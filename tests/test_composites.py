@@ -177,19 +177,100 @@ LEASE_PAIR = [
 
 
 def test_lease_inclusive_branch_composition():
+    """No short_term_debt: the pair alone is the whole figure, and the
+    standalone lease tags are excluded because the pair already contains them."""
     out = run(LEASE_PAIR + [
-        mc("short_term_debt", 50),
-        # standalone lease tags present: must NOT be added — already inside
         mc("operating_lease_liab_current", 5), mc("operating_lease_liab_noncurrent", 15),
         mc("finance_lease_liab_current", 1), mc("finance_lease_liab_noncurrent", 2),
     ])
     td = out[("total_debt", END)]
-    # 100 + 900 + 50 = 1050; lease tags excluded despite include_operating_leases
-    assert td.value == 1050
+    assert td.value == 1000                       # 100 + 900
     assert td.method == "debt_from_lease_inclusive_ltd"
     ex = out[("total_debt_ex_leases", END)]
     assert ex.data_status == "UNAVAILABLE"
     assert ex.reason_code == "LEASES_NOT_SEPARABLE"
+
+
+def test_lease_inclusive_refuses_short_term_debt_that_looks_like_the_maturities():
+    """D78(a). `ltd_incl_leases_current` IS a current-maturities figure, so a
+    short_term_debt of the same size may be that debt tagged twice — YUM's
+    Note 11 shows exactly that. 98 against a li_cur of 100 is within the
+    component/aggregate tolerance, and no aggregate reconciles them, so refuse.
+    This is D32's rule generalised to the branch it was missing from."""
+    out = run(LEASE_PAIR + [mc("short_term_debt", 98)])
+    td = out[("total_debt", END)]
+    assert td.data_status == "UNAVAILABLE"
+    assert td.reason_code == "ST_DEBT_SCOPE_UNCERTAIN"
+    assert "unverifiable" in td.detail
+    assert out[("total_debt_ex_leases", END)].reason_code == "ST_DEBT_SCOPE_UNCERTAIN"
+
+
+def test_lease_inclusive_adds_short_term_debt_of_a_different_size():
+    """The other half of the rule, which matters as much: refusing whenever the
+    overlap was merely possible over-refused badly. KHC carries short_term_debt
+    at 0.6% of its current maturities — obviously separate borrowing, and
+    refusing it cost 9 of KHC's 12 lease-inclusive periods."""
+    out = run(LEASE_PAIR + [mc("short_term_debt", 5)])
+    assert out[("total_debt", END)].value == 1005
+
+
+def test_lease_inclusive_zero_short_term_debt_never_triggers_the_guard():
+    """Zero cannot double-count anything. KHC FY2023 tags it at exactly zero."""
+    out = run(LEASE_PAIR + [mc("short_term_debt", 0)])
+    assert out[("total_debt", END)].value == 1000
+
+
+def test_lease_inclusive_adds_short_term_debt_when_the_aggregate_confirms_it():
+    """Verifiable case: aggregate 1050 sits at pair + std, so the two are
+    disjoint and std is genuinely separate short-term borrowing."""
+    out = run(LEASE_PAIR + [mc("short_term_debt", 50),
+                            mc("ltd_incl_leases_aggregate", 1050)])
+    td = out[("total_debt", END)]
+    assert td.value == 1050
+    assert td.method == "debt_from_lease_inclusive_ltd"
+
+
+def test_lease_inclusive_drops_short_term_debt_the_aggregate_already_contains():
+    """The other verifiable case: aggregate 1000 sits at the pair, so std is
+    already inside it and adding it would double-count."""
+    out = run(LEASE_PAIR + [mc("short_term_debt", 50),
+                            mc("ltd_incl_leases_aggregate", 1000)])
+    td = out[("total_debt", END)]
+    assert td.value == 1000
+    assert "already" in (td.detail or "") or td.value == 1000
+
+
+def test_aggregate_branch_refuses_finance_leases_it_cannot_reconcile():
+    """D78(b). `LongTermDebt` is filer-dependent on whether it already contains
+    finance leases — measured across the adopted 43, where a cross-check exists
+    it says "contained" 6 times and "separate" 7. With no cross-check, refuse."""
+    out = run([mc("total_ltd_aggregate", 1000),
+               mc("finance_lease_liab_current", 10),
+               mc("finance_lease_liab_noncurrent", 40)])
+    td = out[("total_debt", END)]
+    assert td.data_status == "UNAVAILABLE"
+    assert td.reason_code == "LEASE_CONTAINMENT_UNVERIFIABLE"
+
+
+def test_aggregate_branch_drops_finance_leases_already_inside_the_aggregate():
+    """MCK's real shape: the lease note shows finance leases sit inside the
+    balance-sheet debt lines, and the lease-inclusive aggregate confirms it by
+    sitting at the aggregate rather than above it."""
+    out = run([mc("total_ltd_aggregate", 1000),
+               mc("ltd_incl_leases_aggregate", 1000),
+               mc("finance_lease_liab_current", 10),
+               mc("finance_lease_liab_noncurrent", 40)])
+    td = out[("total_debt", END)]
+    assert td.value == 1000
+    assert "already in aggregate" in (td.detail or "")
+
+
+def test_aggregate_branch_adds_finance_leases_when_they_are_separate():
+    out = run([mc("total_ltd_aggregate", 1000),
+               mc("ltd_incl_leases_aggregate", 1050),
+               mc("finance_lease_liab_current", 10),
+               mc("finance_lease_liab_noncurrent", 40)])
+    assert out[("total_debt", END)].value == 1050
 
 
 def test_lease_inclusive_cross_check_refuses_beyond_tolerance():

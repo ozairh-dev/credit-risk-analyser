@@ -21,13 +21,24 @@ two cannot drift apart.
 Immediately, on first contact with real filings: **four engine defects that no other test
 could have found**, and one confirmation that matters as much.
 
-| Finding | Reach across the adopted 43 |
-|---|---|
-| `cfo` missing where a filer tags the continuing-operations variant | **74 periods, 19 companies** |
-| `total_debt` double-count in `debt_from_lease_inclusive_ltd` | up to **65 periods, 8 companies** (1 confirmed by hand) |
-| `total_debt` double-count in `debt_from_aggregate` (finance leases already inside the aggregate) | MCK confirmed; not yet swept |
-| `d_and_a` rank order picks a narrower tag than rank 1 | **16 periods, 2 companies** — MCD understated **80–86%** |
-| **`ST_DEBT_SCOPE_UNCERTAIN` (D32) vindicated** | the refusal prevented a **13%** overstatement of BDX's debt |
+| Finding | Reach across the adopted 43 | Status |
+|---|---|---|
+| `cfo` missing where a filer tags the continuing-operations variant | **75 periods, 19 companies** | fixed, D79 |
+| `short_term_investments` missing where a filer tags `OtherShortTermInvestments` | **26 periods, 3 companies** | fixed, D79 |
+| `total_debt` double-count in `debt_from_lease_inclusive_ltd` | 7 periods now refuse | fixed, D78 |
+| `total_debt` double-count in `debt_from_aggregate` | 5 refuse, 6 corrected | fixed, D78 |
+| `d_and_a` rank order picks a narrower tag than rank 1 | **16 periods, 2 companies** — MCD understated **80-86%** | fixed, D80 |
+| **`ST_DEBT_SCOPE_UNCERTAIN` (D32) vindicated** | the refusal prevented a **13%** overstatement of BDX's debt | no change needed |
+| YUM FY2023 `total_debt`, 0.36pp outside the tolerance | 1 period | **open by decision** |
+
+Combined effect of the fixes: metric values **10,848 → 10,975**, refusals **2,616 → 2,489**,
+periods carrying a grade cap **316 → 267**, grade distribution
+**38/98/273/221/98/48 → 43/110/259/217/101/46**.
+
+**Five defects, not four.** This README and D77 originally summarised four; the BDX evidence
+file classified five, and `short_term_investments` was the one the summary dropped. Fixed
+and recorded in D79 — a count restated rather than re-derived from its evidence is the
+mistake this project keeps finding in itself.
 
 The D32 result is the one worth dwelling on. The engine refuses BDX's `total_debt` because
 `DebtCurrent` (402,965) may already contain `current_ltd` (200,085) and XBRL cannot settle

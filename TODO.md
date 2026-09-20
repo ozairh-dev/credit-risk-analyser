@@ -164,21 +164,24 @@ checks (Phase 4) because the checks depend on them. See docs/build-plan.md.
       BDX FY2009, read from the filing documents rather than the XBRL. 17 enforcing tests,
       sabotage-verified. Found four engine defects no other test could detect
 
-## Engine defects found by the golden set (D77) — measured, not yet fixed
-Each changes published figures across the adopted 43, so each needs its own decision with a
-before/after measurement. Listed in the order I would take them.
-- [ ] **`d_and_a` rank order** — `DepreciationDepletionAndAmortization` ranked above
-      `DepreciationAndAmortization` though it is the narrower tag for some filers.
-      16 periods, 2 companies; **MCD understated 80-86%**, material to a grade. Smallest
-      fix, largest per-period error
-- [ ] **`cfo` tag-map gap** — `NetCashProvidedByUsedInOperatingActivitiesContinuingOperations`
-      not carried. **74 periods across 19 of 43 companies** lose cfo, fcf, fcf_margin,
-      fcf_to_debt and cfo_to_debt
-- [ ] **`total_debt` double-count, two branches** — `short_term_debt` added to a
-      current-maturities figure that already contains it. Confirmed on YUM (+56) and MCK
-      (+202); up to 65 periods across 8 companies exposed, not all wrong. **D32 guards this
-      exact hazard on the components branch; these two branches have no equivalent** — the
-      fourth instance of fixing an instance rather than a mechanism (see D75)
+## Engine defects found by the golden set — ALL FIXED 2026-09-20 (D78-D80)
+- [x] **`d_and_a` rank order** (D80) — `prefer_largest_candidate` added; rank order assumed
+      earlier candidates were broader and for MCD/MCK they were narrower. 16 periods,
+      2 companies; MCD was understated 80-86%
+- [x] **`cfo` tag-map gap** (D79) — continuing-operations variant added as a fallback.
+      75 periods across 19 companies regain cfo, fcf, fcf_margin, fcf_to_debt, cfo_to_debt
+- [x] **`short_term_investments` tag-map gap** (D79) — `OtherShortTermInvestments` added,
+      26 periods across BDX/KO/SYK. **D77's summary said four defects; its own evidence file
+      classified five.** This was the one the summary dropped
+- [x] **`total_debt` double-count, two branches** (D78) — fixed as ONE mechanism, since
+      fixing them separately would have been the fifth instance of the pattern they
+      demonstrate. D32's containment rule generalised: cross-check where one exists, refuse
+      where the two agree and nothing reconciles them, add where magnitudes differ
+- [ ] **KNOWN, NOT FIXED: YUM FY2023 `total_debt`** overstated by 56 (0.5%). Its deviation
+      is 5.36%, 0.36pp outside the component/aggregate tolerance, and its only aggregate is
+      the gross figure which answers backwards. **No threshold was invented** — the
+      deviation distribution is continuous from 0% to 100% with no bimodal gap, so unlike
+      D69 nothing can be measured. Settling it needs footnote prose XBRL does not carry
 
 ## Later
 - See docs/build-plan.md. First two items for v2: sector thresholds (D48/D72a), then the

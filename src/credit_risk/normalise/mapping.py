@@ -25,6 +25,7 @@ def tag_map_config() -> dict:
     return {
         "tolerance": s["candidate_disagreement_tolerance"],
         "refuse": set(s["refuse_on_candidate_disagreement"]),
+        "prefer_largest": set(s["prefer_largest_candidate"]),
     }
 
 
@@ -118,6 +119,12 @@ def map_concepts(selection: SelectionResult, tag_map: dict | None = None) -> Map
                 if fact is None:
                     continue
                 if chosen is None:
+                    chosen = fact
+                elif (concept in cfg["prefer_largest"]
+                      and abs(fact.val) > abs(chosen.val)):
+                    # D80: rank order assumes earlier candidates are at least as
+                    # complete. For an add-back like d_and_a that is false and
+                    # filer-dependent, and the larger figure is the complete one.
                     chosen = fact
                 elif _materially_differs(concept, chosen.val, fact.val, cfg):
                     # D69: for a concept whose candidates name the SAME quantity,
