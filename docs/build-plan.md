@@ -10,7 +10,7 @@
 6. Scoring, grades, explain output
 7. Trends and early warnings
 8. Stress engine with presets, custom scenario, driver attribution, simple sensitivity grid
-9. CLI: `fetch`, `analyse`, `score`, `stress`, `export-evidence`, `validate-memo`
+9. CLI: `fetch`, `metrics`, `score`, `stress`, `export-evidence`, `validate-memo`
 10. Test suite (see below)
 11. Validation on 25–50 companies including four demonstration cases
 
@@ -20,13 +20,18 @@
 
 - Dashboard. Decision point: a Python dashboard library (one language, fast) versus a
   proper web frontend (Next.js). Default is the Python option unless there's a reason.
+- **Sector-specific threshold sets — the first thing v2 should take up.** Moved here from
+  v3 on 2026-09-20: the v1 final audit assessed it as having crossed from anecdote to
+  pattern, on three independent instances (CCL's liquidity in D48, CCL's ~0.19% tonnage-tax
+  effective rate in D55, and the 7-of-43 negative-working-capital liquidity finding in
+  D72a). Still correctly parked for v1 — a sector framework over 43 companies across 21 SIC
+  groups would be fitting noise.
 - Monitoring / change detection across periods (period-over-period credit change summary)
 - Quarterly data
 - Local-LLM option for the memo workflow (see `docs/ai-governance.md`)
 
 ## v3 / maybe
 
-- Sector-specific threshold sets
 - Debt maturity and refinancing analysis (partly available in XBRL)
 - Covenant headroom analysis
 - Companies House ingestion
@@ -57,7 +62,8 @@ fixture with known duplicates, restatements and a fallback tag, checked value by
 **This phase is where most of the time will go.**
 
 **Phase 4 — Integrity + data quality.** All checks in the methodology implemented; a
-period with a failing check is excluded from scoring; data-quality summary printed.
+period with a failing check is excluded from scoring **and, since D76, computes no metric
+at all**; data-quality summary printed.
 
 **Phase 5 — Metrics engine.** Every formula implemented as a pure function taking a
 period's normalised concepts and returning a provenance-carrying result. Every edge case
@@ -84,6 +90,28 @@ deteriorating one, a highly leveraged one, and one that looks weak at base but s
 Severe stress.
 
 **Phase 11 — Docs and write-up.** README, methodology finalised, decisions log complete.
+
+### Definition-of-done not met, recorded rather than deleted (2026-09-20)
+
+**`tests/golden/` is empty.** Phase 10 above and the Testing strategy below both require
+"four real companies with 10-K-verified numbers in `tests/golden/`" — metrics checked **by
+hand against the filing**. That was never done. The directory has held only `.gitkeep`
+since the repo was created.
+
+What exists instead, and why it is not the same thing:
+
+- **The four demonstration cases were chosen, by measurement** (D72d — SYK strong, LYB
+  deteriorating, CHTR leveraged, TXRH resilient), with the rejected candidates and the
+  reason for each rejection recorded. That satisfies the *demonstration* half of Phase 10.
+- **`tests/test_real_companies.py` pins real-data expectations** across the five fixture
+  companies, and runs structural invariants over all 105 cached payloads (D68).
+
+Neither is an independent check against the source document. Every pinned figure was
+produced by this engine, so the whole suite shares one failure mode: **if the engine
+misreads a filing consistently, nothing here would notice.** A hand-verified golden set is
+the only test in the plan that would, which is why it was specified — and it is the one
+thing in v1 specified and not built. It stays on the list rather than being quietly
+dropped, because deleting an unmet requirement is how a plan stops being evidence.
 
 ## Task sequence
 
@@ -112,6 +140,8 @@ the task order is the one to follow.
 8. (Phase 3) Design and create the SQLite schema (`companies`, `filings`, `facts`,
    `concepts`, `metrics`, `assumptions`, `overrides`, `scores`, `warnings`) — write the
    DDL, review it, then implement. Stress tables are deferred to Phase 8 (DECISIONS D20).
+   *Delivered as 14 tables at Task 8, 18 once Phase 8 added the three stress tables and
+   `warning_evidence`.*
 9. (Phase 5) Implement composite concepts (`total_debt`, `net_debt`, `ebitda`, `fcf`)
    with every rule in the methodology and a test per rule. **Before Task 10:** the
    `Debt ⊆ liabilities` check tests `total_debt_ex_leases`, and the abnormal-movement
@@ -136,6 +166,7 @@ the task order is the one to follow.
   EBITDA, negative FCF, negative equity, zero debt, zero and missing interest expense,
   restated value, missing middle year, duplicate fact, a 300%+ jump.
 - **Golden tests**: four real companies with 10-K-verified numbers in `tests/golden/`.
+  **Not built — see "Definition-of-done not met" above.**
 - **Integrity tests**: each check has a passing and a failing fixture.
 - **Config tests**: changing a band edge in YAML changes the score; nothing is hard-coded.
 

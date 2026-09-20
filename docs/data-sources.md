@@ -197,8 +197,10 @@ three codes.
 A refused value is never approximated from a neighbouring period, a related tag, or
 subtraction from another figure (CLAUDE.md rule 11).
 
-**What real data actually produces** (measured across all five cached companies,
-2026-09-11): `CANDIDATE_TAG_DISAGREEMENT` 82 events — LUMN 15, F 32, JNJ 16, KHC 19, CCL
+**What real data actually produces** (measured across the **five cached companies of the
+time** — F, JNJ, LUMN, CCL, KHC — on 2026-09-11, before the 43-company universe was adopted
+in D65. **Provisional: re-measure before relying on these counts.** The same caveat D32's
+status note carries): `CANDIDATE_TAG_DISAGREEMENT` 82 events — LUMN 15, F 32, JNJ 16, KHC 19, CCL
 0 — and 2 `FOREIGN_UNIT` facts (JNJ and KHC, one each). Every other code above is
 exercised only by synthetic fixtures: no cached company has produced an FYE
 disagreement, tie or unanchored instant. Phase 4 should not assume the rarer codes are

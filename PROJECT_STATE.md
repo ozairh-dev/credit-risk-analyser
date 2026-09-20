@@ -3,9 +3,10 @@
 _Update at the end of every working session._
 
 ## Phase
-**v1 complete (2026-09-17).** All ten phases are built, run on real data and are
+**v1 complete (2026-09-20).** All eleven phases are built, run on real data and are
 committed: ingestion, normalisation, composites, integrity checks, ratios, scoring,
-trends and warnings, stress, and the evidence export with its memo validator. 905 tests.
+trends and warnings, stress, the evidence export with its memo validator, and the
+documentation set. 905 tests — 860 pass, 45 skip by design.
 The v1 final audit (`docs/audits/2026-09-14-v1-final-audit.md`) and its fixes are the
 last work in v1; everything beyond is a v2 question in docs/build-plan.md.
 
@@ -589,6 +590,10 @@ never run for it and no revenue-based metric will ever compute. Worth a tag
 investigation before KHC is relied on for anything revenue-derived.
 
 ## Tests
+- **860 passing, 45 skipped (905 collected)** at `ce0fc56`. The 45 skips are
+  fixture-parameterised tests that apply to one of the five fixture companies and skip
+  for the other four — witness-specific assertions, not unrun ones. The breakdown below
+  predates Phases 9-11 and is kept as the record of what each area covered at the time.
 - 844 passing, 45 skipped (7 setup + 3 env + 6 ingest/tickers + 12 ingest/companyfacts (all
   HTTP-mocked) + 4 cli wiring + 3 fixture guards + 31 selection + 10 mapping +
   42 composites (deviation edges, all four branches, guards, toggles, storage) +
@@ -634,23 +639,59 @@ investigation before KHC is relied on for anything revenue-derived.
 - none
 
 ## Open questions
-- **Escalation threshold** (D72b): fires in 31% of periods, escalating 64% of warnings.
-  Implemented as specified; rule 12's principle says a signal that fires constantly is
-  indistinguishable from none. A calibration decision, not a defect.
-- **Sector thresholds** (D48, widened by D72a): 7 of 43 companies score zero liquidity
-  points on a negative-working-capital business model, including P&G. Post-MVP item.
-- **The never-failing fail-severity integrity checks** (D72c): five of the six have never
-  fired on real data. Basis: the 43 adopted companies, 776 scored periods at `ce0fc56`
-  (the "780 periods" previously recorded here was the pre-D69 count at `0fa0897`).
-  `ebitda_margin_plausible` is the exception and has 4 CAG witnesses. Validated by
-  synthetic fixtures only.
-- none blocking. The v1 universe question — open since Phase 0 — was closed on 2026-09-13 by D65.
+
+**None open in v1.** The universe question — open since Phase 0 — was closed on 2026-09-13
+by D65, and it was the last one.
+
+The three calibration items previously listed here have been moved to **Next priorities**
+and reframed: they are **deliberate decisions to park, each with its measurement and its
+argument**, not unanswered questions. Listing a settled decision as an open question
+misrepresents both.
+
+One correction worth keeping visible, since it is the kind this project keeps re-learning:
+**the sector-threshold item has two different seven-company measurements behind it, and
+they are not the same seven.** D72a measured median `current_ratio` below 0.8 (RCL, CCL,
+CHTR, MAR, GIS, TXRH, PG, at adoption); a 2026-09-20 measurement at `ce0fc56` found zero
+liquidity points in the most recent scored period (CHTR, GIS, MAR, PG, RCL, SBUX, WMT).
+Five overlap. Both support the same conclusion; quoting either without its definition
+would be the D32 mistake again. Recorded in `docs/risk-scoring.md`.
 
 ## Next priorities
-- Phase 9 (evidence pack / AI governance workflow) and Phase 10 (company universe).
-  The company-selection work is now the binding constraint on demonstrating anything:
-  four of five companies cannot score uncapped, three of five cannot be stressed, and
-  two of five cannot be stressed at all. See Open questions and the coverage tables.
-- The company-selection work remains the blocker for *demonstrating* Phase 6: four of
-  five companies can never score uncapped. See Open questions.
+
+**v1 is complete. There is no next task inside it.** Phases 1-11 are built, run on real
+data and committed; the documentation set is finished (`docs/architecture.md`,
+`risk-scoring.md`, `interview-notes.md`, `case-study.md`, plus the four originals).
+
+### The three parked calibration items — decisions, not gaps
+
+Each was measured, argued and deliberately left alone. They are listed here so nobody
+mistakes them for unfinished work; the evidence is in D72 and the v1 final audit.
+
+1. **Warning escalation threshold (D72b).** Escalation fires on ~31% of periods. Rule 12's
+   principle applies — a signal that fires constantly is indistinguishable from no signal —
+   but changing the threshold rewrites every historical warning severity, and there is no
+   evidence base for choosing 4 over 3, only an intuition that 31% feels high. **Park it.**
+2. **Sector-specific thresholds (D48, D72a).** The strongest of the three, and the **first
+   thing v2 should take up**. It began as one company and is now three independent
+   instances: CCL's liquidity, CCL's ~0.19% tonnage-tax effective rate (D55), and the
+   negative-working-capital liquidity finding including P&G. Still correctly parked for v1
+   — a sector framework over 43 companies across 21 SIC groups would be fitting noise —
+   but it has crossed from anecdote to pattern.
+3. **The never-failing fail-severity integrity checks (D72c).** `debt_subset` went from 21
+   runnable periods to 287 and still never fails. That is the outcome that would have
+   changed the call, and it did not: these are accounting identities a filer would have to
+   mis-tag to break. The case for leaving them alone is now empirical rather than assumed.
+
+### Known gap, recorded rather than closed
+
+**`tests/golden/` is empty.** Phase 10's definition-of-done required four companies
+hand-checked against their 10-Ks. It was never done, and it is the only test in the plan
+that would catch the engine misreading a filing *consistently* — every other test compares
+the engine against itself. Recorded in `docs/build-plan.md` rather than deleted.
+
+### What v2 would take up, in order
+
+1. Sector-specific thresholds (above).
+2. A hand-verified golden set (above) — arguably before anything else.
+3. The dashboard, monitoring and quarterly data listed in `docs/build-plan.md`.
 

@@ -77,17 +77,17 @@ checks (Phase 4) because the checks depend on them. See docs/build-plan.md.
 - [x] Phase 10 selection treats headline-metric coverage as a selection criterion —
       applied as the joint-availability filter in the 2026-09-13 screen (D65). JNJ's
       6-of-19 OperatingIncomeLoss resolution is what demoted it to a fixture
-- [ ] Tag-map gap: Ford reports no `PaymentsToAcquirePropertyPlantAndEquipment` at
-      all, so capex never resolves and fcf_margin / fcf_to_debt / capex_to_revenue
-      are zero for it in every period. LUMN resolves capex in 6 of 18
-- [ ] Tag-map gap: JNJ's `revenue` (2017-2025) and `ebit` (2010-2014) periods do not
-      overlap at all, so ebit_margin and ebitda_margin are structurally impossible
-      for it — not thin, empty. Needs tag variants for one or both concepts
-- [ ] Phase 10 selection must check capex, revenue AND ebit resolve over the SAME
-      periods before adopting a company — per-concept counts hide an empty overlap
-- [ ] Tag-map gap: KHC resolves `revenue` in zero of 12 periods — no candidate matches
-      how Kraft Heinz tags it. Investigate before relying on KHC for anything
-      revenue-derived
+- [x] Phase 10 selection must check capex, revenue AND ebit resolve over the SAME
+      periods before adopting a company — per-concept counts hide an empty overlap.
+      Implemented as D65's joint-availability filter
+- [~] **Tag-map gaps on F, JNJ and KHC — accepted, not fixed.** All three are now
+      **fixtures retained for specific witness value, not demonstration companies**
+      (D65), so none of these gaps affects a reported result. Ford reports no
+      `PaymentsToAcquirePropertyPlantAndEquipment` at all, so capex never resolves;
+      JNJ's `revenue` (2017-2025) and `ebit` (2010-2014) periods do not overlap at all;
+      KHC resolves `revenue` in zero of 12 periods. Fixing any of them needs
+      period-scoped tag candidates — a `tag_map.yaml` format change that one company
+      cannot justify (D25), and the change v2 should make if the need recurs
 - [x] Phase 6: "excluded until reviewed" resolved by amendment — exclusion lasts until
       the data is corrected and re-ingested; v1 has no review path (D45)
 
@@ -117,12 +117,18 @@ checks (Phase 4) because the checks depend on them. See docs/build-plan.md.
 - [x] D69 revenue refuse-on-disagreement + concept audit + ebitda_margin_plausible check
 - [x] D70 FCF metrics excluded from the stressed grade
 - [x] D71 ebit_interest_cover bands rebased on the observed distribution
-- [ ] Escalation threshold calibration (D72b) — 31% of periods, 64% of warnings
-- [ ] Sector thresholds (D48/D72a) — now two measured instances plus 7 companies on the
-      liquidity finding, including P&G
-- [ ] The never-failing fail-severity integrity checks remain synthetic-only (D72c) —
-      measured 2026-09-17: **five of the six** never fail on real data; only
-      `ebitda_margin_plausible` has a witness (4 CAG periods)
+- [~] **PARKED BY DECISION, not outstanding work** — the three calibration items (D72).
+      Each was measured and argued; see PROJECT_STATE.md "Next priorities".
+      - Escalation threshold (D72b) — fires on 31% of periods, escalating 64% of warnings.
+        No evidence base for choosing 4 over 3; changing it rewrites every historical
+        severity.
+      - Sector thresholds (D48/D72a) — **three independent instances**: CCL's liquidity,
+        CCL's ~0.19% tonnage-tax effective rate (D55), and the negative-working-capital
+        liquidity finding including P&G. **The first item v2 should take up.**
+      - The never-failing fail-severity checks (D72c) — five of the six never fail on real
+        data; only `ebitda_margin_plausible` has a witness (4 CAG periods). `debt_subset`
+        went from 21 runnable periods to 287 and still never fails, which is the outcome
+        that would have changed the call.
 
 ## Phase 9
 - [x] Evidence export + memo validator (2026-09-16): export-evidence,
@@ -140,7 +146,25 @@ checks (Phase 4) because the checks depend on them. See docs/build-plan.md.
 - [x] Finding 5 — D32 status note corrected with its population; D29/D33/D36/D37/D41/
       D42 annotated as five-company-era counts
 - [x] Finding 6 — README rewritten against measured numbers, calibration sentence intact
-- [ ] Finding 4 was the three parked calibration items — still parked, see above
+- [~] Finding 4 was the three parked calibration items — still parked by decision, above
+
+## Phase 11 — documentation and write-up (2026-09-20)
+- [x] Staleness audit of the four original docs before touching them. `ai-governance.md`
+      current; `credit-methodology.md` one stale count (31 -> 34 concepts);
+      `data-sources.md` one five-company-era measurement, now flagged provisional;
+      `build-plan.md` five items, all corrected
+- [x] `docs/architecture.md` — nine stages, four disjoint fingerprint scopes, the
+      three-kind reason model, where authority for each kind of decision lives
+- [x] `docs/risk-scoring.md` — band tables generated from config and checked against
+      `band_points`, missing-data treatments, the graduated cap, what is not calibrated
+- [x] `docs/interview-notes.md` — five components, each with its hardest problem
+- [x] `docs/case-study.md` — readable without the repo, calibration sentence verbatim
+- [x] CLAUDE.md, PROJECT_STATE.md and TODO.md describe the finished state
+- [ ] **`tests/golden/` is still empty** — the one v1 definition-of-done specified and not
+      built. Four companies hand-checked against their 10-Ks. It is the only test that
+      would catch the engine misreading a filing *consistently*; every other test compares
+      the engine against itself. Recorded in `docs/build-plan.md`, not dropped
 
 ## Later
-- See docs/build-plan.md
+- See docs/build-plan.md. First two items for v2: sector thresholds (D48/D72a), then the
+  hand-verified golden set above.

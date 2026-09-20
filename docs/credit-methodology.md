@@ -643,7 +643,7 @@ hidden (D40).
 
 ### Core concepts (abnormal-movement scope)
 
-The abnormal-movement check runs over these 16 concepts only — not all 31 in
+The abnormal-movement check runs over these 16 concepts only — not all 34 in
 `config/tag_map.yaml`. A large move in something like `dividends` is ordinary corporate
 behaviour and would only generate noise.
 

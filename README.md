@@ -121,9 +121,10 @@ graduated grade cap, every stress parameter (`fixed_cost_share` 0.3, `floating_s
 forced, because the fixed/floating split is unreachable from XBRL — `default_tax_rate` 0.21,
 `new_debt_rate_default` 0.06, and the preset shock magnitudes), the trend materiality
 thresholds, and the liquidity bands for negative-working-capital businesses — 7 of the 43
-companies (CHTR, GIS, MAR, PG, RCL, SBUX, WMT) score **zero** liquidity points in their
-most recent period, which is a business-model effect the bands do not model rather than a
-finding about those companies.
+companies (CHTR, GIS, MAR, PG, RCL, SBUX, WMT) score **zero** liquidity points in their most
+recent scored period, measured at `ce0fc56`. That is a business model the bands do not
+model, not a finding about those companies. See `docs/risk-scoring.md`, which also records
+D72a's separate seven — a different set, on a different measurement.
 
 **905 tests is not 905 units of real-world validation.** Most assert engine behaviour
 against hand-computed or fixture data. The real-data assertions are narrower, and they are
@@ -185,20 +186,24 @@ so the whole engine works offline once a company is cached.
 | Path | What it is |
 |---|---|
 | `DECISIONS.md` | 76 decisions with evidence, alternatives and consequences — the most useful file here |
-| `CLAUDE.md` | Project rules, including the fourteen earned non-negotiables |
+| `CLAUDE.md` | Project rules: 13 non-negotiables and 14 working rules, several of them earned the hard way and carrying the finding that produced them |
+| `docs/case-study.md` | The write-up — readable without opening the repo |
+| `docs/architecture.md` | How it fits together, and where each kind of decision lives |
+| `docs/risk-scoring.md` | Bands, weights, missing-data treatments, the graduated cap |
 | `docs/credit-methodology.md` | Every formula, threshold and edge case |
 | `docs/data-sources.md` | Where the data comes from and how facts are selected |
 | `docs/ai-governance.md` | Where AI is and is not allowed |
-| `docs/audits/` | Point-in-time audits, including the v1 final audit |
+| `docs/interview-notes.md` | Per-component notes, including what went wrong and why |
+| `docs/audits/` | Point-in-time audits; corrections appended, never rewritten |
 | `config/*.yaml` | Thresholds, weights, stress presets, XBRL tag map |
 | `src/credit_risk/pipeline.py` | The nine stages in their one correct order |
 | `PROJECT_STATE.md` / `TODO.md` | Where the build has got to, and what is next |
 
 ## Status
 
-**v1 complete.** All ten phases are built, run on real data and are committed: ingestion,
-normalisation, composites, integrity checks, ratios, scoring, trends and warnings, stress,
-and the evidence export with its memo validator.
+**v1 complete.** All eleven phases are built, run on real data and are committed:
+ingestion, normalisation, composites, integrity checks, ratios, scoring, trends and
+warnings, stress, the evidence export with its memo validator, and the documentation set.
 
 Deliberately not built in v1: any web or graphical interface, a database beyond SQLite, any
 paid data source, and any runtime AI. Those are v2 questions and are recorded as such in

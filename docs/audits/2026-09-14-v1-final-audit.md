@@ -36,6 +36,15 @@ described to other people.
 > **D75 and D76 changed no grade at all**: the distribution measured at `8828aef` is
 > identical to the one at `ce0fc56`.
 >
+> **A second stale carry-forward, found 2026-09-20.** Under "Claims a reader would form
+> that the evidence does not support", point 3 states the adopted set "over-indexes on
+> hotels, gaming and restaurants". That described the **pre-D66 19-company set**, where the
+> cluster was an artefact of the `debt_subset` per-company gate. D66 demoted that gate to a
+> set-level target, taking the universe from 19 to 43 and spanning **21 distinct 2-digit SIC
+> groups**. The set is still screened for data adequacy rather than representativeness —
+> that part of the claim stands — but the leisure skew was fixed before this audit was
+> written.
+>
 > **This audit's own finding 5 is the finding it fell to.** Finding 5 says a decision's
 > recorded measurement can go stale while its reasoning stays sound, and recommends
 > treating in-sample counts as provisional. The audit then reported a carried-forward

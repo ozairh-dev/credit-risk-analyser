@@ -1,5 +1,13 @@
 # Credit Risk Analyser — project rules
 
+## Status
+
+**v1 is complete (2026-09-20).** All eleven phases built, run on real data, committed.
+860 tests pass, 45 skip by design. Anything beyond v1 is a v2 question — see
+`docs/build-plan.md`, whose first two items are sector thresholds and the hand-verified
+golden set. The three parked calibration items are **decisions with their measurements
+recorded**, not gaps: see `PROJECT_STATE.md` "Next priorities".
+
 ## What this is
 
 A portfolio-scale credit-risk analysis tool for US-listed, non-financial companies.
@@ -71,10 +79,15 @@ credit-risk-platform/
 │   ├── thresholds.yaml     metric bands, weights, grade edges
 │   └── stress.yaml         preset scenarios and propagation defaults
 ├── docs/
-│   ├── data-sources.md
+│   ├── architecture.md     how it fits together; where each decision lives
+│   ├── risk-scoring.md     bands, weights, treatments, the graduated cap
 │   ├── credit-methodology.md
+│   ├── data-sources.md
 │   ├── ai-governance.md
-│   └── build-plan.md
+│   ├── build-plan.md
+│   ├── interview-notes.md  per-component notes, including what went wrong
+│   ├── case-study.md       the write-up, readable without the repo
+│   └── audits/             point-in-time audits, corrections appended not rewritten
 ├── src/credit_risk/
 │   ├── ingest/             SEC fetch + raw cache
 │   ├── normalise/          tag mapping, period selection, provenance
@@ -156,7 +169,13 @@ before building it.
 
 | Area                          | Read                          |
 |-------------------------------|-------------------------------|
+| Finding your way around at all | `docs/architecture.md`       |
 | Fetching or mapping SEC data  | `docs/data-sources.md`        |
 | Any ratio, score, trend, stress | `docs/credit-methodology.md` |
+| Bands, weights, caps, missing-data rules | `docs/risk-scoring.md` |
 | Anything involving an LLM     | `docs/ai-governance.md`       |
 | What to build next / not build | `docs/build-plan.md`         |
+| Why a choice was made, and what it cost | `DECISIONS.md` — 76 entries, the project's best artefact |
+
+**Do not restate `DECISIONS.md` in a doc.** The docs point into it; duplicating an entry
+creates a second place for it to go stale, which is CLAUDE.md rule 13 applied to prose.
