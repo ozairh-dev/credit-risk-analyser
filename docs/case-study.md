@@ -213,10 +213,11 @@ anywhere it appears. Specifically:
   if it misread a filing *consistently*, almost nothing would notice. **The exception is
   the golden set** — four company-years read from the filing documents themselves. It found
   **five engine defects on first contact with real filings**, including a depreciation tag
-  that understates one company's EBITDA by 80-86%, and two places where debt is counted
-  twice. Those defects are measured and recorded, not yet fixed. **Four companies is four
-  companies**: the set proves the engine reads those four filings correctly and nothing
-  wider, and four of four turning up defects is not a reassuring ratio.
+  that understated one company's EBITDA by 80-86%, and two places where debt was counted
+  twice. All five are fixed (D78-D80), each with its own before/after measurement across
+  the 43. **Four companies is four companies**: the set proves the engine reads those four
+  filings correctly and nothing wider, and four of four turning up defects is not a
+  reassuring ratio.
 - **A validated memo is not a checked memo.** The validator confirms figures *appear* in the
   evidence pack at the memo's stated precision. It cannot confirm they are used correctly: a
   figure cited under the wrong label passes, true figures assembled into a false claim pass,
