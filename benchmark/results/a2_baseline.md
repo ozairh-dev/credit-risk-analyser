@@ -121,6 +121,30 @@ that should reduce confidence.
 default probability, a spread or a loss rate, and 18 events could not support such a map
 even in principle. The grades remain an internal analytical scale.
 
+### Why the survivor denominator is 774 and not 817
+
+Both numbers are correct and they count different things. Stated explicitly because a
+denominator that changes between reports without explanation undermines everything
+reported beside it.
+
+| | arithmetic | what it counts |
+|---|---|---|
+| **817** | 19 cutoffs × 43 survivors | every survivor at every cutoff of all **19 verified** cases |
+| **774** | 18 cutoffs × 43 survivors | every survivor at every cutoff of the **18 admitted** cases |
+
+Nineteen cases were verified and each has a distinct point-in-time cutoff, so nineteen
+survivor panels exist in `a2_raw.json`, each holding all 43 companies. **Hertz is then
+excluded from the discrimination set** as a coverage failure — 1 of 5 categories scored —
+and its cutoff of 2019-05-23 is shared with no other case, so removing Hertz removes
+exactly one panel of 43. **817 − 43 = 774.**
+
+Every discrimination metric in this file uses **774**, because a false-positive rate must
+be computed over the same cutoffs as the sensitivity standing beside it. 817 belongs only
+to statements about all nineteen panels. The escalation and High-severity reach figures
+below are the 774-based ones; measured over all 817 the escalated reach is also 37%, so no
+conclusion here turns on the choice — but that is a coincidence of this dataset, not a
+reason to leave it unsaid.
+
 **The false-positive rate is pseudo-replicated, and the honest number is the worse one.**
 774 "survivor company-cutoffs" are 43 distinct companies observed at up to 18 cutoffs
 each — **not 774 independent observations**. A company weak at one cutoff is usually weak

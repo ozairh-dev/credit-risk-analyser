@@ -213,21 +213,22 @@ Engine, config and tests must stay byte-identical throughout Phase A.
       supersession would use post-bankruptcy restatements to "predict" the bankruptcy
 - [x] Hold-out split for A2 — stratified by SIC group then deterministic by CIK, so it
       cannot have been chosen to flatter a version. 10 dev / 8 held-out
-- [ ] **A1 numerical and extraction accuracy** — extend the golden set with new
-      company-years hand-verified against filing documents, including at least two from
-      sectors not yet covered. Every disagreement classified as engine defect, tagging
-      artefact or legitimate definitional difference
-- [ ] **A3 failure-mode cases** — eight credit situations, a real company-period witness
-      for each where one exists, expected findings written BEFORE running either version
-- [ ] **A4 consistency** — assert deterministic engine reproducibility; measure LLM
-      variance over five runs on one pack
-- [ ] **A5 unsupported claims** — unverified figures via the existing validator, plus
-      unsupported qualitative claims against a written rubric
-- [ ] **Rubric and scoring script for the judged parts**, written before anything is run.
-      The grader must be a separate agent with fresh context, blind to which version
-      produced the output
-- [ ] Run V1 against the complete benchmark, record the baseline, report what it cannot
-      measure, and stop for owner review
+- [x] **A4 consistency — determinism** (`benchmark/harness/run_a4.py`): 7 companies x 3
+      repeats, reversed order, and four explicit `PYTHONHASHSEED` values in fresh
+      interpreters, all bit-identical across eleven output blocks. Asserts only that the
+      output does not move, never that it is correct
+- [~] **DESCOPED by owner decision 2026-09-26, not outstanding work.** A5 and the grader
+      rubric are downstream of an LLM judgment layer that does not exist; A1 and A3 did
+      not justify their cost on the available timeline; the LLM half of A4 has nothing to
+      run five times. Recorded rather than deleted so the benchmark's coverage can be read
+      off it:
+      - A1 numerical and extraction accuracy — golden-set extension against filing
+        documents. **This is the gap that matters: nothing built checks an engine figure
+        against a filing. D77's four company-years remain the only external check**
+      - A3 eight failure-mode cases with expected findings written first. Hertz already
+        witnesses one of the eight (missing information that should reduce confidence)
+      - A5 unsupported qualitative claims against a written rubric
+      - the blind separate grader for judged output
 
 ## Later
 - See docs/build-plan.md. First two items for v2: sector thresholds (D48/D72a), then the

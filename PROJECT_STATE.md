@@ -66,11 +66,23 @@ that would otherwise have published 0.098 as 0.902's replacement.
 5. **The backtest cannot reach the 2008-09 cycle.** Measured: Charter's companyfacts
    begins 2011-05-03, so a 2008 cutoff yields zero facts. 11 of 18 events are 2020.
 
-**Still to build in Phase A:** A1 (extend the golden set against filing documents), A3
-(eight failure-mode cases with expected findings written first), A4 (determinism and LLM
-variance), A5 (unsupported-claim rubric), and the written rubric plus scoring script for
-the judged parts. `benchmark/README.md` carries the scope and what the benchmark cannot
-measure.
+**A4 determinism is asserted and passing.** `benchmark/harness/run_a4.py`: 7 companies x 3
+in-process repeats, plus reversed analysis order and four explicit `PYTHONHASHSEED` values
+in fresh interpreters — all bit-identical across all eleven output blocks (selection,
+mapping, composites, integrity, metrics, trends, warnings, scores, stress). It asserts only
+that output does not MOVE; a consistently wrong engine passes it perfectly.
+
+**Phase A stopped here by owner decision (2026-09-26). A1, A3, A5 and the grader rubric are
+descoped, not outstanding.** A5 and the rubric are downstream of an LLM judgment layer that
+does not exist, so there is nothing for them to measure; A1 and A3 did not justify their
+cost on the available timeline. The LLM half of A4 is unbuilt for the same reason.
+
+**The consequence worth carrying forward: nothing in what was built checks an engine figure
+against a filing document.** That was A1. The golden set (D77) remains the project's only
+external check, at four company-years — and on first contact it found five defects. Every
+A2 figure therefore rests on numbers verified against the engine's own reading of the XBRL,
+never against a statement a person can read. `benchmark/README.md` carries the full scope
+and limitations.
 
 ## Completed
 - Specification: CLAUDE.md, docs/, DECISIONS.md D1-D10
@@ -698,7 +710,8 @@ investigation before KHC is relied on for anything revenue-derived.
   10's job; several assumptions need more companies before they can be exercised).
 
 ## In progress
-- **Benchmark Phase A** — A2 done and baselined; A1, A3, A4, A5 and the rubric outstanding. See the Benchmark section above.
+- nothing. Phase A is closed: A2 baselined, A4 determinism passing, A1/A3/A5/rubric
+  descoped by decision. See the Benchmark section above.
 
 ## Known bugs
 - none

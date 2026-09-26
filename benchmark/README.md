@@ -16,15 +16,25 @@ Two rules govern it:
 
 | Part | What it measures | State |
 |---|---|---|
-| **A1** extraction accuracy | engine figures vs figures read from filing documents | not built |
+| **A1** extraction accuracy | engine figures vs figures read from filing documents | **not built — descoped** |
 | **A2** discrimination backtest | pre-event grades for real Chapter 11 filers vs survivors | **built and baselined** |
-| **A3** failure-mode cases | eight credit situations, expected findings written first | not built |
-| **A4** consistency | engine determinism; LLM variance over five runs | not built |
-| **A5** unsupported claims | unverified figures and unsupported qualitative claims | not built |
-| rubric + hold-out | written grading rubric; dev/held-out split | split done for A2 |
+| **A3** failure-mode cases | eight credit situations, expected findings written first | **not built — descoped** |
+| **A4** consistency | engine determinism | **built and passing** |
+| **A4** LLM variance | five runs on one pack | **not built — nothing to run** |
+| **A5** unsupported claims | unverified figures and unsupported qualitative claims | **not built — descoped** |
+| rubric + hold-out | written grading rubric; dev/held-out split | split done for A2; **rubric descoped** |
 
 A2 was built first because it is the part that can be wrong in the most expensive way —
 a backtest with hindsight leakage produces a flattering number that looks rigorous.
+
+**A1, A3, A5 and the grader rubric were descoped by the owner on 2026-09-26.** A5 and the
+rubric are downstream of an LLM judgment layer that does not exist, so there is nothing for
+them to measure; A1 and A3 were judged not to justify their cost on the available timeline.
+They are recorded here as deliberately not built rather than deleted, because a benchmark
+with parts removed silently is a benchmark whose coverage cannot be read off it. **The
+consequence is specific and should be stated wherever the benchmark is cited: nothing in
+what was built checks the engine's figures against a filing document.** That check is A1,
+and the golden set of D77 remains the only instance of it — four company-years.
 
 ## Layout
 
@@ -37,6 +47,7 @@ benchmark/
 │       └── survivors.yaml         the 43 adopted companies as the survivor panel
 ├── harness/
 │   ├── pit.py                     point-in-time payload filter
+│   ├── run_a4.py                  A4 determinism assertion
 │   ├── edgar_events.py            event sourcing from EDGAR
 │   ├── assess.py                  one PIT assessment — failures and survivors share it
 │   ├── build_a2_cases.py          regenerates failures.yaml
@@ -45,7 +56,8 @@ benchmark/
 └── results/
     ├── a2_raw.json                every assessment, unjudged
     ├── a2_scored.json             the metrics
-    └── a2_baseline.md             the readable V1 baseline, with its limits
+    ├── a2_baseline.md             the readable V1 baseline, with its limits
+    └── a4_determinism.json        the determinism result
 ```
 
 `data/benchmark/raw/` holds the cached companyfacts for the failure cohort. It is
@@ -59,6 +71,7 @@ records. Both are gitignored.
 .venv/bin/python benchmark/harness/build_a2_cases.py   # regenerate the case file
 .venv/bin/python benchmark/harness/run_a2.py           # ~20s, writes a2_raw.json
 .venv/bin/python benchmark/harness/score_a2.py         # writes a2_scored.json
+.venv/bin/python benchmark/harness/run_a4.py           # determinism; exit 1 on failure
 ```
 
 `build_a2_cases.py` needs `data/benchmark/raw/` populated; the CIKs and the fetch are in
@@ -90,18 +103,24 @@ analyst asks, and it is narrower than "did the engine predict the default".
 cutoffs are not many independent observations. Both the pooled rate and the
 distinct-company share are reported, and they differ by more than a factor of two.
 
-**It cannot measure whether the analysis would be *useful* to an analyst.** No part of
-this scores readability, whether the right question was asked, or whether a memo would
-survive a credit committee. A4 and A5 measure consistency and unsupported claims — both
-necessary, neither sufficient.
+**It cannot measure whether the analysis would be *useful* to an analyst.** Nothing here
+scores readability, whether the right question was asked, or whether a memo would survive a
+credit committee.
 
-**It cannot validate the engine against filings at scale.** A1 checks a handful of
-company-years by hand against source documents. Four companies found five defects (D77);
-eight would find more. The benchmark measures the engine's *behaviour*, and only A1
-measures whether it *reads a filing correctly* — on a sample small enough to count on
-one hand.
+**A4 proves only that the output does not move.** A consistently wrong engine passes it
+perfectly. Determinism is a precondition for the rest of the benchmark meaning anything,
+not evidence of correctness.
+
+**Nothing built here checks a figure against a filing document.** That was A1, which is
+descoped. The golden set (D77) remains the project's only external check and covers four
+company-years — which on first contact found five engine defects, so the base rate of
+defects per company-year hand-checked is not reassuring. **Every A2 number therefore rests
+on figures verified only against the engine's own reading of the XBRL.**
 
 **A benchmark frozen before the work is still a benchmark chosen by the person doing the
-work.** The cases, the metrics and the flag rule were all selected by the same session
-that will propose the improvements. The hold-out split and the separate blind grader
-limit that, they do not eliminate it.
+work.** The cases, the metrics and the flag rule were all selected by the same session that
+will propose the improvements. The hold-out split limits that; it does not eliminate it.
+The blind separate grader that rule 1 above describes was **descoped along with the judged
+parts**, so rule 1 currently constrains nothing — there is no judged output to grade. It is
+kept in place because it governs any future judged part, but it must not be read as a
+control presently in force.

@@ -1,0 +1,24 @@
+{
+ "repeats": 3,
+ "companies": {
+  "CCL": "2caa2e34f7104aacb4308e95cd5c65c1083ff13207d0571ee2030c887e3061c7",
+  "LUMN": "019b345752de21486285a545aa3c6149f8a2251618e6a0706cfb3a9a1650c29b",
+  "F": "a1d02d54a0411ebc10b65d7200d24f45c96036e7bdefe63246ba672f715b574b",
+  "AZO": "32b184df81e052e77d3b29445e0637c9c4f2721dda7328f3304f91c6244ca098",
+  "CAG": "c1d32b0620cd1aed133e6d5f39c5fc845ae7424a613ac1aff2ffb96e0ab9d0ca",
+  "JCP": "66cbb070bf237f83537d5bd5fc6afed4bb069e0bb142ecfb5503ea84701e3bb0",
+  "HTZ": "133574c1fcba1e288374a872c9a8a1d3d9e566ab438c07b1b7defc1db91fcdfa"
+ },
+ "reversed_order_identical": true,
+ "fresh_process_identical": true,
+ "hash_seeds_tested": [
+  "0",
+  "1",
+  "12345",
+  "99999"
+ ],
+ "identical_under_every_hash_seed": true,
+ "blocks_hashed": 11,
+ "asserts": "output does not move on identical input, not that it is correct",
+ "llm_variance": "not measured \u2014 no LLM judgment layer exists to run five times"
+}
