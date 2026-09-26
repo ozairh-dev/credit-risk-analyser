@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Credit Risk Analyser — case study</title>
+<meta name="description" content="A deterministic credit-risk analyser over SEC XBRL filings. Case study, including a point-in-time backtest against 18 companies that later filed Chapter 11.">
+<style>:root {
+  --bg: #ffffff; --fg: #1a1a1a; --muted: #5a5a5a; --rule: #e2e2e2;
+  --code-bg: #f5f5f4; --accent: #7a1f1f; --quote: #f8f7f5;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #16181a; --fg: #e6e4e1; --muted: #a2a09d; --rule: #2e3134;
+    --code-bg: #21242700; --code-bg: #212427; --accent: #e0a0a0;
+    --quote: #1d2022;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #16181a; --fg: #e6e4e1; --muted: #a2a09d; --rule: #2e3134;
+  --code-bg: #212427; --accent: #e0a0a0; --quote: #1d2022;
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  background: var(--bg); color: var(--fg); margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+               "Helvetica Neue", Arial, sans-serif;
+  font-size: 16px; line-height: 1.62;
+}
+.wrap { max-width: 46rem; margin: 0 auto; padding: 3rem 16px 6rem; }
+nav { border-bottom: 1px solid var(--rule); padding-bottom: 1rem;
+      margin-bottom: 2.5rem; font-size: 0.875rem; }
+nav a { color: var(--muted); margin-right: 1.1rem; display: inline-block;
+        white-space: nowrap; }
+h1 { font-size: 1.9rem; line-height: 1.25; letter-spacing: -0.01em;
+     margin: 0 0 1.5rem; }
+h2 { font-size: 1.3rem; margin: 3rem 0 1rem; padding-bottom: 0.3rem;
+     border-bottom: 1px solid var(--rule); letter-spacing: -0.005em; }
+h3 { font-size: 1.05rem; margin: 2.2rem 0 0.75rem; }
+p, ul, ol { margin: 0 0 1.1rem; }
+li { margin-bottom: 0.35rem; }
+a { color: var(--accent); text-decoration: underline;
+    text-underline-offset: 2px; }
+a:hover { text-decoration-thickness: 2px; }
+strong { font-weight: 600; }
+code {
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
+               monospace;
+  font-size: 0.86em; background: var(--code-bg); padding: 0.12em 0.34em;
+  border-radius: 3px; overflow-wrap: break-word;
+}
+pre {
+  background: var(--code-bg); padding: 0.9rem 1rem; border-radius: 4px;
+  overflow-x: auto; font-size: 0.83rem; line-height: 1.5;
+}
+pre code { background: none; padding: 0; font-size: inherit; }
+blockquote {
+  margin: 1.4rem 0; padding: 0.85rem 1.1rem; background: var(--quote);
+  border-left: 3px solid var(--accent); border-radius: 0 3px 3px 0;
+}
+blockquote p:last-child { margin-bottom: 0; }
+.table-scroll { overflow-x: auto; margin: 0 0 1.3rem; }
+table { border-collapse: collapse; font-size: 0.87rem; min-width: 100%; }
+th, td { text-align: left; padding: 0.42rem 0.8rem 0.42rem 0;
+         border-bottom: 1px solid var(--rule); vertical-align: top; }
+th { font-weight: 600; white-space: nowrap; }
+hr { border: 0; border-top: 1px solid var(--rule); margin: 2.5rem 0; }
+footer { margin-top: 4rem; padding-top: 1.2rem;
+         border-top: 1px solid var(--rule); color: var(--muted);
+         font-size: 0.83rem; }
+@media (max-width: 34rem) {
+  .wrap { padding-top: 2rem; }
+  h1 { font-size: 1.55rem; }
+  nav a { margin-right: 0.9rem; }
+}</style>
+</head>
+<body>
+<div class="wrap">
+<nav><a href="https://github.com/8dybvz9fym-cpu/credit-risk-analyser">Repository</a> <a href="https://github.com/8dybvz9fym-cpu/credit-risk-analyser/blob/main/benchmark/results/a2_baseline.md">Backtest results</a> <a href="https://github.com/8dybvz9fym-cpu/credit-risk-analyser/blob/main/DECISIONS.md">Decision log</a> <a href="https://github.com/8dybvz9fym-cpu/credit-risk-analyser/blob/main/docs/credit-methodology.md">Methodology</a> <a href="https://github.com/8dybvz9fym-cpu/credit-risk-analyser/blob/main/docs/risk-scoring.md">Scoring model</a> <a href="https://github.com/8dybvz9fym-cpu/credit-risk-analyser/blob/main/docs/architecture.md">Architecture</a></nav>
+<h1>Credit Risk Analyser — case study</h1>
+<p>A deterministic credit-analysis engine over SEC filings. It computes seventeen credit
+metrics, an explainable score and grade, trend classifications, early warnings and stress
+scenarios for 43 US-listed non-financial companies — <strong>and refuses to produce a number
+whenever its inputs are missing, contradictory or ambiguous, with a recorded reason for
+every refusal.</strong></p>
+<p>Built solo, in Python, at £0 running cost. No paid data, no hosting, no LLM in the
+calculation path.</p>
+<hr />
+<h2>The problem</h2>
+<p>Credit analysis begins with a tedious, error-prone step: getting comparable numbers out of
+financial statements. Public filings are machine-readable — the SEC publishes XBRL for
+every US filer — but &quot;machine-readable&quot; is not &quot;consistent&quot;. The same economic quantity
+appears under different tags at different companies, under different tags at the <em>same</em>
+company across years, and sometimes under two tags in the same filing that disagree.</p>
+<p>The interesting failure mode is not that this is hard. It is that it fails <strong>quietly</strong>. A
+mis-resolved revenue figure produces a plausible margin, a plausible grade, and a plausible
+memo. Nothing looks wrong. The system that gets this subtly wrong is more dangerous than
+the one that crashes.</p>
+<p>So the question the project is really about: <strong>what should a credit tool do when the data
+will not support an answer?</strong></p>
+<h2>The approach</h2>
+<p>Four principles, each of which cost something to hold:</p>
+<p><strong>1. The deterministic engine is authoritative.</strong> Every ratio, score, grade, trend, warning
+and stress result is computed by code. No LLM anywhere in that path. AI is used in one
+place — a manual workflow where an analyst drafts a memo from an exported evidence pack —
+and a validator checks that memo back against the pack.</p>
+<p><strong>2. Provenance on every value.</strong> A metric resolves backwards through its inputs to the
+concept, the fact, the filing and the XBRL tag it came from. &quot;Where did this number come
+from&quot; has an answer for every number. Filing URLs are derived at export rather than stored,
+because a stored copy can only drift from the accession it describes.</p>
+<p><strong>3. Refusal over estimation.</strong> A missing input produces <code>UNAVAILABLE</code> with a reason code,
+and anything depending on it is also <code>UNAVAILABLE</code>. No default values for financial inputs,
+no approximating a refused value from an adjacent period or a related tag. <strong>A refusal is
+an answer.</strong> This is the principle the whole design turns on, and the one that required the
+most discipline: at every stage there was a plausible-looking number available, and taking
+it would have been easier than refusing.</p>
+<p><strong>4. Decisions recorded with their evidence.</strong> 76 entries covering what was chosen, what
+was measured, what the alternatives were, and what it cost — <strong>including the choices that
+turned out to be wrong, and why they survived review.</strong> The decision log is the most useful
+artefact the project produced.</p>
+<h2>What it does</h2>
+<p>Nine stages: select facts → map tags to concepts → build composites → integrity checks →
+compute ratios → classify trends → raise warnings → score and grade → stress.</p>
+<p>The grade is an integer 1–6 built from five weighted categories. When a category cannot be
+computed, the score is rescaled over what remains and the grade is <strong>capped</strong> by how many
+categories scored — and the cap line, naming the missing categories and their causes,
+travels with the grade everywhere it appears. A capped grade can never read as a judged one.</p>
+<p>Stress runs three scenarios with <strong>driver attribution</strong>: each shock re-run alone, so the
+contribution of each is visible separately. The attribution is reported as directionally
+consistent with a bounded residual, never as additive — the propagation is multiplicative
+and tax is floored, so the drivers genuinely do not sum.</p>
+<h2>At scale</h2>
+<p><strong>Basis: the 43 adopted companies, capped grades, all periods of each company's filing
+history, measured at commit <code>a5035a6</code> on 2026-09-20, after D78-D80 fixed the five defects
+the golden set found.</strong> Every figure below carries that
+basis, for a reason given under <em>Limitations</em>.</p>
+<div class="table-scroll"><table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Companies screened end to end</td>
+<td><strong>105</strong> — 43 adopted, a 41% pass rate</td>
+</tr>
+<tr>
+<td>Company-periods analysed</td>
+<td><strong>792</strong> (<strong>777</strong> with at least one computed metric)</td>
+</tr>
+<tr>
+<td>Metric values computed</td>
+<td><strong>10,975</strong></td>
+</tr>
+<tr>
+<td>Metric values <strong>refused</strong></td>
+<td><strong>2,489</strong>, across <strong>15</strong> reason codes with real witnesses</td>
+</tr>
+<tr>
+<td>Periods scored</td>
+<td><strong>776</strong>, of which <strong>267</strong> carry a cap</td>
+</tr>
+<tr>
+<td>Grade distribution 1→6</td>
+<td>43 / 110 / 259 / 217 / 101 / 46</td>
+</tr>
+<tr>
+<td>Trend verdicts</td>
+<td><strong>5,544</strong></td>
+</tr>
+<tr>
+<td>Early warnings</td>
+<td><strong>1,522</strong> across 11 indicators</td>
+</tr>
+<tr>
+<td>Stress runs</td>
+<td><strong>630</strong> periods × 3 scenarios = <strong>1,890</strong></td>
+</tr>
+<tr>
+<td>Tests</td>
+<td><strong>936</strong> — 892 pass, 44 skip by design. <strong>17 of them are the golden set</strong>: four company-years checked against the filing documents rather than against the engine</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>The refusal count is the number worth looking at</strong>, because it is the part that is
+measured rather than asserted. The bulk are ordinary missing inputs. The informative ones
+are small and deliberate — each is a case where a plausible number was available and was
+not produced:</p>
+<ul>
+<li><strong>70</strong> <code>COMPONENT_AGGREGATE_MISMATCH</code> — debt components and the reported aggregate
+disagree beyond tolerance, so <code>total_debt</code> refuses rather than picking one</li>
+<li><strong>141</strong> <code>LEASES_NOT_SEPARABLE</code> — lease liabilities cannot be separated from the debt
+figure, so a lease-adjusted number is not offered</li>
+<li><strong>42</strong> <code>ST_DEBT_SCOPE_UNCERTAIN</code> / <code>LEASE_CONTAINMENT_UNVERIFIABLE</code> — a debt component
+may already sit inside the figure it would be added to, and the XBRL cannot settle it</li>
+<li><strong>13</strong> <code>CANDIDATE_TAG_MISMATCH</code> — two tags for the same quantity disagree</li>
+<li><strong>68</strong> <code>INTEGRITY_FAILED</code> — an arithmetic check proved an input wrong, so <strong>every</strong> metric
+for that period refuses</li>
+</ul>
+<p>That last one has a concrete story. One company reported a single wrong revenue tag —
+1.6bn against roughly 13bn actual — with no second tag to disagree with, so no
+tag-comparison rule could catch it. A plausibility check did: an EBITDA margin above 100%
+is arithmetically impossible. The engine now suppresses <strong>every</strong> metric for those four
+periods rather than marking them, because an impossible figure should not be reachable at
+all.</p>
+<p>A second company was caught a different way: two revenue tags disagreeing by 90%, refused
+on the disagreement itself. <strong>The same class of error, caught by two independent
+mechanisms.</strong></p>
+<h2>Checking the engine against something other than itself</h2>
+<p>Every test in the suite compared the engine to hand-built fixtures or to its own prior
+output. All of them shared one blind spot: <strong>if the engine misread a filing consistently,
+nothing would notice.</strong> Expected values taken from the same XBRL the engine reads inherit
+that blind spot exactly.</p>
+<p>So the last thing built was a <strong>golden set</strong>: four company-years — CCL FY2019, YUM FY2023,
+MCK FY2023, BDX FY2009 — where every figure was read from the income statement, balance
+sheet, cash-flow statement and footnotes of the filing documents as a person reads them.
+Not from the SEC's API, not from the cached data, not from any pipeline output.</p>
+<p><strong>It found five engine defects within an hour, and not one was reachable by the 860 tests
+that already existed.</strong> Among them: a missing cash-flow tag that cost 75 company-periods
+their operating cash flow and everything derived from it; two places where debt was counted
+twice, because a component was added to a figure that already contained it; and a
+depreciation tag that understated McDonald's EBITDA by <strong>80-86%</strong>, enough to move a grade.</p>
+<p>Fixing them changed real numbers: 127 more metric values computed, <strong>49 fewer periods
+carrying a grade cap</strong>, and a grade distribution that shifted measurably toward the strong
+end.</p>
+<h3>The pairing that says the most</h3>
+<p>Two moments in this project turned on reasoning without evidence, and they went opposite
+ways. Both were settled by measurement, and neither would have been settled by argument.</p>
+<p><strong>The one that was wrong.</strong> After screening 77 companies and finding no instance of a
+particular code path, I reported it as <em>&quot;structurally unwitnessable&quot;</em> and supplied a
+mechanism: a debt-free filer reports nothing rather than zero, so a different refusal fires
+first. <strong>Both halves were false, and both were checkable in one query.</strong> Filers tag explicit
+zeros routinely — 213 of them across the data. And one company reports zero short-term
+<em>and</em> zero long-term debt, so the path fires exactly as designed. It is simply rare: <strong>2
+occurrences in 1,028 resolved values</strong>, which is why 77 companies were not enough. The claim
+<strong>survived review</strong> — a plausible mechanism attached to a true observation is unusually
+persuasive.</p>
+<p><strong>The one that was right.</strong> A rule was written refusing to compute total debt whenever one
+particular tag appeared alongside another, on the suspicion that the first might already
+contain the second. The tag's scope is filer-dependent and undetectable from the data, so
+the rule refused rather than guess. <strong>It had no witness at the time</strong> — nothing in the data
+demonstrated the overlap was real, and it could reasonably have been called
+over-engineering.</p>
+<p>Then the golden set read BDX's debt footnote:</p>
+<pre><code>Loans Payable — Domestic                 $ 200,000
+Loans Payable — Foreign                      2,880
+Current portion of long-term debt          200,085
+                                         $ 402,965
+</code></pre>
+<p>The 402,965 the engine would have used <strong>does</strong> contain the 200,085 it would have added to
+it. Had it added both, it would have overstated BDX's debt by <strong>13%</strong>. A rule written on
+suspicion, with nothing to point at, was right about a real company — and the same hazard
+turned out to be live in two other code paths that had no such guard.</p>
+<p><strong>What distinguishes the two is not confidence — both claims were confidently made.</strong> It is
+that one was a negative claim (&quot;this cannot happen&quot;) resting on absence, and the other was a
+refusal to assert in the face of ambiguity. The first needed evidence it never had; the
+second cost nothing while it waited for evidence, and was vindicated when the evidence
+arrived. Recording both is more honest than recording either.</p>
+<h2>Tested against real credit outcomes</h2>
+<p>Every check described so far compares the engine to a filing, a fixture, or itself. None of
+them asks the question a credit tool exists to answer: <strong>does it rank borrowers that failed
+below borrowers that did not?</strong></p>
+<p>So a benchmark was frozen before any improvement was attempted. 18 US non-financial filers
+that later filed Chapter 11, each scored using <strong>only filings available at least 12 months
+before the petition</strong>, against the 43 adopted companies as a survivor panel at the same
+cutoff. Every event comes from the filer's own 8-K under Item 1.03, with the petition date
+read from the document text rather than from an index.</p>
+<p><strong>The point-in-time filter is the part that makes it honest.</strong> The engine prefers the most
+recently <em>filed</em> value for a period — correct for analysing a company today, and hindsight
+in a backtest, because a figure restated after the bankruptcy would be used to &quot;predict&quot; it.
+Facts filed after the cutoff are therefore dropped before the payload reaches the engine.
+It removed 30–70% of facts per company. Without it the exercise would produce a flattering
+number that looked rigorous.</p>
+<p><strong>Two findings that need no threshold, each with its limit attached:</strong></p>
+<ul>
+<li><strong>Failures ranked below survivors in 89% of failure-survivor pairs</strong> — AUC 0.893 on the
+score, 0.882 on the grade. Development set 0.902, held-out 0.882. Computed twice by
+independent derivations that agree. <strong>This is discrimination on 18 events, not
+calibration</strong>; no grade is mapped to a default rate, a spread or a loss, and nothing here
+could support such a map.</li>
+<li><strong>All 18 of 18 failures scored below the median of their own survivor panel.</strong> Median
+grade 5.5 against 3.0. No failure graded 1, 2 or 3 at any cutoff. <strong>11 of the 18 events
+are 2020</strong>, so these are not 18 independent observations of a credit cycle.</li>
+</ul>
+<p>Lead times run <strong>14 to 26 months</strong> (median 18), all at or beyond the 12-month minimum;
+fiscal calendars, not choice, produce the spread. <strong>The cohort cannot reach the 2008–09
+cycle</strong> — Charter's companyfacts begins 2011-05-03, so a 2008 cutoff yields zero facts
+because XBRL did not exist. Everything here is conditioned on COVID and the 2022–23 rate
+rise.</p>
+<p>On a <code>grade &gt;= 5</code> flag rule, frozen before the run and chosen on band semantics rather than
+from the trade-off table: <strong>78% sensitivity (14/18) at a 21% false-positive rate per
+survivor company-cutoff</strong> — but <strong>49% (21 of 43) of distinct survivor companies are flagged
+at least once.</strong> Both describe the same rule. The 774 observations are 43 companies at 18
+cutoffs, so <strong>the precision of any rate here is governed by 43 and 18, not by the pair
+count</strong>; a company weak at one cutoff is usually weak at the next.</p>
+<h3>Curating the cohort found more errors than it admitted</h3>
+<p>Five candidates were rejected, three for reasons that would have silently corrupted the
+result. <strong>CIK 1130713 is Overstock.com</strong>, which bought the Bed Bath &amp; Beyond brand out of
+the bankruptcy auction and renamed itself — it never failed; the filer that did is 886158.
+<strong>CIK 1364479 is Herc Holdings</strong>, the equipment-rental spinco that kept Hertz's old CIK and
+survived. <strong>CIK 77182 is J.C. Penney's pre-2002 operating subsidiary</strong>, with two 10-Ks from
+the 1990s and no XBRL. Each would have placed a surviving company in the failure cohort.</p>
+<p><strong>And the SEC's own index turned out not to be a reliable oracle.</strong> Its <code>reportDate</code>
+disagrees with the 8-K's stated petition date in <strong>8 of 19 cases</strong>, and J.C. Penney's
+2014-01-28 filing is tagged Item 1.03 while containing no bankruptcy language at all. One
+correction changed an outcome: Windstream's petition was 2019-02-25, not the indexed
+2019-02-28, which pushes the cutoff three days earlier, excludes the FY2017 10-K filed
+2018-02-28, and moves its evaluated period back a year.</p>
+<h3>The most informative result is a company the engine cannot see</h3>
+<p><code>total_debt</code> refuses with <code>NO_DEBT_DATA</code> for <strong>Hertz</strong>, one of 2020's most leveraged filers.
+No <code>ebit</code>, <code>cash</code>, <code>current_assets</code> or <code>current_liabilities</code> resolves either. Its securitised
+fleet debt sits in <strong>dimensioned contexts the companyfacts endpoint does not return</strong>, behind
+an <strong>unclassified balance sheet</strong>. This recurs the Ford finding that retired Ford as a
+demonstration company years earlier in the project's life.</p>
+<p>The damaging part is not the absence. Hertz's grade 4 rests on <strong>one computed number</strong> —
+revenue grew 8% — giving business performance 8/10, rescaled to 80.0, capped from an uncapped
+grade 2 to 4. Sixteen months before Chapter 11, <strong>the engine rates Hertz better than every
+failure it could actually see</strong>, all of which are grade 5 or 6.</p>
+<p><strong>The graduated cap is a ceiling, never a floor, so the system cannot say &quot;we know nothing
+about this borrower.&quot;</strong> It can only decline to call that borrower strong. An analyst with
+Hertz's filings in front of them records no opinion; this engine records a mid-scale grade.
+That is a design gap in how missing information reaches the output, not a tuning question.</p>
+<h3>Two results that retire a parked assumption and one that limits the method</h3>
+<p><strong>Escalated warnings barely discriminate: 50% of failures against 37% of survivors, 13
+points.</strong> The escalation threshold had been parked on the explicit grounds that firing in 31%
+of periods &quot;feels high&quot; with no evidence base for moving it. That justification no longer
+holds. The finding is stronger than a threshold question — the layer as built hardly
+separates failures from survivors — and it identifies no better threshold.</p>
+<p><strong>The four missed failures are a coherent group, not scatter.</strong> Tailored Brands, Whiting,
+Denbury and Extraction, all grade 4, all below most survivors (percentiles 0.22–0.40), and
+<strong>not one raised a warning of any kind.</strong> Three of the four are oil and gas assessed on
+FY2018 financials that failed in the March–April 2020 commodity collapse. Part of that is a
+limit on what financial-statement analysis can do: <strong>a 2018 balance sheet cannot contain a
+future price shock</strong>, and no ratio computed from it will. The engine ranked them below their
+peers and did not rank them distressed, and closing that gap would need information the
+filings do not carry.</p>
+<p>The false positives read the same way — CCL, RCL, MAR, MGM, LVS, WYNN, PENN, CZR, HLT,
+flagged mostly at COVID-era cutoffs. <strong>A casino or a cruise operator in 2020 did look like a
+default candidate on its financials.</strong> Defensible on their own facts, and a reminder that the
+false-positive rate is period-dependent.</p>
+<h3>What the benchmark deliberately does not contain</h3>
+<p>Four of its five planned parts were not built. The numerical-accuracy check against filing
+documents and the eight hand-written failure-mode cases were dropped on cost; the
+unsupported-claim measurement and the blind grader are downstream of an LLM judgment layer
+that does not exist yet. <strong>The consequence should be read plainly: nothing in the benchmark
+checks an engine figure against a filing document.</strong> The golden set below remains the only
+external check in the project, at four company-years.</p>
+<p>What was built alongside A2 is a determinism assertion: seven companies, three repeats,
+reversed analysis order, and four explicit hash seeds in fresh interpreters, all
+bit-identical across eleven output blocks. <strong>It proves only that the output does not move.</strong>
+A consistently wrong engine passes it perfectly.</p>
+<h2>Limitations</h2>
+<p>Stated plainly, because a case study that overstates is worse than one that is modest and
+exact.</p>
+<blockquote>
+<p><strong>The thresholds, weights and stress parameters are documented project assumptions, not
+calibrated values</strong> — the grades are an internal analytical scale, and nothing maps them
+to ratings, defaults or spreads.</p>
+</blockquote>
+<p>That sentence is the honest summary of the project's weakest point and is not softened
+anywhere it appears. Specifically:</p>
+<ul>
+<li>
+<p><strong>The grades mean nothing externally.</strong> No band edge, weight or grade boundary has been
+tested against defaults, losses or agency ratings. The project has no such data and
+cannot acquire any at £0. One band — interest coverage — was re-edged on the observed
+distribution, which shows it now <em>discriminates</em> between companies; it does not show the
+discrimination predicts anything.</p>
+</li>
+<li>
+<p><strong>43 companies is not a validated universe.</strong> They were screened for <strong>data adequacy</strong>,
+not sampled for representativeness, and all are large US filers. The set spans 21 distinct
+2-digit SIC groups (measured at adoption, D66) — but breadth of industry is not the same
+as being a representative sample of anything, and no claim here rests on it.</p>
+<p>An earlier version of the screen <em>did</em> skew: one criterion required every company to
+witness a particular integrity check, and since hotel and gaming filers happen to tag the
+relevant field, the set came out 5-of-19 leisure. The screen was selecting for a filing
+convention and reading it as a market. Demoting that criterion from a per-company gate to
+a set-level target took the universe from 19 to 43 and removed the cluster. <strong>The
+generalisable point: a check that not every filer can witness must never be a per-company
+selection gate</strong> — it silently narrows the universe along a dimension nobody chose.</p>
+</li>
+<li>
+<p><strong>936 tests is not 936 units of real-world validation.</strong> Most assert engine behaviour
+against hand-computed or fixture data. The real-data assertions are narrower and are the
+ones that carry the claims above. Nearly every test compares the engine against itself:
+if it misread a filing <em>consistently</em>, almost nothing would notice. <strong>The exception is
+the golden set</strong> — four company-years read from the filing documents themselves. It found
+<strong>five engine defects on first contact with real filings</strong>, including a depreciation tag
+that understated one company's EBITDA by 80-86%, and two places where debt was counted
+twice. All five are fixed (D78-D80), each with its own before/after measurement across
+the 43. <strong>Four companies is four companies</strong>: the set proves the engine reads those four
+filings correctly and nothing wider, and four of four turning up defects is not a
+reassuring ratio.</p>
+</li>
+<li>
+<p><strong>A validated memo is not a checked memo.</strong> The validator confirms figures <em>appear</em> in the
+evidence pack at the memo's stated precision. It cannot confirm they are used correctly: a
+figure cited under the wrong label passes, true figures assembled into a false claim pass,
+and a fabricated source passes. All three are pinned by test as characterised limitations
+and printed above every result.</p>
+</li>
+<li>
+<p><strong>One stress assumption dominates the rest.</strong> The fixed/floating debt split is unreachable
+from XBRL, so the whole debt stack is assumed to reprice. Every rate-shock result inherits
+that. It is printed with every run, which is the most the data supports.</p>
+</li>
+<li>
+<p><strong>Every count needs its population and its commit.</strong> Two separate investigations ended at
+the same lesson. A guard recorded as firing &quot;zero times&quot; on five companies fires on nine
+company-periods across the adopted 43. And a grade distribution that could not be
+reconciled against an audit turned out to be correct in both places — measured three
+commits apart, with neither stating which. A count without its scope is a true statement
+that means something other than it appears to.</p>
+</li>
+</ul>
+<h2>What I would do differently</h2>
+<ul>
+<li><strong>Design for period-scoped tag candidates from the start.</strong> One company in the set cannot
+produce a leverage ratio in any period because its consolidated debt disappears from the
+endpoint mid-history. Fixing it needs a tag-map format change that one company could not
+justify — but the need will recur.</li>
+<li><strong>Record negative claims as hypotheses with a query attached.</strong> The project's most
+instructive error was reasoning from absence: a code path was declared &quot;structurally
+unwitnessable&quot; after 77 companies produced no instance, and the gap was filled with an
+invented mechanism rather than a measurement. Both halves were false and both were
+checkable in one query — the path fires, it is simply rare, at 2 occurrences in 1,028
+resolved values. <strong>It survived review</strong>, because a plausible mechanism attached to a true
+observation is unusually persuasive. It is written up in full rather than quietly fixed.</li>
+<li><strong>Build the hand-verified golden set first.</strong> It was the last thing built and the most
+informative: four companies, five defects, each invisible to the 860 tests that already
+existed, because every one of them compared the engine to itself.</li>
+</ul>
+<h2>Stack</h2>
+<p>Python 3.11, SQLite via stdlib <code>sqlite3</code>, pandas, pydantic, typer, pytest, PyYAML. No web
+framework, no ORM, no Docker, no cloud. Thresholds, weights and stress defaults live in
+YAML; a missing key raises rather than defaulting.</p>
+<p>5,500 lines of source and 6,900 of tests (936 tests), built across eleven phases with a
+decision log kept alongside.</p>
+
+<footer>
+Generated from <code>docs/case-study.md</code> by <code>docs/build_site.py</code>.
+Every figure on this page is reproducible from the repository.
+</footer>
+</div>
+</body>
+</html>

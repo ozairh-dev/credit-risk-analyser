@@ -18,6 +18,14 @@ dev = [
     "pytest-cov>=5.0",
     "requests-mock>=1.12",
 ]
+# Build-time only, for docs/build_site.py. Nothing in src/ imports it and the
+# generated docs/index.html is committed, so a missing docs dependency fails at
+# build time and never at serve time. Declared rather than relied on
+# transitively: it arrives today via typer -> rich -> markdown-it-py, and an
+# undeclared dependency is one that disappears on an unrelated upgrade.
+docs = [
+    "markdown-it-py>=3.0",
+]
 
 [project.scripts]
 credit-risk = "credit_risk.cli:app"

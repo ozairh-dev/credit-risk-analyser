@@ -1,26 +1,65 @@
 # Credit Risk Analyser
 
-A deterministic credit-analysis engine over SEC XBRL data that computes seventeen credit
-metrics, an explainable score and grade, trend classifications, early warnings and stress
-scenarios for 43 US-listed non-financial companies — **and refuses to produce a number
-whenever its inputs are missing, contradictory or ambiguous, with a recorded reason for
-every refusal.** Every figure traces to a filing and an XBRL tag. Every scoring and
-methodology choice is recorded with its evidence in a 76-entry decision log, including the
-ones that turned out to be wrong and why. A manual AI workflow exports an evidence pack and
-validates a drafted memo against it, with the validator's own limitations printed above its
-results.
+A deterministic credit-risk analyser over SEC XBRL filings for US-listed non-financial
+companies. It computes seventeen credit metrics, an explainable grade of 1–6, trend
+classifications, early warnings and stress scenarios, with full provenance on every number:
+each figure resolves back to the filing and the XBRL tag it came from.
+
+## The result
+
+Run against **18 companies that later filed for Chapter 11**, using only filings available
+**at least 12 months before the petition**, and compared at the same cutoff against a
+**43-company survivor panel**:
+
+- **AUC 0.893** on the 0–100 score, **0.882** computed on the 1–6 grade — the share of
+  failure-survivor pairs in which the failure ranked worse, counting ties as half.
+- **All 18 of 18 failures scored below the median of their own survivor panel**, at
+  percentiles **0.000 to 0.395**.
+- Lead times from the scored period end to the petition: **14 to 26 months**, every case at
+  or beyond the 12-month minimum.
+
+**And in the same breath: 18 is a small sample.** This measures **discrimination** — whether
+companies that failed ranked below companies that did not — and **not calibration**. Nothing
+here maps a grade to a default probability, a spread or a loss rate, and 18 events could not
+support such a map. Every event falls in **2019–2023, eleven of the eighteen in 2020**,
+because XBRL does not reach back to the 2008–09 credit cycle: the cohort is confined to the
+COVID and 2022–23 waves and carries whatever is particular to them.
 
 > The thresholds, weights and stress parameters are **documented project assumptions, not
 > calibrated values** — the grades are an internal analytical scale, and nothing maps them
 > to ratings, defaults or spreads.
 
-That second paragraph is not boilerplate and should never be dropped when this project is
+That paragraph is not boilerplate and should never be dropped when this project is
 summarised. The engine's refusal behaviour is measured; its calibration is not, because the
 project has no default, loss or rating data to calibrate against and cannot acquire any at
 £0 cost. Everything below is written to keep those two facts distinguishable.
 
-No LLM anywhere in the calculation path. Not a bank rating model, not a regulatory capital
-model, not investment or credit advice.
+**Method, per-case results and the full limitations:
+[`benchmark/results/a2_baseline.md`](benchmark/results/a2_baseline.md).
+The write-up, readable without the repo: [`docs/case-study.md`](docs/case-study.md),
+also published at
+[8dybvz9fym-cpu.github.io/credit-risk-analyser](https://8dybvz9fym-cpu.github.io/credit-risk-analyser/).**
+
+## How it is built
+
+Four properties that are unusual enough to be the point of the project:
+
+- **No LLM anywhere in the calculation path.** Ratios, scores, grades, trends, warnings and
+  stress are computed by code only. AI is used in exactly one place, outside the engine: a
+  manual workflow where an analyst drafts a memo from an exported evidence pack, and a
+  validator checks that memo back against the pack — printing its own limitations above its
+  results.
+- **Every stored number carries a `data_status`** — one of `REPORTED`, `CALCULATED`,
+  `ESTIMATED`, `ASSUMED`, `AI_INTERPRETED`, `UNAVAILABLE` — **and the source tag it came
+  from.** The two are never mixed and never silently upgraded.
+- **A missing or unreliable input produces `UNAVAILABLE` with a reason code, never an
+  estimate.** No default values for financial inputs, and no approximating a refused value
+  from an adjacent period, a related tag, or subtraction from another figure. A refusal is
+  an answer.
+- **82 decisions recorded with their evidence, alternatives and measured cost** — including
+  the ones that turned out to be wrong, and why they survived review.
+
+Not a bank rating model, not a regulatory capital model, not investment or credit advice.
 
 ## What the grades are, and what they are not
 
@@ -103,30 +142,30 @@ smaller and deliberate: **70** `COMPONENT_AGGREGATE_MISMATCH`, **141**
 `LEASE_CONTAINMENT_UNVERIFIABLE` together, **13** `CANDIDATE_TAG_MISMATCH`. Each is a case
 where a plausible number could have been produced and was not.
 
-## Tested against real credit outcomes
+## The backtest in detail
 
-The engine was run against **18 US non-financial filers that later filed Chapter 11**,
-using only filings available at least 12 months before the petition — and compared, at the
-same cutoff, against the 43 adopted companies as a survivor panel. Every event is sourced
-from the filer's own 8-K under Item 1.03, with the petition date read from the document
-text. Full basis, method and limits: `benchmark/results/a2_baseline.md`.
+The headline is at the top of this file. What follows is how it was measured, what it cost,
+and where it fails. Full per-case basis and limitations:
+[`benchmark/results/a2_baseline.md`](benchmark/results/a2_baseline.md).
 
-**The two findings that need no threshold, stated with their limits in the same breath:**
+**Method.** Every event is sourced from the filer's own 8-K under Item 1.03, with the
+petition date read from the document text rather than from the submissions index — which
+disagrees with the document in 8 of 19 cases. Facts filed after each cutoff are dropped
+before the payload reaches the engine, so a figure restated after the bankruptcy cannot be
+used to "predict" it. Failures and survivors are assessed by the same function at the same
+cutoff.
 
-- **Failures ranked below survivors in 89% of failure-survivor pairs** (AUC 0.893 on the
-  0–100 score; 0.882 computed on the grade, which is coarser). Dev 0.902, held-out 0.882.
-  The figure was computed twice by independent derivations that agree — a pairwise count
-  and the Mann-Whitney rank identity. **This is discrimination on 18 events. It is not
-  calibration**, and nothing here maps a grade to a default rate, a spread or a loss.
-- **All 18 of 18 failures scored below the median of their own survivor panel.** Median
-  grade 5.5 against 3.0; median score 26.1 against 59.0; no failure graded 1, 2 or 3 at any
-  cutoff. **18 is a small number and the events are not independent of each other** — 11 of
-  the 18 are 2020.
+**Split and cross-check.** Dev 0.902, held-out 0.882. The AUC was computed twice by
+independent derivations that agree to machine precision — a pairwise count and the
+Mann-Whitney rank identity — after the second one first disagreed and exposed an inverted
+orientation in the first.
 
-Lead times from the scored period end to the petition run **14 to 26 months** (median 18),
-all at or beyond the 12-month minimum. The spread comes from fiscal calendars not lining up
-with petition dates; longer lead makes the test harder, so it biases against the engine —
-but "a 12-month horizon" would misdescribe what was measured.
+**Beyond the two headline findings:** median grade 5.5 for failures against 3.0 for
+survivors, median score 26.1 against 59.0, and no failure graded 1, 2 or 3 at any cutoff.
+
+Lead times run **14 to 26 months** (median 18). The spread comes from fiscal calendars not
+lining up with petition dates; longer lead makes the test harder, so it biases against the
+engine — but "a 12-month horizon" would misdescribe what was measured.
 
 **The cohort cannot reach the 2008–09 credit cycle.** Measured: Charter's companyfacts
 begins 2011-05-03, so a 2008 cutoff yields zero facts — XBRL did not exist. Every event
@@ -292,7 +331,7 @@ so the whole engine works offline once a company is cached.
 
 | Path | What it is |
 |---|---|
-| `DECISIONS.md` | 76 decisions with evidence, alternatives and consequences — the most useful file here |
+| `DECISIONS.md` | 82 decisions with evidence, alternatives and consequences — the most useful file here |
 | `CLAUDE.md` | Project rules: 13 non-negotiables and 14 working rules, several of them earned the hard way and carrying the finding that produced them |
 | `docs/case-study.md` | The write-up — readable without opening the repo |
 | `docs/architecture.md` | How it fits together, and where each kind of decision lives |
@@ -302,6 +341,7 @@ so the whole engine works offline once a company is cached.
 | `docs/ai-governance.md` | Where AI is and is not allowed |
 | `docs/interview-notes.md` | Per-component notes, including what went wrong and why |
 | `docs/audits/` | Point-in-time audits; corrections appended, never rewritten |
+| `docs/index.html` | The case study as a page, generated from `docs/case-study.md` by `docs/build_site.py`. GitHub Pages serves `main` / `/docs` |
 | `config/*.yaml` | Thresholds, weights, stress presets, XBRL tag map |
 | `src/credit_risk/pipeline.py` | The nine stages in their one correct order |
 | `PROJECT_STATE.md` / `TODO.md` | Where the build has got to, and what is next |
