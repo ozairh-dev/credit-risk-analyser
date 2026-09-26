@@ -183,6 +183,21 @@ checks (Phase 4) because the checks depend on them. See docs/build-plan.md.
       deviation distribution is continuous from 0% to 100% with no bimodal gap, so unlike
       D69 nothing can be measured. Settling it needs footnote prose XBRL does not carry
 
+## CLI defects — FIXED 2026-09-26 (D81)
+- [x] **`credit-risk score` never ran in any v1 commit** (D81) — two wiring faults in
+      `cli.py`: a 6-name unpack of `pipeline.analyse()`'s 8-tuple (`ValueError`), and a
+      read of `report['trend_note']`, a key `explain()` has never returned (`KeyError`).
+      Fault 2 was only observable once fault 1 was fixed. Presentational fix, `cli.py`
+      only; no engine logic touched. Sabotage-verified against each fault separately
+- [x] **Four CLI commands had no test at all** (D81) — `score`, `stress`,
+      `export-evidence`, `validate-memo`. 6 tests added, 886 → 892 passing. The engine
+      under `score` was tested heavily; nothing tested that the CLI could reach it
+- [ ] **No check that every registered command is exercised.** The three untested
+      commands beside `score` were found by reading `cli.py`, not by anything that would
+      catch the next one. A test enumerating `app`'s registered commands and asserting
+      each is exercised somewhere would close it. Not done — it is a testing-policy
+      change, and D81 was deliberately scoped to the defect in front of it
+
 ## Later
 - See docs/build-plan.md. First two items for v2: sector thresholds (D48/D72a), then the
   hand-verified golden set above.

@@ -94,7 +94,7 @@ that means something other than it appears to.**
 | Early warnings | **1,522** across **11** indicators |
 | Stressable periods | **630**, each run under 3 scenarios (**1,890** runs) |
 | Integrity check results | **6,336**, of which **4** are fail-severity failures |
-| Tests | **930** — 886 pass, 44 skip by design. **17 of them are the golden set**: four company-years checked against the filing documents rather than against the engine |
+| Tests | **936** — 892 pass, 44 skip by design. **17 of them are the golden set**: four company-years checked against the filing documents rather than against the engine |
 
 The refusal count is the number worth looking at. `MISSING_INPUT` (2,419) and
 `NO_CANDIDATE_TAG` (9,772 at the mapping layer) dominate, but the informative ones are
@@ -166,7 +166,7 @@ are blocked. That is what `.env` is for. There are no other credentials, and no 
 services — the project runs at £0.
 
 ```bash
-pytest                             # 886 passed, 44 skipped
+pytest                             # 892 passed, 44 skipped
 credit-risk version
 ```
 

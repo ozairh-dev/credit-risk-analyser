@@ -2480,3 +2480,55 @@ Basis: 43 adopted companies, capped grades, 776 scored periods, before `e9bee36`
 overwhelmingly cash flow, from D79's `cfo`. The grade distribution shifts modestly toward
 the strong end, which is the expected direction: the fixes add coverage and correct an
 understated EBITDA, and both raise scores.
+
+## D81 — `score` was never runnable in v1, and four commands had no test
+Decision (owner-approved 2026-09-26): repair the two wiring faults in `cli.py`'s `score`
+command and add CLI tests for `score`, `stress`, `export-evidence` and `validate-memo`.
+No change to `scoring/engine.py`, or to any engine logic.
+
+**`credit-risk score` raised on its first working line in every v1 commit.** Two
+independent faults, each confirmed by running the command rather than by reading it:
+
+| | fault | evidence |
+|---|---|---|
+| 1 | `cli.py:161` unpacked **6** names from `pipeline.analyse()`'s **8**-tuple | `ValueError: too many values to unpack (expected 6)` |
+| 2 | `cli.py:212` read `report['trend_note']`, a key `explain()` has never returned | `KeyError: 'trend_note'` — reproduced only after fault 1 was fixed |
+
+Fault 2 sat behind fault 1, so the command had to be half-fixed before the second fault
+could be observed at all. `trend_note` appears **nowhere else in the repository** — not in
+`explain()`, not in a doc, not in a decision. It was never a contract that broke; it was
+never implemented.
+
+**This contradicted the README**, which documents `credit-risk score AZO --period
+2023-08-26` as working usage, and `PROJECT_STATE.md`, which recorded Phase 6 as shipping a
+working `score` command. Both were written from the code's intent rather than its output.
+
+**Why a 930-test green suite never saw it:** `tests/test_cli.py` covered `version`, `fetch`
+and `metrics` only. `score`, `stress`, `export-evidence` and `validate-memo` — four of the
+seven commands, including the one the README leads with — had no test of any kind. The
+engine beneath `score` was tested heavily and is correct; nothing tested that the CLI could
+*reach* it. This is CLAUDE.md rule 12 failing in the one direction the rule does not cover:
+the backwards check asks whether new work contradicts an existing decision, not whether a
+documented behaviour was ever true.
+
+**The fix is presentational and scoped to `cli.py`.** Fault 1 takes the tuple's correct
+positions. Fault 2 renders `explain()`'s existing `deteriorating_metrics` key — chosen
+because it is the only trend data `explain()` returns, so the line needs no new engine
+output to exist. The alternative, adding a `trend_note` key to `explain()`, was rejected:
+it changes the engine's output contract to satisfy a display string, and this repair sits
+immediately before a benchmark freeze that forbids engine changes.
+
+**Sabotage check.** Each fault was reinstated separately and the suite re-run:
+reinstating fault 1 fails `test_score_command_prints_the_explain_block` and
+`test_score_command_rejects_an_unknown_period`; reinstating fault 2 fails the former. The
+tests fail on the defect they were written for, not merely alongside it.
+
+Measured: **886 → 892 passing**, 44 skipped unchanged. Six new tests. No metric, score,
+grade, trend, warning or stress value changes anywhere — `git diff` touches `cli.py` and
+`tests/test_cli.py` only, and the engine's own suites are byte-identical in outcome.
+
+**What this does not fix.** `export-evidence` and `validate-memo` now have coverage, but
+their tests assert structure and the exit-code contract, not memo quality — the validator's
+own banner is explicit that a clean validation is not a clean memo. And the three untested
+commands were found by reading `cli.py`, not by a check that would find the next one: there
+is still nothing asserting that every registered command is exercised at least once.

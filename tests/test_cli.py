@@ -144,3 +144,150 @@ def test_load_cached_names_the_fetch_command_when_nothing_is_cached(tmp_path, mo
     monkeypatch.setattr(config, "RAW_DIR", tmp_path)
     with pytest.raises(FileNotFoundError, match="credit-risk fetch"):
         pipeline.load_cached(999999)
+
+
+# ==== score, stress, export-evidence, validate-memo (D81) ====
+#
+# These four commands shipped with no test at all, which is how `score` reached
+# v1 raising ValueError on its first line. A command that is only ever run by
+# hand is a command whose wiring nothing checks: the suite was green throughout.
+# Every expected value below was read off the real CCL run before it was pinned
+# (CLAUDE.md rule 14), not copied from what the code happened to emit.
+
+
+@pytest.mark.skipif(not CACHED_CCL.exists(), reason="no cached companyfacts")
+def test_score_command_prints_the_explain_block(monkeypatch):
+    """The D81 regression test, covering both wiring faults.
+
+    `score` unpacked six names from pipeline.analyse()'s eight-tuple, and then
+    read a `trend_note` key explain() has never returned. Each raised before any
+    output reached the user, so this test fails on either fault returning.
+    """
+    monkeypatch.setattr(cli.ingest, "ticker_to_cik", lambda ticker, **kw: CCL)
+    result = runner.invoke(cli.app, ["score", "CCL", "--period", "2019-11-30"])
+
+    assert result.exit_code == 0, result.output
+    assert "Carnival" in result.output
+    assert "Grade 4" in result.output
+    assert "Total score 45.0/100" in result.output
+
+    # The five contributions must be present AND sum to the printed total:
+    # 17.50 + 16.00 + 0.00 + 4.00 + 7.50 = 45.0, hand-checked against the
+    # weights in config/thresholds.yaml.
+    for contribution in ("contribution 17.50", "contribution 16.00",
+                         "contribution  0.00", "contribution  4.00",
+                         "contribution  7.50"):
+        assert contribution in result.output
+
+    # Same ebit_interest_cover the metrics command reports for this period
+    # (ebit 3,276 / interest 206), so the two commands cannot silently diverge.
+    assert "15.9" in result.output
+
+    # The line that raised KeyError: 'trend_note'. It now renders explain()'s
+    # deteriorating_metrics, which is the only trend data explain() returns.
+    assert "deteriorating: ebit_interest_cover, ebitda_margin_trend" in result.output
+    assert "Not a credit rating" in result.output
+
+
+@pytest.mark.skipif(not CACHED_CCL.exists(), reason="no cached companyfacts")
+def test_score_command_rejects_an_unknown_period(monkeypatch):
+    """A bad --period must name the periods that do score, not just refuse."""
+    monkeypatch.setattr(cli.ingest, "ticker_to_cik", lambda ticker, **kw: CCL)
+    result = runner.invoke(cli.app, ["score", "CCL", "--period", "1999-01-01"])
+
+    assert result.exit_code != 0
+    assert "no score for that period" in " ".join(result.output.split())
+    assert "2019-11-30" in result.output
+
+
+@pytest.mark.skipif(not CACHED_CCL.exists(), reason="no cached companyfacts")
+def test_stress_command_prints_base_stressed_and_drivers(monkeypatch):
+    """The stressed run must carry the same base score the score command gives.
+
+    Both read the same eight-tuple; pinning the base here is what would catch
+    `stress` drifting onto a different period's score the way `score` drifted
+    onto the wrong tuple positions.
+    """
+    monkeypatch.setattr(cli.ingest, "ticker_to_cik", lambda ticker, **kw: CCL)
+    result = runner.invoke(cli.app, ["stress", "CCL", "--period", "2019-11-30",
+                                     "--scenario", "severe"])
+
+    assert result.exit_code == 0, result.output
+    assert "grade 4 (base, 45.0) -> 5 (stressed, 34.5)" in result.output
+    assert "driver attribution" in result.output
+    # D54's assumption must stay visible in the output, not just in the code.
+    assert "floating_share = 1.0 (ASSUMED, D54)" in result.output
+
+
+@pytest.mark.skipif(not CACHED_CCL.exists(), reason="no cached companyfacts")
+def test_export_evidence_writes_a_pack_with_all_nine_sections(tmp_path, monkeypatch):
+    """A pack missing a section is a pack a memo can cite around."""
+    monkeypatch.setattr(cli.ingest, "ticker_to_cik", lambda ticker, **kw: CCL)
+    result = runner.invoke(cli.app, ["export-evidence", "CCL", "--period",
+                                     "2019-11-30", "--out", str(tmp_path)])
+
+    assert result.exit_code == 0, result.output
+    path = tmp_path / "CCL_2019-11-30.md"
+    assert path.exists()
+    pack = path.read_text(encoding="utf-8")
+    for heading in ("## 1. Company and filing",
+                    "## 2. Grade",
+                    "## 3. Reported concepts",
+                    "## 4. Calculated values",
+                    "## 5. Trends and early warnings",
+                    "## 6. Stress scenarios",
+                    "## 7. Data quality and integrity",
+                    "## 8. Assumption register",
+                    "## 9. What this pack does not contain"):
+        assert heading in pack, heading
+    assert "EXCLUSIVE basis" in result.output
+
+
+@pytest.mark.skipif(not CACHED_CCL.exists(), reason="no cached companyfacts")
+def test_validate_memo_fails_a_reviewed_memo_holding_an_unverified_figure(
+        tmp_path, monkeypatch):
+    """REVIEWED is the claim the exit code defends; 99999 is not in the pack."""
+    monkeypatch.setattr(cli.ingest, "ticker_to_cik", lambda ticker, **kw: CCL)
+    runner.invoke(cli.app, ["export-evidence", "CCL", "--period", "2019-11-30",
+                            "--out", str(tmp_path)])
+    memo = tmp_path / "memo.md"
+    memo.write_text(
+        "# Credit memo — Carnival Corporation Ltd. — 2019-11-30\n\n"
+        "Status: REVIEWED\n\n"
+        "Net debt to EBITDA is 2.0206x and interest cover is 15.9029x.\n"
+        "Revenue reached 99999 million in the period.\n",
+        encoding="utf-8")
+
+    result = runner.invoke(cli.app, ["validate-memo", str(memo),
+                                     str(tmp_path / "CCL_2019-11-30.md")])
+
+    assert result.exit_code == 1, result.output
+    assert "99999" in result.output
+    assert "A CLEAN VALIDATION IS NOT A CLEAN MEMO" in result.output
+
+
+@pytest.mark.skipif(not CACHED_CCL.exists(), reason="no cached companyfacts")
+def test_validate_memo_passes_the_same_memo_when_it_does_not_claim_reviewed(
+        tmp_path, monkeypatch):
+    """The gate is on the REVIEWED claim, not on the figure.
+
+    An unverified figure in a draft is a finding to report; the same figure
+    under Status: REVIEWED is a claim the tool must refuse. Identical memo body
+    to the test above, so the exit code can only be turning on that one line.
+    """
+    monkeypatch.setattr(cli.ingest, "ticker_to_cik", lambda ticker, **kw: CCL)
+    runner.invoke(cli.app, ["export-evidence", "CCL", "--period", "2019-11-30",
+                            "--out", str(tmp_path)])
+    memo = tmp_path / "memo.md"
+    memo.write_text(
+        "# Credit memo — Carnival Corporation Ltd. — 2019-11-30\n\n"
+        "Status: DRAFT\n\n"
+        "Net debt to EBITDA is 2.0206x and interest cover is 15.9029x.\n"
+        "Revenue reached 99999 million in the period.\n",
+        encoding="utf-8")
+
+    result = runner.invoke(cli.app, ["validate-memo", str(memo),
+                                     str(tmp_path / "CCL_2019-11-30.md")])
+
+    assert result.exit_code == 0, result.output
+    assert "99999" in result.output

@@ -158,7 +158,7 @@ def score(
     """
     cik = ingest.ticker_to_cik(ticker)
     raw = pipeline.load_cached(cik)
-    _, _, _, integrity, _, scores = pipeline.analyse(raw)
+    _, _, _, integrity, _, _, scores, _ = pipeline.analyse(raw)
 
     by_period = {s.period_end: s for s in scores}
     ends = sorted(by_period)
@@ -209,7 +209,8 @@ def score(
         for d in report["top_drivers"]:
             typer.echo(f"      {d['metric']:28} {d['points_lost']:5.2f} "
                        f"({d['category']})")
-        typer.echo(f"  {report['trend_note']}")
+        typer.echo("  deteriorating: "
+                   f"{', '.join(report['deteriorating_metrics']) or '—'}")
         typer.echo(f"\n  {report['disclaimer']}\n")
 
 

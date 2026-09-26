@@ -6,9 +6,17 @@ _Update at the end of every working session._
 **v1 complete (2026-09-20, `a5035a6`).** All eleven phases are built, run on real data and are
 committed: ingestion, normalisation, composites, integrity checks, ratios, scoring,
 trends and warnings, stress, the evidence export with its memo validator, and the
-documentation set. 930 tests — 886 pass, 44 skip by design, 17 of them the golden set (D77).
+documentation set. 936 tests — 892 pass, 44 skip by design, 17 of them the golden set (D77).
 The v1 final audit (`docs/audits/2026-09-14-v1-final-audit.md`) and its fixes are the
 last work in v1; everything beyond is a v2 question in docs/build-plan.md.
+
+**Correction (2026-09-26, D81).** The `credit-risk score` command was never runnable in any
+v1 commit: it unpacked six names from `pipeline.analyse()`'s eight-tuple and then read a
+`trend_note` key `explain()` has never returned. The claim below that Phase 6 shipped a
+working `score` command was written from the code's intent, not from running it. Four of
+the seven CLI commands — `score`, `stress`, `export-evidence`, `validate-memo` — had no
+test of any kind, which is how a green suite coexisted with a command that raised on its
+first line. Fixed and covered in D81; no engine logic changed.
 
 ## Completed
 - Specification: CLAUDE.md, docs/, DECISIONS.md D1-D10
@@ -590,10 +598,13 @@ never run for it and no revenue-based metric will ever compute. Worth a tag
 investigation before KHC is relied on for anything revenue-derived.
 
 ## Tests
-- **886 passing, 44 skipped (930 collected)**. The 44 skips are
+- **892 passing, 44 skipped (936 collected)**. The 44 skips are
   fixture-parameterised tests that apply to one of the five fixture companies and skip
   for the other four — witness-specific assertions, not unrun ones. The breakdown below
   predates Phases 9-11 and is kept as the record of what each area covered at the time.
+- **D81 (2026-09-26) added 6 CLI tests**, covering `score`, `stress`, `export-evidence`
+  and `validate-memo` — four commands that had no test before it. Until D81 the suite
+  could be green while `credit-risk score` raised `ValueError` on its first line.
 - 844 passing, 45 skipped (7 setup + 3 env + 6 ingest/tickers + 12 ingest/companyfacts (all
   HTTP-mocked) + 4 cli wiring + 3 fixture guards + 31 selection + 10 mapping +
   42 composites (deviation edges, all four branches, guards, toggles, storage) +
