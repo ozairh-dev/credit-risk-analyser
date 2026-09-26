@@ -2045,6 +2045,17 @@ principle applies directly: *a signal that fires constantly is indistinguishable
 signal.* With seven trend-deterioration indicators able to fire together, a threshold of 3 is
 low. Recorded for a calibration decision, not changed here.
 
+**Status note (2026-09-26, D82): the "no evidence base" half of this item is retired.** It
+was parked partly because nothing supported choosing 4 over 3 beyond an intuition that 31%
+felt high. The A2 discrimination backtest supplied a measurement, and it addresses something
+larger than the threshold: **an escalated warning reaches 50% of 18 real Chapter 11 filers
+against 37% of survivor company-cutoffs — 13 points of separation**, with four of the
+failures raising none at all. A High-severity warning reaches 72% against 45%. So the
+escalated-warning layer barely distinguishes companies that failed from companies that did
+not. **This identifies no better threshold and none is claimed** — it is evidence that the
+layer's design, not its constant, is the open question. The intuition recorded above was
+correct and understated.
+
 **(c) Four fail-severity integrity checks have never fired on real data.**
 `current_assets_subset`, `current_liabilities_subset`, `cash_subset` and `debt_subset`
 produced **zero FAILs across 780 company-periods**. Stated plainly rather than read as a

@@ -18,71 +18,140 @@ the seven CLI commands — `score`, `stress`, `export-evidence`, `validate-memo`
 test of any kind, which is how a green suite coexisted with a command that raised on its
 first line. Fixed and covered in D81; no engine logic changed.
 
-## Benchmark — Phase A in progress (2026-09-26)
+## Benchmark — Phase A closed (2026-09-26)
 
-**v1 is being treated as a baseline to critique, not a standard to preserve.** A frozen
-benchmark is under construction in `benchmark/`, to be committed before any engine change
-so that improvement can be demonstrated rather than asserted. **No engine, config or test
-file has changed** — verified byte-identical to `901ce53`, suite unchanged at 892/44.
+**v1 was treated as a baseline to critique, not a standard to preserve.** A benchmark was
+frozen and committed BEFORE any engine change (`3dacc93`, `efa4f84`), so improvement can be
+demonstrated rather than asserted. **No engine, config or test file changed** — verified
+byte-identical to `901ce53`, suite unchanged at 892 passing / 44 skipped. The point-in-time
+filter is a payload transform outside the engine, never an `as_of` parameter threaded
+through selection.
 
-**A2, the external discrimination backtest, is built and baselined.** 18 real Chapter 11
-filers scored point-in-time at least 12 months before the event, against the 43 adopted
-companies as a matched survivor panel. Results and their limits:
-`benchmark/results/a2_baseline.md`. Flag rule frozen at `grade >= 5` on band semantics
-(D82).
+### A2 — external discrimination backtest
+
+18 US non-financial filers that later filed Chapter 11, scored using **only filings
+available at least 12 months before the petition**, against the 43 adopted companies as a
+matched survivor panel at the same cutoff. Events sourced from each filer's own 8-K under
+Item 1.03, petition date read from the document text. Basis, method and limits:
+`benchmark/results/a2_baseline.md`. Flag rule frozen at `grade >= 5` on band semantics,
+explicitly not chosen from the trade-off table (D82).
+
+**Lead with the threshold-free findings:**
+
+- **Failures ranked below survivors in 89% of failure-survivor pairs.** AUC **0.893** on
+  the score, **0.882** on the grade. Dev 0.902, held-out 0.882. Computed twice by
+  independent derivations that agree — a pairwise count and the Mann-Whitney rank identity.
+- **All 18 of 18 failures scored below the median of their own survivor panel.** Median
+  grade 5.5 against 3.0, median score 26.1 against 59.0, and no failure graded 1, 2 or 3 at
+  any cutoff.
+
+**Lead times 14 to 26 months** (median 18), all at or beyond the 12-month minimum; fiscal
+calendars produce the spread, and longer lead makes the test harder.
+
+**The limits belong in the same breath, not a footnote.** This is **discrimination on 18
+events, not calibration** — nothing maps a grade to a default rate, a spread or a loss.
+**The cohort cannot reach the 2008-09 credit cycle**: measured, Charter's companyfacts
+begins 2011-05-03, so a 2008 cutoff yields zero facts because XBRL did not exist. Every
+event falls in 2019-2023 and **11 of 18 are 2020**, so the cohort is confined to the COVID
+and 2022-23 waves. The 817 and 774 observation counts are **43 distinct companies** at 19
+and 18 cutoffs respectively, so **the precision of any rate is governed by 43 and 18, not
+by the pair count.**
 
 | | dev (10) | held-out (8) | all (18) |
 |---|---|---|---|
-| AUC, failure scores worse | 0.902 | 0.882 | **0.893** |
+| AUC on score | 0.902 | 0.882 | **0.893** |
+| AUC on grade | 0.898 | 0.862 | **0.882** |
 | median grade, failures vs survivors | 5.5 / 3.0 | 5.5 / 3.0 | 5.5 / 3.0 |
 | sensitivity at `grade >= 5` | 80% | 75% | **78% (14/18)** |
-| false positives, company-cutoffs | 20% | 23% | **21%** |
-| distinct survivor companies flagged | 14/43 | 20/43 | **21/43 (49%)** |
+| false positives per company-cutoff | 20% | 23% | **21% (166/774)** |
+| **distinct survivor companies flagged** | 14/43 | 20/43 | **21/43 (49%)** |
 
-All **18 of 18** failures score below the median of their own survivor panel — the one
-headline claim needing no threshold. AUC was computed twice, by a pairwise count and the
-Mann-Whitney rank identity; they agree, and the cross-check caught an inverted orientation
-that would otherwise have published 0.098 as 0.902's replacement.
+Both false-positive figures describe the same rule and read completely differently. The
+dev and held-out distinct-company shares are **not comparable to each other** — the share
+rises mechanically with the number of cutoffs in a split.
 
-**Five findings from building it, three of which changed the data:**
-1. **Three identity traps.** CIK 1130713 is Overstock.com renamed "Bed Bath & Beyond"
-   after buying the brand out of the auction — it never failed; the filer that did is
-   886158. CIK 1364479 is Herc Holdings, the surviving spinco that kept Hertz's old CIK.
-   CIK 77182 is J.C. Penney's pre-2002 operating subsidiary with no XBRL.
-2. **The SEC submissions index is not a reliable event oracle.** Its `reportDate`
-   disagrees with the 8-K's own stated petition date in **8 of 19 cases (42%)**, and
-   J.C. Penney's 2014-01-28 filing is tagged Item 1.03 with no bankruptcy language in it
-   at all. Every date is now read from the document, with the sentence recorded.
-   Windstream's correction moved its evaluated period from FY2017 to FY2016.
-3. **The engine is blind to Hertz** — `NO_DEBT_DATA`, and no `ebit`, `cash` or
-   current-asset concept resolves, because fleet debt sits in dimensioned securitisation
-   contexts and Hertz files an unclassified balance sheet. **This is D25's Ford finding on
-   a second company.** Worse than absence: Hertz's grade 4 rests on one number (revenue
-   +8%), so the engine rates it **better** than every failure it could see. The graduated
-   cap is a ceiling, never a floor — it cannot say "we know nothing".
-4. **Escalated warnings barely discriminate** — 50% of failures against 37% of survivors,
-   13 points. **This is the evidence base D72b said did not exist** for the parked
-   escalation threshold.
-5. **The backtest cannot reach the 2008-09 cycle.** Measured: Charter's companyfacts
-   begins 2011-05-03, so a 2008 cutoff yields zero facts. 11 of 18 events are 2020.
+### Hertz: the engine is blind to it, and the grade does not say so
 
-**A4 determinism is asserted and passing.** `benchmark/harness/run_a4.py`: 7 companies x 3
-in-process repeats, plus reversed analysis order and four explicit `PYTHONHASHSEED` values
-in fresh interpreters — all bit-identical across all eleven output blocks (selection,
-mapping, composites, integrity, metrics, trends, warnings, scores, stress). It asserts only
-that output does not MOVE; a consistently wrong engine passes it perfectly.
+`total_debt` refuses with `NO_DEBT_DATA` for one of 2020's most leveraged filers, and no
+`ebit`, `cash`, `current_assets` or `current_liabilities` resolves either. Its securitised
+fleet debt sits in **dimensioned contexts the companyfacts endpoint does not return**,
+behind an **unclassified balance sheet** with no current/non-current split. **This recurs
+D25's Ford finding on a second company.**
 
-**Phase A stopped here by owner decision (2026-09-26). A1, A3, A5 and the grader rubric are
-descoped, not outstanding.** A5 and the rubric are downstream of an LLM judgment layer that
-does not exist, so there is nothing for them to measure; A1 and A3 did not justify their
-cost on the available timeline. The LLM half of A4 is unbuilt for the same reason.
+The absence is not the serious part. Hertz's **grade 4 rests on one computed number** —
+revenue grew 8% — giving business performance 8/10, rescaled to 80.0, capped from an
+uncapped grade 2 to 4. Sixteen months before Chapter 11 the engine rates Hertz **better
+than every failure it could actually see**, all of which are grade 5 or 6.
 
-**The consequence worth carrying forward: nothing in what was built checks an engine figure
+**The architectural finding: the graduated cap is a ceiling, never a floor, so the system
+cannot express "we know nothing about this borrower."** It can only decline to call that
+borrower strong. An analyst in that position records no opinion; the engine records a
+mid-scale grade. Hertz is reported as a coverage failure in its own row — counting it as a
+miss would blame the ranking for a coverage defect, hiding it would overstate coverage.
+
+### Escalated warnings are close to decorative — D72b's parked reason retired
+
+| | failures | survivor company-cutoffs |
+|---|---|---|
+| >= 1 escalated warning | 50% | 37% |
+| >= 1 High-severity warning | 72% | 45% |
+
+**Thirteen points of separation is close to none.** D72b parked the escalation threshold on
+the stated grounds that firing in 31% of periods "feels high" with **no evidence base** for
+changing it. That justification no longer holds. The finding is stronger than a threshold
+question — the layer as built hardly separates failures from survivors — and it identifies
+no better threshold, so none is claimed.
+
+### The four misses, and the false positives, framed honestly
+
+The rule misses four failures, all grade 4: **TLRD, WLL, DNR, XOG.** All sit below most
+survivors (percentiles 0.22-0.40 of their panels) but above a band edge, and **not one
+raised a warning of any kind** — the trend and warning layer contributed nothing precisely
+where the grade fell short.
+
+**Three of the four are oil and gas assessed on FY2018 financials, and they failed in the
+March-April 2020 commodity collapse.** That is partly a limit on what financial-statement
+analysis can see at all: **a 2018 balance sheet cannot contain a future price shock**, and
+no ratio computed from it will. This is not only an engine defect.
+
+The flagged survivors read the same way — CCL, RCL, MAR, MGM, LVS, WYNN, PENN, CZR, HLT,
+flagged mostly at COVID-era cutoffs. **A cruise operator or a casino in 2020 genuinely did
+look like a default candidate on its financials.** Defensible on their own facts rather
+than arbitrary, which also makes the false-positive rate period-dependent.
+
+### Three identity traps and an unreliable index, rejected during curation
+
+- **CIK 1130713 is Overstock.com**, renamed "Bed Bath & Beyond, Inc." after buying the brand
+  out of the auction. It never failed; the filer that did is 886158.
+- **CIK 1364479 is Herc Holdings**, the equipment-rental spinco that kept Hertz's old CIK.
+- **CIK 77182 is J.C. Penney's pre-2002 operating subsidiary** — two 1990s 10-Ks, no XBRL.
+- **WeWork excluded on scope**: SIC 6512 sits inside the 6000-6799 range the universe
+  definition excludes.
+- **The SEC submissions index is not a reliable event oracle.** Its `reportDate` disagrees
+  with the 8-K's own petition date in **8 of 19 cases (42%)**, and JCP's 2014-01-28 filing is
+  tagged Item 1.03 with no bankruptcy language in it. Windstream's correction moved its
+  evaluated period from FY2017 to FY2016.
+
+### A4 — determinism, asserted and passing
+
+`benchmark/harness/run_a4.py`: 7 companies x 3 in-process repeats, plus reversed analysis
+order and four explicit `PYTHONHASHSEED` values in fresh interpreters — all bit-identical
+across eleven output blocks (selection, mapping, composites, integrity, metrics, trends,
+warnings, scores, stress). **It asserts only that output does not MOVE**; a consistently
+wrong engine passes it perfectly.
+
+### What was descoped, and the gap it leaves
+
+**A1, A3, A5 and the grader rubric are descoped by owner decision, not outstanding.** A5 and
+the rubric are downstream of an LLM judgment layer that does not exist; A1 and A3 did not
+justify their cost on the available timeline; the LLM half of A4 has nothing to run five
+times.
+
+**The consequence to carry forward: nothing in what was built checks an engine figure
 against a filing document.** That was A1. The golden set (D77) remains the project's only
 external check, at four company-years — and on first contact it found five defects. Every
-A2 figure therefore rests on numbers verified against the engine's own reading of the XBRL,
-never against a statement a person can read. `benchmark/README.md` carries the full scope
-and limitations.
+A2 figure rests on numbers verified against the engine's own reading of the XBRL, never
+against a statement a person can read. `benchmark/README.md` carries the full scope.
 
 ## Completed
 - Specification: CLAUDE.md, docs/, DECISIONS.md D1-D10
@@ -745,10 +814,17 @@ data and committed; the documentation set is finished (`docs/architecture.md`,
 Each was measured, argued and deliberately left alone. They are listed here so nobody
 mistakes them for unfinished work; the evidence is in D72 and the v1 final audit.
 
-1. **Warning escalation threshold (D72b).** Escalation fires on ~31% of periods. Rule 12's
-   principle applies — a signal that fires constantly is indistinguishable from no signal —
-   but changing the threshold rewrites every historical warning severity, and there is no
-   evidence base for choosing 4 over 3, only an intuition that 31% feels high. **Park it.**
+1. **Warning escalation threshold (D72b) — NO LONGER PARKED FOR WANT OF EVIDENCE
+   (2026-09-26).** It was parked because changing the threshold rewrites every historical
+   severity and there was **no evidence base** for choosing 4 over 3, only an intuition
+   that 31% firing felt high. **The A2 backtest supplied the evidence base, and it is
+   worse than the intuition:** an escalated warning reaches **50% of the 18 failures
+   against 37% of survivor company-cutoffs — 13 points.** The layer as built hardly
+   separates companies that failed from companies that did not, and four of the failures
+   raise no escalated warning at all. That is a finding about the **layer**, not about the
+   threshold: it identifies no better number, so no number is proposed here. See D82 and
+   `benchmark/results/a2_baseline.md`. The escalation design is now a Phase B question
+   with measured evidence behind it.
 2. **Sector-specific thresholds (D48, D72a).** The strongest of the three, and the **first
    thing v2 should take up**. It began as one company and is now three independent
    instances: CCL's liquidity, CCL's ~0.19% tonnage-tax effective rate (D55), and the

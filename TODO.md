@@ -119,9 +119,11 @@ checks (Phase 4) because the checks depend on them. See docs/build-plan.md.
 - [x] D71 ebit_interest_cover bands rebased on the observed distribution
 - [~] **PARKED BY DECISION, not outstanding work** — the three calibration items (D72).
       Each was measured and argued; see PROJECT_STATE.md "Next priorities".
-      - Escalation threshold (D72b) — fires on 31% of periods, escalating 64% of warnings.
-        No evidence base for choosing 4 over 3; changing it rewrites every historical
-        severity.
+      - Escalation threshold (D72b) — **the "no evidence base" reason is retired
+        (2026-09-26).** A2 measured an escalated warning reaching 50% of failures against
+        37% of survivor company-cutoffs — 13 points of separation — so the layer hardly
+        discriminates. This is evidence about the LAYER, not about which threshold to pick,
+        and none is proposed. Phase B question now, with D82 behind it.
       - Sector thresholds (D48/D72a) — **three independent instances**: CCL's liquidity,
         CCL's ~0.19% tonnage-tax effective rate (D55), and the negative-working-capital
         liquidity finding including P&G. **The first item v2 should take up.**

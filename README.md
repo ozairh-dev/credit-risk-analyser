@@ -103,6 +103,110 @@ smaller and deliberate: **70** `COMPONENT_AGGREGATE_MISMATCH`, **141**
 `LEASE_CONTAINMENT_UNVERIFIABLE` together, **13** `CANDIDATE_TAG_MISMATCH`. Each is a case
 where a plausible number could have been produced and was not.
 
+## Tested against real credit outcomes
+
+The engine was run against **18 US non-financial filers that later filed Chapter 11**,
+using only filings available at least 12 months before the petition — and compared, at the
+same cutoff, against the 43 adopted companies as a survivor panel. Every event is sourced
+from the filer's own 8-K under Item 1.03, with the petition date read from the document
+text. Full basis, method and limits: `benchmark/results/a2_baseline.md`.
+
+**The two findings that need no threshold, stated with their limits in the same breath:**
+
+- **Failures ranked below survivors in 89% of failure-survivor pairs** (AUC 0.893 on the
+  0–100 score; 0.882 computed on the grade, which is coarser). Dev 0.902, held-out 0.882.
+  The figure was computed twice by independent derivations that agree — a pairwise count
+  and the Mann-Whitney rank identity. **This is discrimination on 18 events. It is not
+  calibration**, and nothing here maps a grade to a default rate, a spread or a loss.
+- **All 18 of 18 failures scored below the median of their own survivor panel.** Median
+  grade 5.5 against 3.0; median score 26.1 against 59.0; no failure graded 1, 2 or 3 at any
+  cutoff. **18 is a small number and the events are not independent of each other** — 11 of
+  the 18 are 2020.
+
+Lead times from the scored period end to the petition run **14 to 26 months** (median 18),
+all at or beyond the 12-month minimum. The spread comes from fiscal calendars not lining up
+with petition dates; longer lead makes the test harder, so it biases against the engine —
+but "a 12-month horizon" would misdescribe what was measured.
+
+**The cohort cannot reach the 2008–09 credit cycle.** Measured: Charter's companyfacts
+begins 2011-05-03, so a 2008 cutoff yields zero facts — XBRL did not exist. Every event
+therefore falls in 2019–2023, and the cohort is confined to two shocks: COVID and the
+2022–23 rate rise. It is 8 retail/consumer, 5 energy, 3 transport/industrial, 2 telecom,
+which reflects which sectors actually defaulted rather than any sampling choice.
+
+**On a `grade >= 5` flag rule** — frozen before the run, chosen on band semantics rather
+than from the trade-off table (D82) — sensitivity is **78% (14/18)** at a **21%**
+false-positive rate per survivor company-cutoff. That second figure needs its denominator
+read carefully:
+
+| | value | what it counts |
+|---|---|---|
+| false positives per company-cutoff | **21%** (166/774) | 43 survivors × 18 admitted cutoffs |
+| **distinct survivor companies flagged ≥ once** | **21/43 = 49%** | how many real businesses the rule would surface |
+
+**The 774 and 817 observation counts come from 43 distinct companies, so the precision of
+any rate here is governed by 43 and 18 — not by the pair count.** A company weak at one
+cutoff is usually weak at the next, so these are pseudo-replicated observations and the
+pooled 21% reads far more precise than it is. Both figures describe the same rule. (817 is
+19 cutoffs × 43 over all verified cases; 774 is 18 × 43 after Hertz leaves the
+discrimination set, and its cutoff is shared with no other case.)
+
+### The engine is blind to Hertz, and the grade does not say so
+
+`total_debt` refuses with `NO_DEBT_DATA` for one of 2020's most leveraged filers. No
+`ebit`, `cash`, `current_assets` or `current_liabilities` concept resolves either. Hertz's
+securitised fleet debt sits in **dimensioned contexts the companyfacts endpoint does not
+return**, behind an **unclassified balance sheet** with no current/non-current split.
+**This recurs D25's Ford finding on a second company.**
+
+The absence is not the serious part. Hertz's grade 4 rests on a **single computed number** —
+revenue grew 8% — which gives business performance 8/10, rescales to 80.0, and caps from an
+uncapped grade 2 down to 4. So sixteen months before Chapter 11 the engine rates Hertz
+**better than every failure it could actually see**, all of which sit at grade 5 or 6.
+
+The architectural point: **the graduated cap is a ceiling, never a floor, so the system
+cannot express "we know nothing about this borrower."** It can only decline to call such a
+borrower strong. A credit analyst in that position records no opinion; this engine records a
+mid-scale grade. Hertz is reported as a coverage failure in its own row rather than counted
+as a miss — counting it would blame the ranking for a coverage defect, and hiding it would
+overstate coverage.
+
+### Escalated warnings are close to decorative
+
+| | failures | survivor company-cutoffs |
+|---|---|---|
+| ≥ 1 escalated warning | 50% | 37% |
+| ≥ 1 High-severity warning | 72% | 45% |
+
+**Thirteen points of separation on escalation is close to none.** D72b parked the escalation
+threshold on the stated grounds that firing in 31% of periods "feels high" with no evidence
+base for changing it. **That justification no longer holds — this is the evidence base.**
+What it shows is stronger than a threshold question: the escalated-warning layer barely
+distinguishes companies that failed from companies that did not. It does not identify a
+better threshold, and none is claimed here.
+
+### What the four misses and the false positives actually show
+
+The rule misses four failures, all at grade 4: **Tailored Brands, Whiting Petroleum,
+Denbury, Extraction Oil & Gas**. Their scores put them below most survivors (percentiles
+0.22–0.40 of their panels), just not below a band edge. **None of the four raised a single
+warning of any kind** — no escalated warning, no High-severity warning — which is the more
+serious half: the trend and warning layer contributed nothing precisely where the grade fell
+short.
+
+**Three of the four are oil and gas assessed on FY2018 financials, and they failed in the
+March–April 2020 commodity collapse.** That is partly a limit on what financial-statement
+analysis can see at all: a 2018 balance sheet cannot contain a future price shock, and no
+ratio computed from it will. The honest reading is that the engine ranked them below their
+peers and did not rank them as distressed, and that a materially better answer would have
+required information the filings do not carry.
+
+The flagged survivors read the same way. They are dominated by travel, leisure and gaming —
+CCL, RCL, MAR, MGM, LVS, WYNN, PENN, CZR, HLT — flagged largely at COVID-era cutoffs. **A
+cruise operator or a casino in 2020 genuinely did look like a default candidate on its
+financials.** Those are defensible on their own facts rather than arbitrary, which also
+means the false-positive rate is period-dependent and would differ in a calmer window.
+
 ## What is validated against real data, and what is not
 
 **Validated on real filings:** ingestion and normalisation for arbitrary US filers; the 17
@@ -129,7 +233,7 @@ recent scored period, re-measured at `a5035a6`. That is a business model the ban
 model, not a finding about those companies. See `docs/risk-scoring.md`, which also records
 D72a's separate seven — a different set, on a different measurement.
 
-**930 tests is not 930 units of real-world validation.** Most assert engine behaviour
+**936 tests is not 936 units of real-world validation.** Most assert engine behaviour
 against hand-computed or fixture data. The real-data assertions are narrower, and they are
 the ones that carry the claims above. The 44 skips are not gaps: they are tests
 parameterised over the five fixture companies that apply to one of them and skip for the
