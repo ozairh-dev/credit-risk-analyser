@@ -28,3 +28,6 @@ venv/
 .vscode/
 .idea/
 .DS_Store
+
+# Benchmark SEC downloads — raw public data, never committed (same rule as data/raw/)
+data/benchmark/raw/

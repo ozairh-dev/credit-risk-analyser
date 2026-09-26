@@ -2532,3 +2532,73 @@ their tests assert structure and the exit-code contract, not memo quality — th
 own banner is explicit that a clean validation is not a clean memo. And the three untested
 commands were found by reading `cli.py`, not by a check that would find the next one: there
 is still nothing asserting that every registered command is exercised at least once.
+
+## D82 — The A2 flag rule is `grade >= 5`, chosen on band semantics and not on the ROC table
+Decision (owner call, 2026-09-26, Phase A of the benchmark build): the operational
+definition of "the engine raised a concern about this borrower" — the rule whose
+sensitivity and false-positive rate the benchmark reports, and which Phase D will re-run
+unchanged against the improved engine — is **`grade >= 5`**.
+
+**The basis is the meaning of the bands, not the shape of the trade-off curve.** Grades 5
+and 6 are the bottom two of a six-band scale, so "concern" is the bottom third; grade 4 is
+mid-scale and a mid-scale grade is not a concern. That argument is complete without any
+reference to how the rule performs.
+
+**Stated explicitly because it would otherwise be assumed: the threshold was NOT selected
+by comparing the sensitivity/false-positive table.** The table was measured before the
+decision and is recorded below as the rule's *cost*, not its justification. Picking the
+row that looked best would have been fitting the metric to the sample — the inverse of
+rule 14, and the same backwards move D26 rejected when it refused to widen a tolerance so
+a demonstration company would pass.
+
+Measured cost on the 18 admitted failures against 774 survivor company-cutoffs:
+**78% sensitivity (14/18) at a 21% per-company-cutoff false-positive rate.**
+
+**`grade >= 6` was rejected despite a 4% false-positive rate.** It misses 9 of 18
+failures. In credit a missed default is the worse error, and a rule that finds half of
+them is not a screen. `grade >= 4` was rejected from the other direction: 100%
+sensitivity at a 44% false-positive rate is CLAUDE.md rule 12 exactly — a signal that
+fires on nearly half the healthy universe is indistinguishable from no signal.
+
+**Warning-based and combined rules were rejected on measured separation.** An escalated
+warning reaches **50% of failures against 37% of survivors — 13 points**. A High-severity
+warning reaches **72% against 45% — 27 points**. Neither earns a place in a headline
+metric, and four failures at grades 4-5 (DNR, ASNA, DBD, TLRD) raise no escalated warning
+at all. **This is the evidence base D72b said did not exist** for moving the escalation
+threshold: escalation was parked because 31% firing "feels high" with nothing behind the
+intuition, and the intuition is now supported by a discrimination measurement.
+
+**`scored == False` returns `None`, not `False`, and is excluded from both denominators.**
+Collapsing "the engine produced no opinion" into "no concern" would assert reassurance the
+engine never gave — CLAUDE.md rule 3, and the same evidence-versus-gap distinction D9 makes
+load-bearing everywhere else. It is reported as its own row. Zero admitted failures and
+zero survivor company-cutoffs are currently unscoreable, so the tri-state costs nothing
+today and exists because Hertz demonstrates the state is reachable.
+
+**Two metrics added on the owner's instruction, both about not overstating precision.**
+
+1. **AUC, verified by two independent derivations.** A pairwise count and the
+   Mann-Whitney rank identity. They agree to machine precision: **0.893 pooled, 0.902
+   dev, 0.882 held-out.** The check was not ceremonial — the rank version first returned
+   **0.0978** against the pairwise **0.9022**, exact complements, which is the signature
+   of an inverted orientation rather than an arithmetic slip. A single implementation
+   would have published one of them unchallenged. The owner's independent estimate of 0.88
+   was computed from the grade distributions; AUC computed on grades rather than scores is
+   **0.882**, which confirms it.
+2. **Distinct survivor companies flagged, beside the per-company-cutoff rate.** 774
+   company-cutoffs are 43 companies observed at up to 18 cutoffs, so they are **not 774
+   independent observations** — a company weak at one cutoff is usually weak at the next.
+   The pooled rate is 21%; **21 of 43 distinct companies (49%) are flagged at least
+   once.** Both describe the same rule and read completely differently, so the results
+   file states the pseudo-replication and carries both.
+
+Alternatives: `grade >= 6` (misses half the cohort); `grade >= 4` (rule 12); escalation or
+High-severity, alone or combined with a grade cut (13pp and 27pp separation, measured
+above); treating an unscored company as unflagged (asserts reassurance).
+
+Consequences: the rule is frozen in `benchmark/harness/score_a2.py` as `CONCERN_GRADE`
+with its basis in the module comment, and Phase D re-runs it unchanged. A future change to
+it invalidates the before/after comparison and needs its own entry. The dev and held-out
+distinct-company shares are **not comparable to each other** — the share rises
+mechanically with the number of cutoffs in a split — so each split is compared only
+against itself across versions.

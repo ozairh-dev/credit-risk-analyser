@@ -198,6 +198,37 @@ checks (Phase 4) because the checks depend on them. See docs/build-plan.md.
       each is exercised somewhere would close it. Not done — it is a testing-policy
       change, and D81 was deliberately scoped to the defect in front of it
 
+## Benchmark — Phase A (2026-09-26, in progress)
+
+Freeze a benchmark BEFORE any engine change, so improvement is demonstrated not asserted.
+Engine, config and tests must stay byte-identical throughout Phase A.
+
+- [x] **A2 external discrimination backtest** — 19 Chapter 11 cases verified from EDGAR
+      Item 1.03 8-Ks with the petition date read from each document, 18 admitted, 43
+      adopted companies as the matched survivor panel, point-in-time filtered so no
+      restatement filed after the cutoff can leak in. Flag rule frozen at `grade >= 5`
+      on band semantics (D82). Baseline in `benchmark/results/a2_baseline.md`
+- [x] **Point-in-time harness** — `benchmark/harness/pit.py` filters the payload on
+      `filed`, outside the engine, so no engine module changes. Without it D14/D15
+      supersession would use post-bankruptcy restatements to "predict" the bankruptcy
+- [x] Hold-out split for A2 — stratified by SIC group then deterministic by CIK, so it
+      cannot have been chosen to flatter a version. 10 dev / 8 held-out
+- [ ] **A1 numerical and extraction accuracy** — extend the golden set with new
+      company-years hand-verified against filing documents, including at least two from
+      sectors not yet covered. Every disagreement classified as engine defect, tagging
+      artefact or legitimate definitional difference
+- [ ] **A3 failure-mode cases** — eight credit situations, a real company-period witness
+      for each where one exists, expected findings written BEFORE running either version
+- [ ] **A4 consistency** — assert deterministic engine reproducibility; measure LLM
+      variance over five runs on one pack
+- [ ] **A5 unsupported claims** — unverified figures via the existing validator, plus
+      unsupported qualitative claims against a written rubric
+- [ ] **Rubric and scoring script for the judged parts**, written before anything is run.
+      The grader must be a separate agent with fresh context, blind to which version
+      produced the output
+- [ ] Run V1 against the complete benchmark, record the baseline, report what it cannot
+      measure, and stop for owner review
+
 ## Later
 - See docs/build-plan.md. First two items for v2: sector thresholds (D48/D72a), then the
   hand-verified golden set above.

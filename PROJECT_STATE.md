@@ -18,6 +18,60 @@ the seven CLI commands — `score`, `stress`, `export-evidence`, `validate-memo`
 test of any kind, which is how a green suite coexisted with a command that raised on its
 first line. Fixed and covered in D81; no engine logic changed.
 
+## Benchmark — Phase A in progress (2026-09-26)
+
+**v1 is being treated as a baseline to critique, not a standard to preserve.** A frozen
+benchmark is under construction in `benchmark/`, to be committed before any engine change
+so that improvement can be demonstrated rather than asserted. **No engine, config or test
+file has changed** — verified byte-identical to `901ce53`, suite unchanged at 892/44.
+
+**A2, the external discrimination backtest, is built and baselined.** 18 real Chapter 11
+filers scored point-in-time at least 12 months before the event, against the 43 adopted
+companies as a matched survivor panel. Results and their limits:
+`benchmark/results/a2_baseline.md`. Flag rule frozen at `grade >= 5` on band semantics
+(D82).
+
+| | dev (10) | held-out (8) | all (18) |
+|---|---|---|---|
+| AUC, failure scores worse | 0.902 | 0.882 | **0.893** |
+| median grade, failures vs survivors | 5.5 / 3.0 | 5.5 / 3.0 | 5.5 / 3.0 |
+| sensitivity at `grade >= 5` | 80% | 75% | **78% (14/18)** |
+| false positives, company-cutoffs | 20% | 23% | **21%** |
+| distinct survivor companies flagged | 14/43 | 20/43 | **21/43 (49%)** |
+
+All **18 of 18** failures score below the median of their own survivor panel — the one
+headline claim needing no threshold. AUC was computed twice, by a pairwise count and the
+Mann-Whitney rank identity; they agree, and the cross-check caught an inverted orientation
+that would otherwise have published 0.098 as 0.902's replacement.
+
+**Five findings from building it, three of which changed the data:**
+1. **Three identity traps.** CIK 1130713 is Overstock.com renamed "Bed Bath & Beyond"
+   after buying the brand out of the auction — it never failed; the filer that did is
+   886158. CIK 1364479 is Herc Holdings, the surviving spinco that kept Hertz's old CIK.
+   CIK 77182 is J.C. Penney's pre-2002 operating subsidiary with no XBRL.
+2. **The SEC submissions index is not a reliable event oracle.** Its `reportDate`
+   disagrees with the 8-K's own stated petition date in **8 of 19 cases (42%)**, and
+   J.C. Penney's 2014-01-28 filing is tagged Item 1.03 with no bankruptcy language in it
+   at all. Every date is now read from the document, with the sentence recorded.
+   Windstream's correction moved its evaluated period from FY2017 to FY2016.
+3. **The engine is blind to Hertz** — `NO_DEBT_DATA`, and no `ebit`, `cash` or
+   current-asset concept resolves, because fleet debt sits in dimensioned securitisation
+   contexts and Hertz files an unclassified balance sheet. **This is D25's Ford finding on
+   a second company.** Worse than absence: Hertz's grade 4 rests on one number (revenue
+   +8%), so the engine rates it **better** than every failure it could see. The graduated
+   cap is a ceiling, never a floor — it cannot say "we know nothing".
+4. **Escalated warnings barely discriminate** — 50% of failures against 37% of survivors,
+   13 points. **This is the evidence base D72b said did not exist** for the parked
+   escalation threshold.
+5. **The backtest cannot reach the 2008-09 cycle.** Measured: Charter's companyfacts
+   begins 2011-05-03, so a 2008 cutoff yields zero facts. 11 of 18 events are 2020.
+
+**Still to build in Phase A:** A1 (extend the golden set against filing documents), A3
+(eight failure-mode cases with expected findings written first), A4 (determinism and LLM
+variance), A5 (unsupported-claim rubric), and the written rubric plus scoring script for
+the judged parts. `benchmark/README.md` carries the scope and what the benchmark cannot
+measure.
+
 ## Completed
 - Specification: CLAUDE.md, docs/, DECISIONS.md D1-D10
 - Task 1 — project skeleton: pyproject.toml, package layout under src/credit_risk/,
@@ -644,7 +698,7 @@ investigation before KHC is relied on for anything revenue-derived.
   10's job; several assumptions need more companies before they can be exercised).
 
 ## In progress
-- nothing
+- **Benchmark Phase A** — A2 done and baselined; A1, A3, A4, A5 and the rubric outstanding. See the Benchmark section above.
 
 ## Known bugs
 - none

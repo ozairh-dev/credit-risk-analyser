@@ -1,0 +1,70 @@
+# A2 — the survivor panel: the 43 adopted companies of D65.
+#
+# "Survivor" is asserted against EDGAR, not assumed from the ticker still being
+# listed. Every CIK below was checked for an 8-K under Item 1.03 (Bankruptcy or
+# Receivership) across its entire filing history.
+#
+# ONE member is not an unconditional survivor. **CHTR filed Item 1.03 8-Ks on
+# 2009-03-27 and 2009-11-23** — Charter Communications' 2009 prepackaged
+# Chapter 11. Every cutoff in this benchmark is 2018 or later, by which time
+# Charter had emerged and did not fail again, so it is a valid survivor HERE.
+# It carries `excluded_before` so the harness enforces that rather than trusting
+# this comment, and so a future cutoff earlier than 2010 cannot silently admit a
+# defaulting company to the survivor panel.
+#
+# Charter's own 2009 default was tested as a candidate FAILURE case and cannot
+# be used: measured, its companyfacts begins 2011-05-03, so a 2008-03-27 cutoff
+# yields **zero facts**. XBRL did not exist yet. This is the hard floor on the
+# whole backtest — no pre-2011 default is reachable, so the 2008-09 credit cycle
+# is out of scope and the cohort is confined to the COVID and 2022-23 waves.
+#
+# Item 2.04 (triggering events accelerating an obligation) is deliberately NOT
+# treated as a default event. It appears for CHTR x10, MGM x4, DPZ x2 and
+# CMI/CZR/YUM x1, and is routinely filed alongside ordinary refinancing and
+# covenant mechanics. Counting it without reading each document would
+# manufacture defaults out of housekeeping.
+
+survivors:
+  - {ticker: YUM,  cik: 1041061}
+  - {ticker: BKNG, cik: 1075531}
+  - {ticker: MAR,  cik: 1048286}
+  - {ticker: DPZ,  cik: 1286681}
+  - {ticker: CAG,  cik: 23217}
+  - {ticker: HLT,  cik: 1585689}
+  - {ticker: MPC,  cik: 1510295}
+  - {ticker: TXRH, cik: 1289460}
+  - {ticker: CMI,  cik: 26172}
+  - {ticker: PENN, cik: 921738}
+  - {ticker: SBUX, cik: 829224}
+  - {ticker: STLD, cik: 1022671}
+  - {ticker: WYNN, cik: 1174922}
+  - {ticker: HAS,  cik: 46080}
+  - {ticker: WBD,  cik: 1437107}
+  - {ticker: SYK,  cik: 310764}
+  - {ticker: LYB,  cik: 1489393}
+  - {ticker: LVS,  cik: 1300514}
+  - {ticker: IDXX, cik: 874716}
+  - {ticker: MGM,  cik: 789570}
+  - {ticker: SLB,  cik: 87347}
+  - {ticker: GIS,  cik: 40704}
+  - {ticker: RCL,  cik: 884887}
+  - {ticker: LYV,  cik: 1335258}
+  - {ticker: PG,   cik: 80424}
+  - {ticker: AZO,  cik: 866787}
+  - {ticker: COST, cik: 909832}
+  - {ticker: PPG,  cik: 79879}
+  - {ticker: CHD,  cik: 313927}
+  - {ticker: CZR,  cik: 1590895}
+  - {ticker: DVN,  cik: 1090012}
+  - {ticker: MCD,  cik: 63908}
+  - {ticker: CCL,  cik: 815097}
+  - {ticker: ECL,  cik: 31462}
+  - {ticker: BBY,  cik: 764478}
+  - {ticker: KO,   cik: 21344}
+  - {ticker: MCK,  cik: 927653}
+  - {ticker: LUV,  cik: 92380}
+  - {ticker: TJX,  cik: 109198}
+  - {ticker: FAST, cik: 815556}
+  - {ticker: CHTR, cik: 1091667, excluded_before: "2010-01-01"}
+  - {ticker: WMT,  cik: 104169}
+  - {ticker: BDX,  cik: 10795}
