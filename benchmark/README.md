@@ -46,6 +46,7 @@ benchmark/
 │       ├── failures.yaml          19 verified Chapter 11 cases, 5 rejected candidates
 │       └── survivors.yaml         the 43 adopted companies as the survivor panel
 ├── harness/
+│   ├── fetch_cohort.py            one command to re-fetch the cohort's data
 │   ├── pit.py                     point-in-time payload filter
 │   ├── run_a4.py                  A4 determinism assertion
 │   ├── edgar_events.py            event sourcing from EDGAR
@@ -68,14 +69,26 @@ records. Both are gitignored.
 ## Reproducing
 
 ```bash
-.venv/bin/python benchmark/harness/build_a2_cases.py   # regenerate the case file
+.venv/bin/python benchmark/harness/fetch_cohort.py     # fetch the cohort's SEC data
 .venv/bin/python benchmark/harness/run_a2.py           # ~20s, writes a2_raw.json
 .venv/bin/python benchmark/harness/score_a2.py         # writes a2_scored.json
 .venv/bin/python benchmark/harness/run_a4.py           # determinism; exit 1 on failure
 ```
 
-`build_a2_cases.py` needs `data/benchmark/raw/` populated; the CIKs and the fetch are in
-its docstring. Everything else runs offline from the cache.
+**The data is re-fetchable, not missing.** `data/benchmark/raw/` is gitignored because the
+payloads are public SEC data that does not belong in a repository, so a fresh clone has the
+harness and the frozen cases but no data. `fetch_cohort.py` reads the CIKs from
+`failures.yaml` — never a second copy — and caches all 19 to `data/benchmark/raw/`. It
+honours the 24h staleness window, so re-running is cheap. The survivor panel comes from
+`data/raw/`, which `credit-risk fetch <ticker>` populates.
+
+`build_a2_cases.py` regenerates `failures.yaml` from the cache and is only needed if a case
+is added or an event date corrected.
+
+**Re-fetching does not move the result**, and the point-in-time filter is why: every fact
+filed after a case's cutoff is dropped, so filings made since this baseline was taken cannot
+reach the measurement. Verified by deleting one company's cache, re-fetching it, and
+confirming `a2_scored.json` came back byte-identical.
 
 ## What the benchmark cannot measure
 

@@ -1,5 +1,13 @@
 # A2 — external discrimination backtest: the V1 baseline
 
+**Reproducing this file.** The cached SEC payloads are gitignored, so they are
+**re-fetchable rather than missing**:
+`benchmark/harness/fetch_cohort.py` (one command, reads the CIKs from `failures.yaml`),
+then `run_a2.py`, then `score_a2.py`. Re-fetching cannot move these numbers — the
+point-in-time filter drops every fact filed after each case's cutoff, so filings made since
+this baseline was taken are excluded by construction. Confirmed by deleting one company's
+cache, re-fetching, and getting a byte-identical `a2_scored.json`.
+
 **Basis.** V1 at commit `901ce53`, engine and config untouched. 18 admitted failure
 cases against the 43 adopted companies of D65 as the survivor panel, each assessed at
 the *same* point-in-time cutoff through the same `assess()` call. Flag rule `grade >= 5`,

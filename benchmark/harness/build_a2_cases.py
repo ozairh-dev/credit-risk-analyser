@@ -1,5 +1,8 @@
 """Generate benchmark/cases/a2_discrimination/failures.yaml from verified inputs.
 
+Run `benchmark/harness/fetch_cohort.py` first — it populates the cache this
+reads, and takes its CIK list from the file this writes.
+
 Generated rather than hand-typed, because a count or a date restated by hand is
 how D79's dropped defect and D71's arithmetic slip happened. The only values
 entered by hand here are the ones that came from reading a document — the
