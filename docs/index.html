@@ -115,7 +115,7 @@ no approximating a refused value from an adjacent period or a related tag. <stro
 an answer.</strong> This is the principle the whole design turns on, and the one that required the
 most discipline: at every stage there was a plausible-looking number available, and taking
 it would have been easier than refusing.</p>
-<p><strong>4. Decisions recorded with their evidence.</strong> 76 entries covering what was chosen, what
+<p><strong>4. Decisions recorded with their evidence.</strong> 82 entries covering what was chosen, what
 was measured, what the alternatives were, and what it cost — <strong>including the choices that
 turned out to be wrong, and why they survived review.</strong> The decision log is the most useful
 artefact the project produced.</p>
@@ -219,10 +219,12 @@ MCK FY2023, BDX FY2009 — where every figure was read from the income statement
 sheet, cash-flow statement and footnotes of the filing documents as a person reads them.
 Not from the SEC's API, not from the cached data, not from any pipeline output.</p>
 <p><strong>It found five engine defects within an hour, and not one was reachable by the 860 tests
-that already existed.</strong> Among them: a missing cash-flow tag that cost 75 company-periods
-their operating cash flow and everything derived from it; two places where debt was counted
-twice, because a component was added to a figure that already contained it; and a
-depreciation tag that understated McDonald's EBITDA by <strong>80-86%</strong>, enough to move a grade.</p>
+that already existed.</strong> All five, so the count is checkable rather than asserted: a missing
+cash-flow tag that cost 75 company-periods their operating cash flow and everything derived
+from it; two places where debt was counted twice, because a component was added to a figure
+that already contained it; a short-term-investments tag missing from 26 periods, overstating
+net debt by the whole balance; and a depreciation tag that understated McDonald's EBITDA by
+<strong>80-86%</strong>, enough to move a grade.</p>
 <p>Fixing them changed real numbers: 127 more metric values computed, <strong>49 fewer periods
 carrying a grade cap</strong>, and a grade distribution that shifted measurably toward the strong
 end.</p>
@@ -277,7 +279,9 @@ number that looked rigorous.</p>
 <p><strong>Two findings that need no threshold, each with its limit attached:</strong></p>
 <ul>
 <li><strong>Failures ranked below survivors in 89% of failure-survivor pairs</strong> — AUC 0.893 on the
-score, 0.882 on the grade. Development set 0.902, held-out 0.882. Computed twice by
+score (n = 18 failures vs 43 survivors, 95% CI <strong>[0.82, 0.95]</strong> via a company-level
+cluster bootstrap, since the 774 pooled survivor observations are not 774 independent
+ones), 0.882 on the grade. Development set 0.902, held-out 0.882. Computed twice by
 independent derivations that agree. <strong>This is discrimination on 18 events, not
 calibration</strong>; no grade is mapped to a default rate, a spread or a loss, and nothing here
 could support such a map.</li>

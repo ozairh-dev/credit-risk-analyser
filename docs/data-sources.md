@@ -45,6 +45,20 @@ has to be explicit or you get duplicates and wrong periods.
    reporting), the earliest filing remains the source and no supersession is recorded —
    supersession marks changed values only. (DECISIONS D15)
    Rules apply in order: 1–3 filter, then this rule dedups the survivors. (DECISIONS D14)
+   **Two legitimate questions, two deliberate answers.** The live engine — `credit-risk
+   score` and every other command — answers "what is the best-known value for this
+   period, as of today," so supersession genuinely does prefer the most recently filed
+   value even for a period years in the past (D14/D15, above). A backtest asks a
+   different question — "what would an analyst have known by a given date" — and needs a
+   different mechanism: `benchmark/harness/pit.py`'s `filter_payload(raw, cutoff)` runs
+   *before* `pipeline.analyse()`, dropping every fact filed after `cutoff`, so a
+   restatement filed later can never reach this rule at all.
+   Demonstrated, not asserted: BDX restated FY2009 revenue in its FY2010 10-K.
+   Unfiltered, selection resolves `revenue` to **6,986,722,000** — the restated figure.
+   Filtered to a `2010-01-01` cutoff (before the restating filing), the same period
+   resolves to **7,160,874,000** — the original figure as first filed. Filtered to
+   `2011-01-01` (after it), the answer returns to **6,986,722,000**, correctly, since by
+   then the restatement was itself knowable.
 5. **Units:** USD for monetary items. A unit is classified into exactly one of three
    kinds (DECISIONS D24):
    - **Monetary, USD** → the fact is selected normally.

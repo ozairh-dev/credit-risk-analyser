@@ -48,7 +48,7 @@ an answer.** This is the principle the whole design turns on, and the one that r
 most discipline: at every stage there was a plausible-looking number available, and taking
 it would have been easier than refusing.
 
-**4. Decisions recorded with their evidence.** 76 entries covering what was chosen, what
+**4. Decisions recorded with their evidence.** 82 entries covering what was chosen, what
 was measured, what the alternatives were, and what it cost — **including the choices that
 turned out to be wrong, and why they survived review.** The decision log is the most useful
 artefact the project produced.
@@ -127,10 +127,12 @@ sheet, cash-flow statement and footnotes of the filing documents as a person rea
 Not from the SEC's API, not from the cached data, not from any pipeline output.
 
 **It found five engine defects within an hour, and not one was reachable by the 860 tests
-that already existed.** Among them: a missing cash-flow tag that cost 75 company-periods
-their operating cash flow and everything derived from it; two places where debt was counted
-twice, because a component was added to a figure that already contained it; and a
-depreciation tag that understated McDonald's EBITDA by **80-86%**, enough to move a grade.
+that already existed.** All five, so the count is checkable rather than asserted: a missing
+cash-flow tag that cost 75 company-periods their operating cash flow and everything derived
+from it; two places where debt was counted twice, because a component was added to a figure
+that already contained it; a short-term-investments tag missing from 26 periods, overstating
+net debt by the whole balance; and a depreciation tag that understated McDonald's EBITDA by
+**80-86%**, enough to move a grade.
 
 Fixing them changed real numbers: 127 more metric values computed, **49 fewer periods
 carrying a grade cap**, and a grade distribution that shifted measurably toward the strong
@@ -200,7 +202,9 @@ number that looked rigorous.
 **Two findings that need no threshold, each with its limit attached:**
 
 - **Failures ranked below survivors in 89% of failure-survivor pairs** — AUC 0.893 on the
-  score, 0.882 on the grade. Development set 0.902, held-out 0.882. Computed twice by
+  score (n = 18 failures vs 43 survivors, 95% CI **[0.82, 0.95]** via a company-level
+  cluster bootstrap, since the 774 pooled survivor observations are not 774 independent
+  ones), 0.882 on the grade. Development set 0.902, held-out 0.882. Computed twice by
   independent derivations that agree. **This is discrimination on 18 events, not
   calibration**; no grade is mapped to a default rate, a spread or a loss, and nothing here
   could support such a map.

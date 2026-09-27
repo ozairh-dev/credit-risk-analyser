@@ -39,8 +39,10 @@ explicitly not chosen from the trade-off table (D82).
 **Lead with the threshold-free findings:**
 
 - **Failures ranked below survivors in 89% of failure-survivor pairs.** AUC **0.893** on
-  the score, **0.882** on the grade. Dev 0.902, held-out 0.882. Computed twice by
-  independent derivations that agree — a pairwise count and the Mann-Whitney rank identity.
+  the score (n = 18 failures vs 43 survivors, 95% CI **[0.82, 0.95]**, company-level
+  cluster bootstrap — `benchmark/harness/auc_ci.py`), **0.882** on the grade. Dev 0.902,
+  held-out 0.882. Computed twice by independent derivations that agree — a pairwise count
+  and the Mann-Whitney rank identity.
 - **All 18 of 18 failures scored below the median of their own survivor panel.** Median
   grade 5.5 against 3.0, median score 26.1 against 59.0, and no failure graded 1, 2 or 3 at
   any cutoff.

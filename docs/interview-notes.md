@@ -8,7 +8,7 @@ Numbers carry their basis. Where a figure has no basis I can state, it is not he
 **Basis for engine-wide figures: the 43 adopted companies, capped grades, 776 scored
 periods, measured at commit `a5035a6` on 2026-09-20, after D78-D80.**
 
-The arguments behind every choice are in `DECISIONS.md` (76 entries). This file does not
+The arguments behind every choice are in `DECISIONS.md` (82 entries). This file does not
 repeat them — it points.
 
 ---

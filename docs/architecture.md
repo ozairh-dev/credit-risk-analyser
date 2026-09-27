@@ -2,7 +2,7 @@
 
 How the system is put together and where each kind of decision is made. This is a map, not
 a rationale: every "why" below is one line and a pointer into `DECISIONS.md`, which holds
-76 entries with their evidence, alternatives and consequences. **Read this to find your way
+82 entries with their evidence, alternatives and consequences. **Read this to find your way
 around; read the decision entries for the argument.**
 
 Numbers quoted here carry their basis — population, grade type, period count, commit —

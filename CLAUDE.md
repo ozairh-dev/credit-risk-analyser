@@ -177,7 +177,7 @@ before building it.
 | Bands, weights, caps, missing-data rules | `docs/risk-scoring.md` |
 | Anything involving an LLM     | `docs/ai-governance.md`       |
 | What to build next / not build | `docs/build-plan.md`         |
-| Why a choice was made, and what it cost | `DECISIONS.md` — 76 entries, the project's best artefact |
+| Why a choice was made, and what it cost | `DECISIONS.md` — 82 entries, the project's best artefact |
 
 **Do not restate `DECISIONS.md` in a doc.** The docs point into it; duplicating an entry
 creates a second place for it to go stale, which is CLAUDE.md rule 13 applied to prose.
