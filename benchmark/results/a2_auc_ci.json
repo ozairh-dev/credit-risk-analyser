@@ -1,0 +1,40 @@
+{
+ "all": {
+  "point_estimate": 0.8927,
+  "n_failures": 18,
+  "n_survivor_companies": 43,
+  "n_survivor_observations": 774,
+  "n_bootstrap": 10000,
+  "ci_95_lo": 0.8161,
+  "ci_95_hi": 0.9518,
+  "method": "cluster bootstrap, 10,000 resamples; failures resampled per-observation (18 independent units), survivors resampled per-company (43 clusters, all of a drawn company's cutoffs move together)"
+ },
+ "dev": {
+  "point_estimate": 0.9022,
+  "n_failures": 10,
+  "n_survivor_companies": 43,
+  "n_survivor_observations": 430,
+  "n_bootstrap": 10000,
+  "ci_95_lo": 0.8069,
+  "ci_95_hi": 0.9707,
+  "method": "cluster bootstrap, 10,000 resamples; failures resampled per-observation (18 independent units), survivors resampled per-company (43 clusters, all of a drawn company's cutoffs move together)"
+ },
+ "holdout": {
+  "point_estimate": 0.8819,
+  "n_failures": 8,
+  "n_survivor_companies": 43,
+  "n_survivor_observations": 344,
+  "n_bootstrap": 10000,
+  "ci_95_lo": 0.7707,
+  "ci_95_hi": 0.9655,
+  "method": "cluster bootstrap, 10,000 resamples; failures resampled per-observation (18 independent units), survivors resampled per-company (43 clusters, all of a drawn company's cutoffs move together)"
+ },
+ "naive_contrast": {
+  "auc": 0.8927,
+  "n1": 18,
+  "n2_treated_as_independent": 774,
+  "se": 0.0502,
+  "ci_95_lo": 0.7943,
+  "ci_95_hi": 0.9912
+ }
+}

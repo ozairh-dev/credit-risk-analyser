@@ -232,6 +232,85 @@ Engine, config and tests must stay byte-identical throughout Phase A.
       - A5 unsupported qualitative claims against a written rubric
       - the blind separate grader for judged output
 
+## Proposal, not implemented — negative book equity from buybacks (2026-09-27)
+
+An external review raised three claims about this project; two were wrong on their
+central premise when checked against the actual code, config and git history (a
+mismatched sample size and a look-ahead-bias claim disproved by direct testing — both
+recorded in the session, not repeated here). **This is the one that held up.** Verified
+against the code before writing this up (`scoring/engine.py`, `metrics/ratios.py`,
+`config/thresholds.yaml`) — the mechanism is real; only the review's specific line
+citations were wrong. Scoring engine untouched, per owner instruction — this is a
+write-up only.
+
+**The problem, with a live witness already in this repo.** `debt_to_capital =
+total_debt / (total_debt + equity)` (`_debt_to_capital`, `metrics/ratios.py:198-213`;
+it returns `UNAVAILABLE` only when `total_debt + equity <= 0` — deeply negative equity
+that stops just short of that has no such guard). A
+company that has bought back enough stock to push book equity deeply negative — without
+quite exceeding total debt — produces a ratio above 1.0, and the band table
+(`config/thresholds.yaml:42-45`) has no edge above 0.8: anything past it scores 0, the
+worst band, with no further gradient. AutoZone is the exact case, already in this
+README's own example output: `net_debt_to_ebitda 2.733, 6 pts` against `debt_to_capital
+1.642, 0 pts` — **the two leverage components disagree by six points on the same
+company, in the same category, for the same period.**
+
+That is sharper than a cross-category framing alone would suggest. Two separate things
+are happening:
+
+1. **Within the leverage category**, `_score_category` (`scoring/engine.py:169`) takes a
+   plain mean of `net_debt_to_ebitda` and `debt_to_capital`. Once equity is deeply
+   negative from buybacks rather than from losses, book capital stops meaning what the
+   ratio assumes it means — the company hasn't gotten riskier, it has returned capital —
+   but the metric is averaged in as if it carried the same information content as the
+   cash-flow-based `net_debt_to_ebitda`, pulling a 6 down to a 3.
+2. **Across categories**, `score_period` (`scoring/engine.py:208`) sums each category's
+   weighted contribution independently — nothing in `coverage` (8/10 for AZO) or
+   `cash_flow` (7/10) can reach back and inform the `leverage` score. This is D45's
+   design, working as specified; it just was not designed with this failure mode in mind.
+
+Real capital structures do this deliberately and are not automatically weaker for it —
+rating agencies routinely look through negative book equity from buybacks to
+cash-flow-based leverage, which is exactly why `net_debt_to_ebitda` exists as a separate
+component already. The engine computes the right evidence; it just doesn't reason about
+it once `debt_to_capital` has gone unreliable.
+
+**A candidate direction, not a spec.** Two shapes worth comparing rather than picking
+blind:
+
+- **Localized:** treat `debt_to_capital` the way `NON_POSITIVE_CAPITAL` already treats
+  the fully-negative case (`_debt_to_capital`, same function) — when capital is positive
+  but thin *because* equity is negative, drop the component from the leverage mean
+  instead of scoring it 0, and let `net_debt_to_ebitda` carry the category alone. Smallest
+  change, stays inside one function, but a company could then earn a full leverage score
+  from one metric alone.
+- **Cross-category overlay:** cap how far a weak `leverage` score can drag the total when
+  `ebit_interest_cover` and `fcf_to_debt` both land in a top band — the shape the review
+  suggested. Bigger change, touches `score_period`'s aggregation, and needs its own
+  threshold for what "strong" means in each of those two metrics.
+
+**Why this is not a quick patch.** Either direction changes real, already-published
+grades for real companies — not just AZO, every negative-book-equity name in the 43. It
+needs the same discipline as everything else that moved a number in this project: a
+hand-computed unit test for the new behaviour, a before/after measurement across the 43
+adopted companies (the D72/A2 pattern — freeze the measurement, then change the code, then
+re-measure), a sabotage check, and its own DECISIONS entry with the alternatives this note
+only sketches. Checked and this is genuinely leverage-specific, not a wider pattern:
+`CATEGORIES` (`scoring/engine.py:36`) pairs `debt_to_capital` with a cash-flow-based metric
+inside one category, but `liquidity`'s two components (`current_ratio`,
+`cash_to_current_liabilities`) are both book-based and `cash_flow`'s two
+(`fcf_to_debt`, `fcf_margin`) are both cash-based — neither mixes the two the way leverage
+does, so this isn't the same shape recurring elsewhere. `cash_to_debt` and `cfo_to_debt`
+aren't scored at all (not in `CATEGORIES`), so there's nothing there to fix.
+
+**The closer parallel is already a parked, evidenced item, not a new discovery:**
+liquidity's own bands already misjudge a real business-model pattern — 7 of the 43 adopted
+companies score zero liquidity points despite negative working capital being ordinary for
+their business (D48, D72a). Same shape as this one: a generic ratio misreading a deliberate,
+non-distressed capital or working-capital structure. Worth deciding together rather than
+fixing in isolation, since both are "the bands assume a balance-sheet shape most companies
+have, and some companies deliberately don't."
+
 ## Later
 - See docs/build-plan.md. First two items for v2: sector thresholds (D48/D72a), then the
   hand-verified golden set above.

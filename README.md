@@ -7,23 +7,31 @@ each figure resolves back to the filing and the XBRL tag it came from.
 
 ## The result
 
-Run against **18 companies that later filed for Chapter 11**, using only filings available
-**at least 12 months before the petition**, and compared at the same cutoff against a
-**43-company survivor panel**:
+A discrimination sanity check, not a statistically validated production model. Run against
+**18 companies that later filed for Chapter 11**, using only filings available **at least
+12 months before the petition**, and compared at the same cutoff against a **43-company
+survivor panel**:
 
-- **AUC 0.893** on the 0–100 score, **0.882** computed on the 1–6 grade — the share of
+- **AUC 0.893** on the 0–100 score (n = 18 failures vs 43 survivors, 95% CI **[0.82,
+  0.95]** via a company-level cluster bootstrap — see below for why a plain formula isn't
+  valid here). **0.882** computed on the coarser 1–6 grade. AUC is the share of
   failure-survivor pairs in which the failure ranked worse, counting ties as half.
 - **All 18 of 18 failures scored below the median of their own survivor panel**, at
   percentiles **0.000 to 0.395**.
 - Lead times from the scored period end to the petition: **14 to 26 months**, every case at
   or beyond the 12-month minimum.
 
-**And in the same breath: 18 is a small sample.** This measures **discrimination** — whether
-companies that failed ranked below companies that did not — and **not calibration**. Nothing
-here maps a grade to a default probability, a spread or a loss rate, and 18 events could not
-support such a map. Every event falls in **2019–2023, eleven of the eighteen in 2020**,
-because XBRL does not reach back to the 2008–09 credit cycle: the cohort is confined to the
-COVID and 2022–23 waves and carries whatever is particular to them.
+**And in the same breath: 18 events is few, and [0.82, 0.95] is wide enough to say so.**
+This measures **discrimination** — whether companies that failed ranked below companies
+that did not — and **not calibration**. Nothing here maps a grade to a default probability,
+a spread or a loss rate, and 18 events could not support such a map. Every event falls in
+**2019–2023, eleven of the eighteen in 2020**, because XBRL does not reach back to the
+2008–09 credit cycle: the cohort is confined to the COVID and 2022–23 waves and carries
+whatever is particular to them. **The band edges and category weights that produced these
+grades were frozen before this evaluation ran and have not moved since** — confirmed
+against git history, not asserted: `config/thresholds.yaml` and `config/composites.yaml`
+are byte-identical to the commit immediately before the benchmark existed. Nothing was
+tuned toward this result.
 
 > The thresholds, weights and stress parameters are **documented project assumptions, not
 > calibrated values** — the grades are an internal analytical scale, and nothing maps them
@@ -159,6 +167,13 @@ cutoff.
 independent derivations that agree to machine precision — a pairwise count and the
 Mann-Whitney rank identity — after the second one first disagreed and exposed an inverted
 orientation in the first.
+
+**The confidence interval needed its own method, not a textbook formula.** The 774 pooled
+survivor observations behind the AUC are 43 companies at up to 18 cutoffs each — not 774
+independent draws, as stated above. The standard Hanley-McNeil formula assumes independence;
+the interval reported is a cluster bootstrap that resamples failures per-observation and
+survivors per-company, so a company's full cluster of cutoffs moves together. Reproducible:
+`benchmark/harness/auc_ci.py`.
 
 **Beyond the two headline findings:** median grade 5.5 for failures against 3.0 for
 survivors, median score 26.1 against 59.0, and no failure graded 1, 2 or 3 at any cutoff.
