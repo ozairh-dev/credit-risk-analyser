@@ -36,9 +36,7 @@ project has no default, loss or rating data to calibrate against and cannot acqu
 
 **Method, per-case results and the full limitations:
 [`benchmark/results/a2_baseline.md`](benchmark/results/a2_baseline.md).
-The write-up, readable without the repo: [`docs/case-study.md`](docs/case-study.md),
-also published at
-[8dybvz9fym-cpu.github.io/credit-risk-analyser](https://8dybvz9fym-cpu.github.io/credit-risk-analyser/).**
+The write-up, readable without the repo: [`docs/case-study.md`](docs/case-study.md).**
 
 ## How it is built
 
@@ -326,6 +324,50 @@ credit-risk validate-memo memo.md evidence/AZO_2023-08-26.md
 
 `fetch` is the only command that touches the network. Everything else runs from the cache,
 so the whole engine works offline once a company is cached.
+
+## Example output
+
+`credit-risk score AZO --period 2023-08-26`, unedited:
+
+```
+AUTOZONE INC (CIK 866787)
+
+========================================================================
+Period end 2023-08-26
+  Grade 4 (scored on all 5 categories)
+  Total score 48.0/100
+
+  leverage                3.00/10  weight 25  contribution  7.50
+      net_debt_to_ebitda                  2.733     6 pts  band 3 of 6
+      debt_to_capital                     1.642     0 pts  band 6 of 6
+  coverage                8.00/10  weight 20  contribution 16.00
+      ebit_interest_cover                 10.85     8 pts  band 5 of 6
+  liquidity               0.00/10  weight 20  contribution  0.00
+      current_ratio                      0.7965     0 pts  band 1 of 6
+      cash_to_current_liabilities       0.03255     0 pts  band 1 of 6
+  cash_flow               7.00/10  weight 20  contribution 14.00
+      fcf_to_debt                        0.1926     6 pts  band 4 of 6
+      fcf_margin                         0.1228     8 pts  band 5 of 6
+  business_performance    7.00/10  weight 15  contribution 10.50
+      revenue_growth                    0.07414     8 pts  band 5 of 6
+      ebitda_margin_trend                     —     6 pts  Stable
+
+  strongest: coverage, cash_flow
+  weakest:   liquidity, leverage
+  top drivers (points lost vs a perfect score):
+      debt_to_capital              12.50 (leverage)
+      current_ratio                10.00 (liquidity)
+      cash_to_current_liabilities  10.00 (liquidity)
+  deteriorating: ebit_interest_cover, net_debt_to_ebitda, revenue_growth
+
+  Internal analytical grade for this project. Not a credit rating; never mapped to S&P, Moody's, Fitch or any bank's internal scale.
+```
+
+Every line traces: `leverage` scores 3.00/10 because its two components — `net_debt_to_ebitda`
+at 6 points and `debt_to_capital` at 0 — average to 3.0, and 3.0/10 × weight 25 gives the
+7.50 contribution. The five category contributions sum to 48.0, which lands in `[40, 55)` —
+grade 4. `debt_to_capital` costs the most points of anything in the period (12.50 versus a
+perfect score) and is named as the top driver for exactly that reason.
 
 ## Where things are
 
