@@ -1,0 +1,4807 @@
+{
+ "flagged": {
+  "BDX": {
+   "any_negative": false,
+   "any_near_zero_or_negative": false,
+   "n_obs": 11
+  },
+  "BKNG": {
+   "any_negative": false,
+   "any_near_zero_or_negative": false,
+   "n_obs": 2
+  },
+  "CAG": {
+   "any_negative": false,
+   "any_near_zero_or_negative": false,
+   "n_obs": 2
+  },
+  "CCL": {
+   "any_negative": false,
+   "any_near_zero_or_negative": false,
+   "n_obs": 6
+  },
+  "CHTR": {
+   "any_negative": false,
+   "any_near_zero_or_negative": false,
+   "n_obs": 16
+  },
+  "CZR": {
+   "any_negative": false,
+   "any_near_zero_or_negative": false,
+   "n_obs": 7
+  },
+  "DPZ": {
+   "any_negative": true,
+   "any_near_zero_or_negative": true,
+   "n_obs": 12
+  },
+  "GIS": {
+   "any_negative": false,
+   "any_near_zero_or_negative": false,
+   "n_obs": 11
+  },
+  "HLT": {
+   "any_negative": true,
+   "any_near_zero_or_negative": true,
+   "n_obs": 17
+  },
+  "LVS": {
+   "any_negative": false,
+   "any_near_zero_or_negative": false,
+   "n_obs": 6
+  },
+  "LYB": {
+   "any_negative": false,
+   "any_near_zero_or_negative": false,
+   "n_obs": 2
+  },
+  "LYV": {
+   "any_negative": true,
+   "any_near_zero_or_negative": true,
+   "n_obs": 2
+  },
+  "MAR": {
+   "any_negative": false,
+   "any_near_zero_or_negative": true,
+   "n_obs": 13
+  },
+  "MCD": {
+   "any_negative": true,
+   "any_near_zero_or_negative": true,
+   "n_obs": 2
+  },
+  "MCK": {
+   "any_negative": true,
+   "any_near_zero_or_negative": true,
+   "n_obs": 3
+  },
+  "MGM": {
+   "any_negative": false,
+   "any_near_zero_or_negative": false,
+   "n_obs": 14
+  },
+  "MPC": {
+   "any_negative": false,
+   "any_near_zero_or_negative": false,
+   "n_obs": 2
+  },
+  "PENN": {
+   "any_negative": false,
+   "any_near_zero_or_negative": false,
+   "n_obs": 2
+  },
+  "RCL": {
+   "any_negative": false,
+   "any_near_zero_or_negative": false,
+   "n_obs": 17
+  },
+  "SBUX": {
+   "any_negative": true,
+   "any_near_zero_or_negative": true,
+   "n_obs": 1
+  },
+  "WYNN": {
+   "any_negative": true,
+   "any_near_zero_or_negative": true,
+   "n_obs": 18
+  }
+ },
+ "never_flagged": {
+  "AZO": {
+   "any_negative": true,
+   "any_near_zero_or_negative": true,
+   "n_obs": 18
+  },
+  "BBY": {
+   "any_negative": false,
+   "any_near_zero_or_negative": false,
+   "n_obs": 18
+  },
+  "CHD": {
+   "any_negative": false,
+   "any_near_zero_or_negative": false,
+   "n_obs": 18
+  },
+  "CMI": {
+   "any_negative": false,
+   "any_near_zero_or_negative": false,
+   "n_obs": 18
+  },
+  "COST": {
+   "any_negative": false,
+   "any_near_zero_or_negative": false,
+   "n_obs": 18
+  },
+  "DVN": {
+   "any_negative": false,
+   "any_near_zero_or_negative": false,
+   "n_obs": 18
+  },
+  "ECL": {
+   "any_negative": false,
+   "any_near_zero_or_negative": false,
+   "n_obs": 18
+  },
+  "FAST": {
+   "any_negative": false,
+   "any_near_zero_or_negative": false,
+   "n_obs": 18
+  },
+  "HAS": {
+   "any_negative": false,
+   "any_near_zero_or_negative": false,
+   "n_obs": 18
+  },
+  "IDXX": {
+   "any_negative": true,
+   "any_near_zero_or_negative": true,
+   "n_obs": 18
+  },
+  "KO": {
+   "any_negative": false,
+   "any_near_zero_or_negative": false,
+   "n_obs": 18
+  },
+  "LUV": {
+   "any_negative": false,
+   "any_near_zero_or_negative": false,
+   "n_obs": 18
+  },
+  "PG": {
+   "any_negative": false,
+   "any_near_zero_or_negative": false,
+   "n_obs": 18
+  },
+  "PPG": {
+   "any_negative": false,
+   "any_near_zero_or_negative": false,
+   "n_obs": 18
+  },
+  "SLB": {
+   "any_negative": false,
+   "any_near_zero_or_negative": false,
+   "n_obs": 18
+  },
+  "STLD": {
+   "any_negative": false,
+   "any_near_zero_or_negative": false,
+   "n_obs": 18
+  },
+  "SYK": {
+   "any_negative": false,
+   "any_near_zero_or_negative": false,
+   "n_obs": 18
+  },
+  "TJX": {
+   "any_negative": false,
+   "any_near_zero_or_negative": false,
+   "n_obs": 18
+  },
+  "TXRH": {
+   "any_negative": false,
+   "any_near_zero_or_negative": false,
+   "n_obs": 18
+  },
+  "WBD": {
+   "any_negative": false,
+   "any_near_zero_or_negative": false,
+   "n_obs": 18
+  },
+  "WMT": {
+   "any_negative": false,
+   "any_near_zero_or_negative": false,
+   "n_obs": 18
+  },
+  "YUM": {
+   "any_negative": true,
+   "any_near_zero_or_negative": true,
+   "n_obs": 18
+  }
+ },
+ "flagged_detail": {
+  "BDX": [
+   {
+    "cutoff": "2019-04-02",
+    "period_end": "2018-09-30",
+    "grade": 5,
+    "equity": 20994000000,
+    "total_assets": 53904000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-04-15",
+    "period_end": "2018-09-30",
+    "grade": 5,
+    "equity": 20994000000,
+    "total_assets": 53904000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-05-16",
+    "period_end": "2018-09-30",
+    "grade": 5,
+    "equity": 20994000000,
+    "total_assets": 53904000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-06-15",
+    "period_end": "2018-09-30",
+    "grade": 5,
+    "equity": 20994000000,
+    "total_assets": 53904000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-06-24",
+    "period_end": "2018-09-30",
+    "grade": 5,
+    "equity": 20994000000,
+    "total_assets": 53904000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-06-29",
+    "period_end": "2018-09-30",
+    "grade": 5,
+    "equity": 20994000000,
+    "total_assets": 53904000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-07-21",
+    "period_end": "2018-09-30",
+    "grade": 5,
+    "equity": 20994000000,
+    "total_assets": 53904000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-07-24",
+    "period_end": "2018-09-30",
+    "grade": 5,
+    "equity": 20994000000,
+    "total_assets": 53904000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-07-31",
+    "period_end": "2018-09-30",
+    "grade": 5,
+    "equity": 20994000000,
+    "total_assets": 53904000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-08-03",
+    "period_end": "2018-09-30",
+    "grade": 5,
+    "equity": 20994000000,
+    "total_assets": 53904000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-08-20",
+    "period_end": "2018-09-30",
+    "grade": 5,
+    "equity": 20994000000,
+    "total_assets": 53904000000,
+    "class": "normal"
+   }
+  ],
+  "BKNG": [
+   {
+    "cutoff": "2021-06-15",
+    "period_end": "2020-12-31",
+    "grade": 6,
+    "equity": 4893000000,
+    "total_assets": 21874000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2022-01-17",
+    "period_end": "2020-12-31",
+    "grade": 6,
+    "equity": 4893000000,
+    "total_assets": 21874000000,
+    "class": "normal"
+   }
+  ],
+  "CAG": [
+   {
+    "cutoff": "2022-08-06",
+    "period_end": "2022-05-29",
+    "grade": 5,
+    "equity": 8787700000,
+    "total_assets": 22435100000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2022-10-15",
+    "period_end": "2022-05-29",
+    "grade": 5,
+    "equity": 8787700000,
+    "total_assets": 22435100000,
+    "class": "normal"
+   }
+  ],
+  "CCL": [
+   {
+    "cutoff": "2021-06-15",
+    "period_end": "2020-11-30",
+    "grade": 6,
+    "equity": 20555000000,
+    "total_assets": 53593000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2022-01-17",
+    "period_end": "2020-11-30",
+    "grade": 6,
+    "equity": 20555000000,
+    "total_assets": 53593000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2022-04-23",
+    "period_end": "2021-11-30",
+    "grade": 6,
+    "equity": 12144000000,
+    "total_assets": 53344000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2022-06-01",
+    "period_end": "2021-11-30",
+    "grade": 6,
+    "equity": 12144000000,
+    "total_assets": 53344000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2022-08-06",
+    "period_end": "2021-11-30",
+    "grade": 6,
+    "equity": 12144000000,
+    "total_assets": 53344000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2022-10-15",
+    "period_end": "2021-11-30",
+    "grade": 6,
+    "equity": 12144000000,
+    "total_assets": 53344000000,
+    "class": "normal"
+   }
+  ],
+  "CHTR": [
+   {
+    "cutoff": "2018-02-25",
+    "period_end": "2016-12-31",
+    "grade": 5,
+    "equity": 40139000000,
+    "total_assets": 149067000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-04-02",
+    "period_end": "2016-12-31",
+    "grade": 5,
+    "equity": 40139000000,
+    "total_assets": 149067000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-04-15",
+    "period_end": "2016-12-31",
+    "grade": 5,
+    "equity": 40139000000,
+    "total_assets": 149067000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-05-16",
+    "period_end": "2016-12-31",
+    "grade": 5,
+    "equity": 40139000000,
+    "total_assets": 149067000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-06-15",
+    "period_end": "2016-12-31",
+    "grade": 5,
+    "equity": 40139000000,
+    "total_assets": 149067000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-06-24",
+    "period_end": "2016-12-31",
+    "grade": 5,
+    "equity": 40139000000,
+    "total_assets": 149067000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-06-29",
+    "period_end": "2016-12-31",
+    "grade": 5,
+    "equity": 40139000000,
+    "total_assets": 149067000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-07-21",
+    "period_end": "2016-12-31",
+    "grade": 5,
+    "equity": 40139000000,
+    "total_assets": 149067000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-07-24",
+    "period_end": "2016-12-31",
+    "grade": 5,
+    "equity": 40139000000,
+    "total_assets": 149067000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-07-31",
+    "period_end": "2016-12-31",
+    "grade": 5,
+    "equity": 40139000000,
+    "total_assets": 149067000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-08-03",
+    "period_end": "2016-12-31",
+    "grade": 5,
+    "equity": 40139000000,
+    "total_assets": 149067000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-08-20",
+    "period_end": "2016-12-31",
+    "grade": 5,
+    "equity": 40139000000,
+    "total_assets": 149067000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2022-04-23",
+    "period_end": "2021-12-31",
+    "grade": 5,
+    "equity": 14050000000,
+    "total_assets": 142491000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2022-06-01",
+    "period_end": "2021-12-31",
+    "grade": 5,
+    "equity": 14050000000,
+    "total_assets": 142491000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2022-08-06",
+    "period_end": "2021-12-31",
+    "grade": 5,
+    "equity": 14050000000,
+    "total_assets": 142491000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2022-10-15",
+    "period_end": "2021-12-31",
+    "grade": 5,
+    "equity": 14050000000,
+    "total_assets": 142491000000,
+    "class": "normal"
+   }
+  ],
+  "CZR": [
+   {
+    "cutoff": "2018-02-25",
+    "period_end": "2016-12-31",
+    "grade": 5,
+    "equity": 298451000,
+    "total_assets": 1294044000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2021-06-15",
+    "period_end": "2020-12-31",
+    "grade": 5,
+    "equity": 5016000000,
+    "total_assets": 36385000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2022-01-17",
+    "period_end": "2020-12-31",
+    "grade": 5,
+    "equity": 5016000000,
+    "total_assets": 36385000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2022-04-23",
+    "period_end": "2021-12-31",
+    "grade": 5,
+    "equity": 4480000000,
+    "total_assets": 38031000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2022-06-01",
+    "period_end": "2021-12-31",
+    "grade": 5,
+    "equity": 4480000000,
+    "total_assets": 38031000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2022-08-06",
+    "period_end": "2021-12-31",
+    "grade": 5,
+    "equity": 4480000000,
+    "total_assets": 38031000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2022-10-15",
+    "period_end": "2021-12-31",
+    "grade": 5,
+    "equity": 4480000000,
+    "total_assets": 38031000000,
+    "class": "normal"
+   }
+  ],
+  "DPZ": [
+   {
+    "cutoff": "2018-02-25",
+    "period_end": "2017-12-31",
+    "grade": 5,
+    "equity": -2735384000,
+    "total_assets": 836753000,
+    "class": "negative"
+   },
+   {
+    "cutoff": "2019-04-02",
+    "period_end": "2018-12-30",
+    "grade": 5,
+    "equity": -3039921000,
+    "total_assets": 907385000,
+    "class": "negative"
+   },
+   {
+    "cutoff": "2019-04-15",
+    "period_end": "2018-12-30",
+    "grade": 5,
+    "equity": -3039921000,
+    "total_assets": 907385000,
+    "class": "negative"
+   },
+   {
+    "cutoff": "2019-05-16",
+    "period_end": "2018-12-30",
+    "grade": 5,
+    "equity": -3039921000,
+    "total_assets": 907385000,
+    "class": "negative"
+   },
+   {
+    "cutoff": "2019-06-15",
+    "period_end": "2018-12-30",
+    "grade": 5,
+    "equity": -3039921000,
+    "total_assets": 907385000,
+    "class": "negative"
+   },
+   {
+    "cutoff": "2019-06-24",
+    "period_end": "2018-12-30",
+    "grade": 5,
+    "equity": -3039921000,
+    "total_assets": 907385000,
+    "class": "negative"
+   },
+   {
+    "cutoff": "2019-06-29",
+    "period_end": "2018-12-30",
+    "grade": 5,
+    "equity": -3039921000,
+    "total_assets": 907385000,
+    "class": "negative"
+   },
+   {
+    "cutoff": "2019-07-21",
+    "period_end": "2018-12-30",
+    "grade": 5,
+    "equity": -3039921000,
+    "total_assets": 907385000,
+    "class": "negative"
+   },
+   {
+    "cutoff": "2019-07-24",
+    "period_end": "2018-12-30",
+    "grade": 5,
+    "equity": -3039921000,
+    "total_assets": 907385000,
+    "class": "negative"
+   },
+   {
+    "cutoff": "2019-07-31",
+    "period_end": "2018-12-30",
+    "grade": 5,
+    "equity": -3039921000,
+    "total_assets": 907385000,
+    "class": "negative"
+   },
+   {
+    "cutoff": "2019-08-03",
+    "period_end": "2018-12-30",
+    "grade": 5,
+    "equity": -3039921000,
+    "total_assets": 907385000,
+    "class": "negative"
+   },
+   {
+    "cutoff": "2019-08-20",
+    "period_end": "2018-12-30",
+    "grade": 5,
+    "equity": -3039921000,
+    "total_assets": 907385000,
+    "class": "negative"
+   }
+  ],
+  "GIS": [
+   {
+    "cutoff": "2019-04-02",
+    "period_end": "2018-05-27",
+    "grade": 5,
+    "equity": 6141100000,
+    "total_assets": 30624000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-04-15",
+    "period_end": "2018-05-27",
+    "grade": 5,
+    "equity": 6141100000,
+    "total_assets": 30624000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-05-16",
+    "period_end": "2018-05-27",
+    "grade": 5,
+    "equity": 6141100000,
+    "total_assets": 30624000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-06-15",
+    "period_end": "2018-05-27",
+    "grade": 5,
+    "equity": 6141100000,
+    "total_assets": 30624000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-06-24",
+    "period_end": "2018-05-27",
+    "grade": 5,
+    "equity": 6141100000,
+    "total_assets": 30624000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-06-29",
+    "period_end": "2019-05-26",
+    "grade": 5,
+    "equity": 7054500000,
+    "total_assets": 30111200000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-07-21",
+    "period_end": "2019-05-26",
+    "grade": 5,
+    "equity": 7054500000,
+    "total_assets": 30111200000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-07-24",
+    "period_end": "2019-05-26",
+    "grade": 5,
+    "equity": 7054500000,
+    "total_assets": 30111200000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-07-31",
+    "period_end": "2019-05-26",
+    "grade": 5,
+    "equity": 7054500000,
+    "total_assets": 30111200000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-08-03",
+    "period_end": "2019-05-26",
+    "grade": 5,
+    "equity": 7054500000,
+    "total_assets": 30111200000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-08-20",
+    "period_end": "2019-05-26",
+    "grade": 5,
+    "equity": 7054500000,
+    "total_assets": 30111200000,
+    "class": "normal"
+   }
+  ],
+  "HLT": [
+   {
+    "cutoff": "2019-04-02",
+    "period_end": "2018-12-31",
+    "grade": 5,
+    "equity": 551000000,
+    "total_assets": 13995000000,
+    "class": "near_zero"
+   },
+   {
+    "cutoff": "2019-04-15",
+    "period_end": "2018-12-31",
+    "grade": 5,
+    "equity": 551000000,
+    "total_assets": 13995000000,
+    "class": "near_zero"
+   },
+   {
+    "cutoff": "2019-05-16",
+    "period_end": "2018-12-31",
+    "grade": 5,
+    "equity": 551000000,
+    "total_assets": 13995000000,
+    "class": "near_zero"
+   },
+   {
+    "cutoff": "2019-06-15",
+    "period_end": "2018-12-31",
+    "grade": 5,
+    "equity": 551000000,
+    "total_assets": 13995000000,
+    "class": "near_zero"
+   },
+   {
+    "cutoff": "2019-06-24",
+    "period_end": "2018-12-31",
+    "grade": 5,
+    "equity": 551000000,
+    "total_assets": 13995000000,
+    "class": "near_zero"
+   },
+   {
+    "cutoff": "2019-06-29",
+    "period_end": "2018-12-31",
+    "grade": 5,
+    "equity": 551000000,
+    "total_assets": 13995000000,
+    "class": "near_zero"
+   },
+   {
+    "cutoff": "2019-07-21",
+    "period_end": "2018-12-31",
+    "grade": 5,
+    "equity": 551000000,
+    "total_assets": 13995000000,
+    "class": "near_zero"
+   },
+   {
+    "cutoff": "2019-07-24",
+    "period_end": "2018-12-31",
+    "grade": 5,
+    "equity": 551000000,
+    "total_assets": 13995000000,
+    "class": "near_zero"
+   },
+   {
+    "cutoff": "2019-07-31",
+    "period_end": "2018-12-31",
+    "grade": 5,
+    "equity": 551000000,
+    "total_assets": 13995000000,
+    "class": "near_zero"
+   },
+   {
+    "cutoff": "2019-08-03",
+    "period_end": "2018-12-31",
+    "grade": 5,
+    "equity": 551000000,
+    "total_assets": 13995000000,
+    "class": "near_zero"
+   },
+   {
+    "cutoff": "2019-08-20",
+    "period_end": "2018-12-31",
+    "grade": 5,
+    "equity": 551000000,
+    "total_assets": 13995000000,
+    "class": "near_zero"
+   },
+   {
+    "cutoff": "2021-06-15",
+    "period_end": "2020-12-31",
+    "grade": 5,
+    "equity": -1490000000,
+    "total_assets": 16755000000,
+    "class": "negative"
+   },
+   {
+    "cutoff": "2022-01-17",
+    "period_end": "2020-12-31",
+    "grade": 5,
+    "equity": -1490000000,
+    "total_assets": 16755000000,
+    "class": "negative"
+   },
+   {
+    "cutoff": "2022-04-23",
+    "period_end": "2021-12-31",
+    "grade": 5,
+    "equity": -821000000,
+    "total_assets": 15441000000,
+    "class": "negative"
+   },
+   {
+    "cutoff": "2022-06-01",
+    "period_end": "2021-12-31",
+    "grade": 5,
+    "equity": -821000000,
+    "total_assets": 15441000000,
+    "class": "negative"
+   },
+   {
+    "cutoff": "2022-08-06",
+    "period_end": "2021-12-31",
+    "grade": 5,
+    "equity": -821000000,
+    "total_assets": 15441000000,
+    "class": "negative"
+   },
+   {
+    "cutoff": "2022-10-15",
+    "period_end": "2021-12-31",
+    "grade": 5,
+    "equity": -821000000,
+    "total_assets": 15441000000,
+    "class": "negative"
+   }
+  ],
+  "LVS": [
+   {
+    "cutoff": "2021-06-15",
+    "period_end": "2020-12-31",
+    "grade": 6,
+    "equity": 2973000000,
+    "total_assets": 20807000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2022-01-17",
+    "period_end": "2020-12-31",
+    "grade": 6,
+    "equity": 2973000000,
+    "total_assets": 20807000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2022-04-23",
+    "period_end": "2021-12-31",
+    "grade": 5,
+    "equity": 1996000000,
+    "total_assets": 20059000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2022-06-01",
+    "period_end": "2021-12-31",
+    "grade": 5,
+    "equity": 1996000000,
+    "total_assets": 20059000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2022-08-06",
+    "period_end": "2021-12-31",
+    "grade": 5,
+    "equity": 1996000000,
+    "total_assets": 20059000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2022-10-15",
+    "period_end": "2021-12-31",
+    "grade": 5,
+    "equity": 1996000000,
+    "total_assets": 20059000000,
+    "class": "normal"
+   }
+  ],
+  "LYB": [
+   {
+    "cutoff": "2021-06-15",
+    "period_end": "2020-12-31",
+    "grade": 5,
+    "equity": 7971000000,
+    "total_assets": 35403000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2022-01-17",
+    "period_end": "2020-12-31",
+    "grade": 5,
+    "equity": 7971000000,
+    "total_assets": 35403000000,
+    "class": "normal"
+   }
+  ],
+  "LYV": [
+   {
+    "cutoff": "2021-06-15",
+    "period_end": "2020-12-31",
+    "grade": 6,
+    "equity": -471772000,
+    "total_assets": 10589303000,
+    "class": "negative"
+   },
+   {
+    "cutoff": "2022-01-17",
+    "period_end": "2020-12-31",
+    "grade": 6,
+    "equity": -471772000,
+    "total_assets": 10589303000,
+    "class": "negative"
+   }
+  ],
+  "MAR": [
+   {
+    "cutoff": "2019-04-02",
+    "period_end": "2018-12-31",
+    "grade": 5,
+    "equity": 2225000000,
+    "total_assets": 23696000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-04-15",
+    "period_end": "2018-12-31",
+    "grade": 5,
+    "equity": 2225000000,
+    "total_assets": 23696000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-05-16",
+    "period_end": "2018-12-31",
+    "grade": 5,
+    "equity": 2225000000,
+    "total_assets": 23696000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-06-15",
+    "period_end": "2018-12-31",
+    "grade": 5,
+    "equity": 2225000000,
+    "total_assets": 23696000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-06-24",
+    "period_end": "2018-12-31",
+    "grade": 5,
+    "equity": 2225000000,
+    "total_assets": 23696000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-06-29",
+    "period_end": "2018-12-31",
+    "grade": 5,
+    "equity": 2225000000,
+    "total_assets": 23696000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-07-21",
+    "period_end": "2018-12-31",
+    "grade": 5,
+    "equity": 2225000000,
+    "total_assets": 23696000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-07-24",
+    "period_end": "2018-12-31",
+    "grade": 5,
+    "equity": 2225000000,
+    "total_assets": 23696000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-07-31",
+    "period_end": "2018-12-31",
+    "grade": 5,
+    "equity": 2225000000,
+    "total_assets": 23696000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-08-03",
+    "period_end": "2018-12-31",
+    "grade": 5,
+    "equity": 2225000000,
+    "total_assets": 23696000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-08-20",
+    "period_end": "2018-12-31",
+    "grade": 5,
+    "equity": 2225000000,
+    "total_assets": 23696000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2021-06-15",
+    "period_end": "2020-12-31",
+    "grade": 5,
+    "equity": 430000000,
+    "total_assets": 24701000000,
+    "class": "near_zero"
+   },
+   {
+    "cutoff": "2022-01-17",
+    "period_end": "2020-12-31",
+    "grade": 5,
+    "equity": 430000000,
+    "total_assets": 24701000000,
+    "class": "near_zero"
+   }
+  ],
+  "MCD": [
+   {
+    "cutoff": "2021-06-15",
+    "period_end": "2020-12-31",
+    "grade": 5,
+    "equity": -7824900000,
+    "total_assets": 52626800000,
+    "class": "negative"
+   },
+   {
+    "cutoff": "2022-01-17",
+    "period_end": "2020-12-31",
+    "grade": 5,
+    "equity": -7824900000,
+    "total_assets": 52626800000,
+    "class": "negative"
+   }
+  ],
+  "MCK": [
+   {
+    "cutoff": "2021-06-15",
+    "period_end": "2021-03-31",
+    "grade": 6,
+    "equity": -21000000,
+    "total_assets": 65015000000,
+    "class": "negative"
+   },
+   {
+    "cutoff": "2022-01-17",
+    "period_end": "2021-03-31",
+    "grade": 6,
+    "equity": -21000000,
+    "total_assets": 65015000000,
+    "class": "negative"
+   },
+   {
+    "cutoff": "2022-04-23",
+    "period_end": "2021-03-31",
+    "grade": 6,
+    "equity": -21000000,
+    "total_assets": 65015000000,
+    "class": "negative"
+   }
+  ],
+  "MGM": [
+   {
+    "cutoff": "2018-02-25",
+    "period_end": "2016-12-31",
+    "grade": 5,
+    "equity": 6220180000,
+    "total_assets": 28173301000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-04-02",
+    "period_end": "2018-12-31",
+    "grade": 5,
+    "equity": 6512283000,
+    "total_assets": 30210706000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-04-15",
+    "period_end": "2018-12-31",
+    "grade": 5,
+    "equity": 6512283000,
+    "total_assets": 30210706000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-05-16",
+    "period_end": "2018-12-31",
+    "grade": 5,
+    "equity": 6512283000,
+    "total_assets": 30210706000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-06-15",
+    "period_end": "2018-12-31",
+    "grade": 5,
+    "equity": 6512283000,
+    "total_assets": 30210706000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-06-24",
+    "period_end": "2018-12-31",
+    "grade": 5,
+    "equity": 6512283000,
+    "total_assets": 30210706000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-06-29",
+    "period_end": "2018-12-31",
+    "grade": 5,
+    "equity": 6512283000,
+    "total_assets": 30210706000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-07-21",
+    "period_end": "2018-12-31",
+    "grade": 5,
+    "equity": 6512283000,
+    "total_assets": 30210706000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-07-24",
+    "period_end": "2018-12-31",
+    "grade": 5,
+    "equity": 6512283000,
+    "total_assets": 30210706000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-07-31",
+    "period_end": "2018-12-31",
+    "grade": 5,
+    "equity": 6512283000,
+    "total_assets": 30210706000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-08-03",
+    "period_end": "2018-12-31",
+    "grade": 5,
+    "equity": 6512283000,
+    "total_assets": 30210706000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-08-20",
+    "period_end": "2018-12-31",
+    "grade": 5,
+    "equity": 6512283000,
+    "total_assets": 30210706000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2021-06-15",
+    "period_end": "2020-12-31",
+    "grade": 6,
+    "equity": 6504726000,
+    "total_assets": 36494934000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2022-01-17",
+    "period_end": "2020-12-31",
+    "grade": 6,
+    "equity": 6504726000,
+    "total_assets": 36494934000,
+    "class": "normal"
+   }
+  ],
+  "MPC": [
+   {
+    "cutoff": "2021-06-15",
+    "period_end": "2020-12-31",
+    "grade": 6,
+    "equity": 22199000000,
+    "total_assets": 85158000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2022-01-17",
+    "period_end": "2020-12-31",
+    "grade": 6,
+    "equity": 22199000000,
+    "total_assets": 85158000000,
+    "class": "normal"
+   }
+  ],
+  "PENN": [
+   {
+    "cutoff": "2021-06-15",
+    "period_end": "2020-12-31",
+    "grade": 5,
+    "equity": 2656200000,
+    "total_assets": 14667300000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2022-01-17",
+    "period_end": "2020-12-31",
+    "grade": 5,
+    "equity": 2656200000,
+    "total_assets": 14667300000,
+    "class": "normal"
+   }
+  ],
+  "RCL": [
+   {
+    "cutoff": "2019-04-02",
+    "period_end": "2018-12-31",
+    "grade": 5,
+    "equity": 11105461000,
+    "total_assets": 27698270000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-04-15",
+    "period_end": "2018-12-31",
+    "grade": 5,
+    "equity": 11105461000,
+    "total_assets": 27698270000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-05-16",
+    "period_end": "2018-12-31",
+    "grade": 5,
+    "equity": 11105461000,
+    "total_assets": 27698270000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-06-15",
+    "period_end": "2018-12-31",
+    "grade": 5,
+    "equity": 11105461000,
+    "total_assets": 27698270000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-06-24",
+    "period_end": "2018-12-31",
+    "grade": 5,
+    "equity": 11105461000,
+    "total_assets": 27698270000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-06-29",
+    "period_end": "2018-12-31",
+    "grade": 5,
+    "equity": 11105461000,
+    "total_assets": 27698270000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-07-21",
+    "period_end": "2018-12-31",
+    "grade": 5,
+    "equity": 11105461000,
+    "total_assets": 27698270000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-07-24",
+    "period_end": "2018-12-31",
+    "grade": 5,
+    "equity": 11105461000,
+    "total_assets": 27698270000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-07-31",
+    "period_end": "2018-12-31",
+    "grade": 5,
+    "equity": 11105461000,
+    "total_assets": 27698270000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-08-03",
+    "period_end": "2018-12-31",
+    "grade": 5,
+    "equity": 11105461000,
+    "total_assets": 27698270000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-08-20",
+    "period_end": "2018-12-31",
+    "grade": 5,
+    "equity": 11105461000,
+    "total_assets": 27698270000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2021-06-15",
+    "period_end": "2020-12-31",
+    "grade": 6,
+    "equity": 8760669000,
+    "total_assets": 32465187000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2022-01-17",
+    "period_end": "2020-12-31",
+    "grade": 6,
+    "equity": 8760669000,
+    "total_assets": 32465187000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2022-04-23",
+    "period_end": "2021-12-31",
+    "grade": 6,
+    "equity": 5085556000,
+    "total_assets": 32258355000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2022-06-01",
+    "period_end": "2021-12-31",
+    "grade": 6,
+    "equity": 5085556000,
+    "total_assets": 32258355000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2022-08-06",
+    "period_end": "2021-12-31",
+    "grade": 6,
+    "equity": 5085556000,
+    "total_assets": 32258355000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2022-10-15",
+    "period_end": "2021-12-31",
+    "grade": 6,
+    "equity": 5085556000,
+    "total_assets": 32258355000,
+    "class": "normal"
+   }
+  ],
+  "SBUX": [
+   {
+    "cutoff": "2021-06-15",
+    "period_end": "2020-09-27",
+    "grade": 6,
+    "equity": -7805100000,
+    "total_assets": 29374500000,
+    "class": "negative"
+   }
+  ],
+  "WYNN": [
+   {
+    "cutoff": "2018-02-25",
+    "period_end": "2016-12-31",
+    "grade": 5,
+    "equity": 157949000,
+    "total_assets": 11953557000,
+    "class": "near_zero"
+   },
+   {
+    "cutoff": "2019-04-02",
+    "period_end": "2018-12-31",
+    "grade": 5,
+    "equity": 2034123000,
+    "total_assets": 13216269000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-04-15",
+    "period_end": "2018-12-31",
+    "grade": 5,
+    "equity": 2034123000,
+    "total_assets": 13216269000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-05-16",
+    "period_end": "2018-12-31",
+    "grade": 5,
+    "equity": 2034123000,
+    "total_assets": 13216269000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-06-15",
+    "period_end": "2018-12-31",
+    "grade": 5,
+    "equity": 2034123000,
+    "total_assets": 13216269000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-06-24",
+    "period_end": "2018-12-31",
+    "grade": 5,
+    "equity": 2034123000,
+    "total_assets": 13216269000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-06-29",
+    "period_end": "2018-12-31",
+    "grade": 5,
+    "equity": 2034123000,
+    "total_assets": 13216269000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-07-21",
+    "period_end": "2018-12-31",
+    "grade": 5,
+    "equity": 2034123000,
+    "total_assets": 13216269000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-07-24",
+    "period_end": "2018-12-31",
+    "grade": 5,
+    "equity": 2034123000,
+    "total_assets": 13216269000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-07-31",
+    "period_end": "2018-12-31",
+    "grade": 5,
+    "equity": 2034123000,
+    "total_assets": 13216269000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-08-03",
+    "period_end": "2018-12-31",
+    "grade": 5,
+    "equity": 2034123000,
+    "total_assets": 13216269000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-08-20",
+    "period_end": "2018-12-31",
+    "grade": 5,
+    "equity": 2034123000,
+    "total_assets": 13216269000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2021-06-15",
+    "period_end": "2020-12-31",
+    "grade": 6,
+    "equity": -351997000,
+    "total_assets": 13869547000,
+    "class": "negative"
+   },
+   {
+    "cutoff": "2022-01-17",
+    "period_end": "2020-12-31",
+    "grade": 6,
+    "equity": -351997000,
+    "total_assets": 13869547000,
+    "class": "negative"
+   },
+   {
+    "cutoff": "2022-04-23",
+    "period_end": "2021-12-31",
+    "grade": 6,
+    "equity": -214418000,
+    "total_assets": 12530826000,
+    "class": "negative"
+   },
+   {
+    "cutoff": "2022-06-01",
+    "period_end": "2021-12-31",
+    "grade": 6,
+    "equity": -214418000,
+    "total_assets": 12530826000,
+    "class": "negative"
+   },
+   {
+    "cutoff": "2022-08-06",
+    "period_end": "2021-12-31",
+    "grade": 6,
+    "equity": -214418000,
+    "total_assets": 12530826000,
+    "class": "negative"
+   },
+   {
+    "cutoff": "2022-10-15",
+    "period_end": "2021-12-31",
+    "grade": 6,
+    "equity": -214418000,
+    "total_assets": 12530826000,
+    "class": "negative"
+   }
+  ]
+ },
+ "never_flagged_detail": {
+  "AZO": [
+   {
+    "cutoff": "2018-02-25",
+    "period_end": "2017-08-26",
+    "grade": 4,
+    "equity": -1428377000,
+    "total_assets": 9259781000,
+    "class": "negative"
+   },
+   {
+    "cutoff": "2019-04-02",
+    "period_end": "2018-08-25",
+    "grade": 4,
+    "equity": -1520355000,
+    "total_assets": 9346980000,
+    "class": "negative"
+   },
+   {
+    "cutoff": "2019-04-15",
+    "period_end": "2018-08-25",
+    "grade": 4,
+    "equity": -1520355000,
+    "total_assets": 9346980000,
+    "class": "negative"
+   },
+   {
+    "cutoff": "2019-05-16",
+    "period_end": "2018-08-25",
+    "grade": 4,
+    "equity": -1520355000,
+    "total_assets": 9346980000,
+    "class": "negative"
+   },
+   {
+    "cutoff": "2019-06-15",
+    "period_end": "2018-08-25",
+    "grade": 4,
+    "equity": -1520355000,
+    "total_assets": 9346980000,
+    "class": "negative"
+   },
+   {
+    "cutoff": "2019-06-24",
+    "period_end": "2018-08-25",
+    "grade": 4,
+    "equity": -1520355000,
+    "total_assets": 9346980000,
+    "class": "negative"
+   },
+   {
+    "cutoff": "2019-06-29",
+    "period_end": "2018-08-25",
+    "grade": 4,
+    "equity": -1520355000,
+    "total_assets": 9346980000,
+    "class": "negative"
+   },
+   {
+    "cutoff": "2019-07-21",
+    "period_end": "2018-08-25",
+    "grade": 4,
+    "equity": -1520355000,
+    "total_assets": 9346980000,
+    "class": "negative"
+   },
+   {
+    "cutoff": "2019-07-24",
+    "period_end": "2018-08-25",
+    "grade": 4,
+    "equity": -1520355000,
+    "total_assets": 9346980000,
+    "class": "negative"
+   },
+   {
+    "cutoff": "2019-07-31",
+    "period_end": "2018-08-25",
+    "grade": 4,
+    "equity": -1520355000,
+    "total_assets": 9346980000,
+    "class": "negative"
+   },
+   {
+    "cutoff": "2019-08-03",
+    "period_end": "2018-08-25",
+    "grade": 4,
+    "equity": -1520355000,
+    "total_assets": 9346980000,
+    "class": "negative"
+   },
+   {
+    "cutoff": "2019-08-20",
+    "period_end": "2018-08-25",
+    "grade": 4,
+    "equity": -1520355000,
+    "total_assets": 9346980000,
+    "class": "negative"
+   },
+   {
+    "cutoff": "2021-06-15",
+    "period_end": "2020-08-29",
+    "grade": 3,
+    "equity": -877977000,
+    "total_assets": 14423872000,
+    "class": "negative"
+   },
+   {
+    "cutoff": "2022-01-17",
+    "period_end": "2021-08-28",
+    "grade": 3,
+    "equity": -1797536000,
+    "total_assets": 14516199000,
+    "class": "negative"
+   },
+   {
+    "cutoff": "2022-04-23",
+    "period_end": "2021-08-28",
+    "grade": 3,
+    "equity": -1797536000,
+    "total_assets": 14516199000,
+    "class": "negative"
+   },
+   {
+    "cutoff": "2022-06-01",
+    "period_end": "2021-08-28",
+    "grade": 3,
+    "equity": -1797536000,
+    "total_assets": 14516199000,
+    "class": "negative"
+   },
+   {
+    "cutoff": "2022-08-06",
+    "period_end": "2021-08-28",
+    "grade": 3,
+    "equity": -1797536000,
+    "total_assets": 14516199000,
+    "class": "negative"
+   },
+   {
+    "cutoff": "2022-10-15",
+    "period_end": "2021-08-28",
+    "grade": 3,
+    "equity": -1797536000,
+    "total_assets": 14516199000,
+    "class": "negative"
+   }
+  ],
+  "BBY": [
+   {
+    "cutoff": "2018-02-25",
+    "period_end": "2017-01-28",
+    "grade": 3,
+    "equity": 4709000000,
+    "total_assets": 13856000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-04-02",
+    "period_end": "2019-02-02",
+    "grade": 2,
+    "equity": 3306000000,
+    "total_assets": 12901000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-04-15",
+    "period_end": "2019-02-02",
+    "grade": 2,
+    "equity": 3306000000,
+    "total_assets": 12901000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-05-16",
+    "period_end": "2019-02-02",
+    "grade": 2,
+    "equity": 3306000000,
+    "total_assets": 12901000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-06-15",
+    "period_end": "2019-02-02",
+    "grade": 2,
+    "equity": 3306000000,
+    "total_assets": 12901000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-06-24",
+    "period_end": "2019-02-02",
+    "grade": 2,
+    "equity": 3306000000,
+    "total_assets": 12901000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-06-29",
+    "period_end": "2019-02-02",
+    "grade": 2,
+    "equity": 3306000000,
+    "total_assets": 12901000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-07-21",
+    "period_end": "2019-02-02",
+    "grade": 2,
+    "equity": 3306000000,
+    "total_assets": 12901000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-07-24",
+    "period_end": "2019-02-02",
+    "grade": 2,
+    "equity": 3306000000,
+    "total_assets": 12901000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-07-31",
+    "period_end": "2019-02-02",
+    "grade": 2,
+    "equity": 3306000000,
+    "total_assets": 12901000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-08-03",
+    "period_end": "2019-02-02",
+    "grade": 2,
+    "equity": 3306000000,
+    "total_assets": 12901000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-08-20",
+    "period_end": "2019-02-02",
+    "grade": 2,
+    "equity": 3306000000,
+    "total_assets": 12901000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2021-06-15",
+    "period_end": "2021-01-30",
+    "grade": 2,
+    "equity": 4587000000,
+    "total_assets": 19067000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2022-01-17",
+    "period_end": "2021-01-30",
+    "grade": 2,
+    "equity": 4587000000,
+    "total_assets": 19067000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2022-04-23",
+    "period_end": "2022-01-29",
+    "grade": 3,
+    "equity": 3020000000,
+    "total_assets": 17504000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2022-06-01",
+    "period_end": "2022-01-29",
+    "grade": 3,
+    "equity": 3020000000,
+    "total_assets": 17504000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2022-08-06",
+    "period_end": "2022-01-29",
+    "grade": 3,
+    "equity": 3020000000,
+    "total_assets": 17504000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2022-10-15",
+    "period_end": "2022-01-29",
+    "grade": 3,
+    "equity": 3020000000,
+    "total_assets": 17504000000,
+    "class": "normal"
+   }
+  ],
+  "CHD": [
+   {
+    "cutoff": "2018-02-25",
+    "period_end": "2017-12-31",
+    "grade": 3,
+    "equity": 2218000000,
+    "total_assets": 6014800000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-04-02",
+    "period_end": "2018-12-31",
+    "grade": 3,
+    "equity": 2453800000,
+    "total_assets": 6069200000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-04-15",
+    "period_end": "2018-12-31",
+    "grade": 3,
+    "equity": 2453800000,
+    "total_assets": 6069200000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-05-16",
+    "period_end": "2018-12-31",
+    "grade": 3,
+    "equity": 2453800000,
+    "total_assets": 6069200000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-06-15",
+    "period_end": "2018-12-31",
+    "grade": 3,
+    "equity": 2453800000,
+    "total_assets": 6069200000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-06-24",
+    "period_end": "2018-12-31",
+    "grade": 3,
+    "equity": 2453800000,
+    "total_assets": 6069200000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-06-29",
+    "period_end": "2018-12-31",
+    "grade": 3,
+    "equity": 2453800000,
+    "total_assets": 6069200000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-07-21",
+    "period_end": "2018-12-31",
+    "grade": 3,
+    "equity": 2453800000,
+    "total_assets": 6069200000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-07-24",
+    "period_end": "2018-12-31",
+    "grade": 3,
+    "equity": 2453800000,
+    "total_assets": 6069200000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-07-31",
+    "period_end": "2018-12-31",
+    "grade": 3,
+    "equity": 2453800000,
+    "total_assets": 6069200000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-08-03",
+    "period_end": "2018-12-31",
+    "grade": 3,
+    "equity": 2453800000,
+    "total_assets": 6069200000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-08-20",
+    "period_end": "2018-12-31",
+    "grade": 3,
+    "equity": 2453800000,
+    "total_assets": 6069200000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2021-06-15",
+    "period_end": "2020-12-31",
+    "grade": 2,
+    "equity": 3020400000,
+    "total_assets": 7414500000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2022-01-17",
+    "period_end": "2020-12-31",
+    "grade": 2,
+    "equity": 3020400000,
+    "total_assets": 7414500000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2022-04-23",
+    "period_end": "2021-12-31",
+    "grade": 3,
+    "equity": 3233200000,
+    "total_assets": 7996500000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2022-06-01",
+    "period_end": "2021-12-31",
+    "grade": 3,
+    "equity": 3233200000,
+    "total_assets": 7996500000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2022-08-06",
+    "period_end": "2021-12-31",
+    "grade": 3,
+    "equity": 3233200000,
+    "total_assets": 7996500000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2022-10-15",
+    "period_end": "2021-12-31",
+    "grade": 3,
+    "equity": 3233200000,
+    "total_assets": 7996500000,
+    "class": "normal"
+   }
+  ],
+  "CMI": [
+   {
+    "cutoff": "2018-02-25",
+    "period_end": "2017-12-31",
+    "grade": 1,
+    "equity": 7259000000,
+    "total_assets": 18075000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-04-02",
+    "period_end": "2018-12-31",
+    "grade": 1,
+    "equity": 7348000000,
+    "total_assets": 19062000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-04-15",
+    "period_end": "2018-12-31",
+    "grade": 1,
+    "equity": 7348000000,
+    "total_assets": 19062000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-05-16",
+    "period_end": "2018-12-31",
+    "grade": 1,
+    "equity": 7348000000,
+    "total_assets": 19062000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-06-15",
+    "period_end": "2018-12-31",
+    "grade": 1,
+    "equity": 7348000000,
+    "total_assets": 19062000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-06-24",
+    "period_end": "2018-12-31",
+    "grade": 1,
+    "equity": 7348000000,
+    "total_assets": 19062000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-06-29",
+    "period_end": "2018-12-31",
+    "grade": 1,
+    "equity": 7348000000,
+    "total_assets": 19062000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-07-21",
+    "period_end": "2018-12-31",
+    "grade": 1,
+    "equity": 7348000000,
+    "total_assets": 19062000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-07-24",
+    "period_end": "2018-12-31",
+    "grade": 1,
+    "equity": 7348000000,
+    "total_assets": 19062000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-07-31",
+    "period_end": "2018-12-31",
+    "grade": 1,
+    "equity": 7348000000,
+    "total_assets": 19062000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-08-03",
+    "period_end": "2018-12-31",
+    "grade": 1,
+    "equity": 7348000000,
+    "total_assets": 19062000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-08-20",
+    "period_end": "2018-12-31",
+    "grade": 1,
+    "equity": 7348000000,
+    "total_assets": 19062000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2021-06-15",
+    "period_end": "2020-12-31",
+    "grade": 2,
+    "equity": 8062000000,
+    "total_assets": 22624000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2022-01-17",
+    "period_end": "2020-12-31",
+    "grade": 2,
+    "equity": 8062000000,
+    "total_assets": 22624000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2022-04-23",
+    "period_end": "2021-12-31",
+    "grade": 1,
+    "equity": 8474000000,
+    "total_assets": 23710000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2022-06-01",
+    "period_end": "2021-12-31",
+    "grade": 1,
+    "equity": 8474000000,
+    "total_assets": 23710000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2022-08-06",
+    "period_end": "2021-12-31",
+    "grade": 1,
+    "equity": 8474000000,
+    "total_assets": 23710000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2022-10-15",
+    "period_end": "2021-12-31",
+    "grade": 1,
+    "equity": 8474000000,
+    "total_assets": 23710000000,
+    "class": "normal"
+   }
+  ],
+  "COST": [
+   {
+    "cutoff": "2018-02-25",
+    "period_end": "2017-09-03",
+    "grade": 2,
+    "equity": 10778000000,
+    "total_assets": 36347000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-04-02",
+    "period_end": "2018-09-02",
+    "grade": 2,
+    "equity": 12799000000,
+    "total_assets": 40830000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-04-15",
+    "period_end": "2018-09-02",
+    "grade": 2,
+    "equity": 12799000000,
+    "total_assets": 40830000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-05-16",
+    "period_end": "2018-09-02",
+    "grade": 2,
+    "equity": 12799000000,
+    "total_assets": 40830000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-06-15",
+    "period_end": "2018-09-02",
+    "grade": 2,
+    "equity": 12799000000,
+    "total_assets": 40830000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-06-24",
+    "period_end": "2018-09-02",
+    "grade": 2,
+    "equity": 12799000000,
+    "total_assets": 40830000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-06-29",
+    "period_end": "2018-09-02",
+    "grade": 2,
+    "equity": 12799000000,
+    "total_assets": 40830000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-07-21",
+    "period_end": "2018-09-02",
+    "grade": 2,
+    "equity": 12799000000,
+    "total_assets": 40830000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-07-24",
+    "period_end": "2018-09-02",
+    "grade": 2,
+    "equity": 12799000000,
+    "total_assets": 40830000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-07-31",
+    "period_end": "2018-09-02",
+    "grade": 2,
+    "equity": 12799000000,
+    "total_assets": 40830000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-08-03",
+    "period_end": "2018-09-02",
+    "grade": 2,
+    "equity": 12799000000,
+    "total_assets": 40830000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-08-20",
+    "period_end": "2018-09-02",
+    "grade": 2,
+    "equity": 12799000000,
+    "total_assets": 40830000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2021-06-15",
+    "period_end": "2020-08-30",
+    "grade": 2,
+    "equity": 18284000000,
+    "total_assets": 55556000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2022-01-17",
+    "period_end": "2021-08-29",
+    "grade": 2,
+    "equity": 17564000000,
+    "total_assets": 59268000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2022-04-23",
+    "period_end": "2021-08-29",
+    "grade": 2,
+    "equity": 17564000000,
+    "total_assets": 59268000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2022-06-01",
+    "period_end": "2021-08-29",
+    "grade": 2,
+    "equity": 17564000000,
+    "total_assets": 59268000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2022-08-06",
+    "period_end": "2021-08-29",
+    "grade": 2,
+    "equity": 17564000000,
+    "total_assets": 59268000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2022-10-15",
+    "period_end": "2022-08-28",
+    "grade": 2,
+    "equity": 20642000000,
+    "total_assets": 64166000000,
+    "class": "normal"
+   }
+  ],
+  "DVN": [
+   {
+    "cutoff": "2018-02-25",
+    "period_end": "2017-12-31",
+    "grade": 3,
+    "equity": 9254000000,
+    "total_assets": 30241000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-04-02",
+    "period_end": "2018-12-31",
+    "grade": 3,
+    "equity": 9186000000,
+    "total_assets": 19566000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-04-15",
+    "period_end": "2018-12-31",
+    "grade": 3,
+    "equity": 9186000000,
+    "total_assets": 19566000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-05-16",
+    "period_end": "2018-12-31",
+    "grade": 3,
+    "equity": 9186000000,
+    "total_assets": 19566000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-06-15",
+    "period_end": "2018-12-31",
+    "grade": 3,
+    "equity": 9186000000,
+    "total_assets": 19566000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-06-24",
+    "period_end": "2018-12-31",
+    "grade": 3,
+    "equity": 9186000000,
+    "total_assets": 19566000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-06-29",
+    "period_end": "2018-12-31",
+    "grade": 3,
+    "equity": 9186000000,
+    "total_assets": 19566000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-07-21",
+    "period_end": "2018-12-31",
+    "grade": 3,
+    "equity": 9186000000,
+    "total_assets": 19566000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-07-24",
+    "period_end": "2018-12-31",
+    "grade": 3,
+    "equity": 9186000000,
+    "total_assets": 19566000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-07-31",
+    "period_end": "2018-12-31",
+    "grade": 3,
+    "equity": 9186000000,
+    "total_assets": 19566000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-08-03",
+    "period_end": "2018-12-31",
+    "grade": 3,
+    "equity": 9186000000,
+    "total_assets": 19566000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-08-20",
+    "period_end": "2018-12-31",
+    "grade": 3,
+    "equity": 9186000000,
+    "total_assets": 19566000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2021-06-15",
+    "period_end": "2020-12-31",
+    "grade": 4,
+    "equity": 2885000000,
+    "total_assets": 9912000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2022-01-17",
+    "period_end": "2020-12-31",
+    "grade": 4,
+    "equity": 2885000000,
+    "total_assets": 9912000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2022-04-23",
+    "period_end": "2021-12-31",
+    "grade": 3,
+    "equity": 9262000000,
+    "total_assets": 21025000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2022-06-01",
+    "period_end": "2021-12-31",
+    "grade": 3,
+    "equity": 9262000000,
+    "total_assets": 21025000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2022-08-06",
+    "period_end": "2021-12-31",
+    "grade": 3,
+    "equity": 9262000000,
+    "total_assets": 21025000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2022-10-15",
+    "period_end": "2021-12-31",
+    "grade": 3,
+    "equity": 9262000000,
+    "total_assets": 21025000000,
+    "class": "normal"
+   }
+  ],
+  "ECL": [
+   {
+    "cutoff": "2018-02-25",
+    "period_end": "2017-12-31",
+    "grade": 3,
+    "equity": 7618500000,
+    "total_assets": 19962400000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-04-02",
+    "period_end": "2018-12-31",
+    "grade": 3,
+    "equity": 8003200000,
+    "total_assets": 20074500000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-04-15",
+    "period_end": "2018-12-31",
+    "grade": 3,
+    "equity": 8003200000,
+    "total_assets": 20074500000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-05-16",
+    "period_end": "2018-12-31",
+    "grade": 3,
+    "equity": 8003200000,
+    "total_assets": 20074500000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-06-15",
+    "period_end": "2018-12-31",
+    "grade": 3,
+    "equity": 8003200000,
+    "total_assets": 20074500000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-06-24",
+    "period_end": "2018-12-31",
+    "grade": 3,
+    "equity": 8003200000,
+    "total_assets": 20074500000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-06-29",
+    "period_end": "2018-12-31",
+    "grade": 3,
+    "equity": 8003200000,
+    "total_assets": 20074500000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-07-21",
+    "period_end": "2018-12-31",
+    "grade": 3,
+    "equity": 8003200000,
+    "total_assets": 20074500000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-07-24",
+    "period_end": "2018-12-31",
+    "grade": 3,
+    "equity": 8003200000,
+    "total_assets": 20074500000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-07-31",
+    "period_end": "2018-12-31",
+    "grade": 3,
+    "equity": 8003200000,
+    "total_assets": 20074500000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-08-03",
+    "period_end": "2018-12-31",
+    "grade": 3,
+    "equity": 8003200000,
+    "total_assets": 20074500000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-08-20",
+    "period_end": "2018-12-31",
+    "grade": 3,
+    "equity": 8003200000,
+    "total_assets": 20074500000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2021-06-15",
+    "period_end": "2020-12-31",
+    "grade": 4,
+    "equity": 6166500000,
+    "total_assets": 18126000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2022-01-17",
+    "period_end": "2020-12-31",
+    "grade": 4,
+    "equity": 6166500000,
+    "total_assets": 18126000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2022-04-23",
+    "period_end": "2021-12-31",
+    "grade": 3,
+    "equity": 7224200000,
+    "total_assets": 21206400000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2022-06-01",
+    "period_end": "2021-12-31",
+    "grade": 3,
+    "equity": 7224200000,
+    "total_assets": 21206400000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2022-08-06",
+    "period_end": "2021-12-31",
+    "grade": 3,
+    "equity": 7224200000,
+    "total_assets": 21206400000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2022-10-15",
+    "period_end": "2021-12-31",
+    "grade": 3,
+    "equity": 7224200000,
+    "total_assets": 21206400000,
+    "class": "normal"
+   }
+  ],
+  "FAST": [
+   {
+    "cutoff": "2018-02-25",
+    "period_end": "2017-12-31",
+    "grade": 1,
+    "equity": 2096900000,
+    "total_assets": 2910500000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-04-02",
+    "period_end": "2018-12-31",
+    "grade": 1,
+    "equity": 2302700000,
+    "total_assets": 3321500000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-04-15",
+    "period_end": "2018-12-31",
+    "grade": 1,
+    "equity": 2302700000,
+    "total_assets": 3321500000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-05-16",
+    "period_end": "2018-12-31",
+    "grade": 1,
+    "equity": 2302700000,
+    "total_assets": 3321500000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-06-15",
+    "period_end": "2018-12-31",
+    "grade": 1,
+    "equity": 2302700000,
+    "total_assets": 3321500000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-06-24",
+    "period_end": "2018-12-31",
+    "grade": 1,
+    "equity": 2302700000,
+    "total_assets": 3321500000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-06-29",
+    "period_end": "2018-12-31",
+    "grade": 1,
+    "equity": 2302700000,
+    "total_assets": 3321500000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-07-21",
+    "period_end": "2018-12-31",
+    "grade": 1,
+    "equity": 2302700000,
+    "total_assets": 3321500000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-07-24",
+    "period_end": "2018-12-31",
+    "grade": 1,
+    "equity": 2302700000,
+    "total_assets": 3321500000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-07-31",
+    "period_end": "2018-12-31",
+    "grade": 1,
+    "equity": 2302700000,
+    "total_assets": 3321500000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-08-03",
+    "period_end": "2018-12-31",
+    "grade": 1,
+    "equity": 2302700000,
+    "total_assets": 3321500000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-08-20",
+    "period_end": "2018-12-31",
+    "grade": 1,
+    "equity": 2302700000,
+    "total_assets": 3321500000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2021-06-15",
+    "period_end": "2020-12-31",
+    "grade": 1,
+    "equity": 2733200000,
+    "total_assets": 3964700000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2022-01-17",
+    "period_end": "2020-12-31",
+    "grade": 1,
+    "equity": 2733200000,
+    "total_assets": 3964700000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2022-04-23",
+    "period_end": "2021-12-31",
+    "grade": 1,
+    "equity": 3042200000,
+    "total_assets": 4299000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2022-06-01",
+    "period_end": "2021-12-31",
+    "grade": 1,
+    "equity": 3042200000,
+    "total_assets": 4299000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2022-08-06",
+    "period_end": "2021-12-31",
+    "grade": 1,
+    "equity": 3042200000,
+    "total_assets": 4299000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2022-10-15",
+    "period_end": "2021-12-31",
+    "grade": 1,
+    "equity": 3042200000,
+    "total_assets": 4299000000,
+    "class": "normal"
+   }
+  ],
+  "HAS": [
+   {
+    "cutoff": "2018-02-25",
+    "period_end": "2016-12-25",
+    "grade": 4,
+    "equity": 1862736000,
+    "total_assets": 5091366000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-04-02",
+    "period_end": "2018-12-30",
+    "grade": 3,
+    "equity": 1754486000,
+    "total_assets": 5262988000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-04-15",
+    "period_end": "2018-12-30",
+    "grade": 3,
+    "equity": 1754486000,
+    "total_assets": 5262988000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-05-16",
+    "period_end": "2018-12-30",
+    "grade": 3,
+    "equity": 1754486000,
+    "total_assets": 5262988000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-06-15",
+    "period_end": "2018-12-30",
+    "grade": 3,
+    "equity": 1754486000,
+    "total_assets": 5262988000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-06-24",
+    "period_end": "2018-12-30",
+    "grade": 3,
+    "equity": 1754486000,
+    "total_assets": 5262988000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-06-29",
+    "period_end": "2018-12-30",
+    "grade": 3,
+    "equity": 1754486000,
+    "total_assets": 5262988000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-07-21",
+    "period_end": "2018-12-30",
+    "grade": 3,
+    "equity": 1754486000,
+    "total_assets": 5262988000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-07-24",
+    "period_end": "2018-12-30",
+    "grade": 3,
+    "equity": 1754486000,
+    "total_assets": 5262988000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-07-31",
+    "period_end": "2018-12-30",
+    "grade": 3,
+    "equity": 1754486000,
+    "total_assets": 5262988000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-08-03",
+    "period_end": "2018-12-30",
+    "grade": 3,
+    "equity": 1754486000,
+    "total_assets": 5262988000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-08-20",
+    "period_end": "2018-12-30",
+    "grade": 3,
+    "equity": 1754486000,
+    "total_assets": 5262988000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2021-06-15",
+    "period_end": "2020-12-27",
+    "grade": 3,
+    "equity": 2936737000,
+    "total_assets": 10818385000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2022-01-17",
+    "period_end": "2020-12-27",
+    "grade": 3,
+    "equity": 2936737000,
+    "total_assets": 10818385000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2022-04-23",
+    "period_end": "2021-12-26",
+    "grade": 3,
+    "equity": 3063100000,
+    "total_assets": 10037800000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2022-06-01",
+    "period_end": "2021-12-26",
+    "grade": 3,
+    "equity": 3063100000,
+    "total_assets": 10037800000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2022-08-06",
+    "period_end": "2021-12-26",
+    "grade": 3,
+    "equity": 3063100000,
+    "total_assets": 10037800000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2022-10-15",
+    "period_end": "2021-12-26",
+    "grade": 3,
+    "equity": 3063100000,
+    "total_assets": 10037800000,
+    "class": "normal"
+   }
+  ],
+  "IDXX": [
+   {
+    "cutoff": "2018-02-25",
+    "period_end": "2017-12-31",
+    "grade": 3,
+    "equity": -54106000,
+    "total_assets": 1713416000,
+    "class": "negative"
+   },
+   {
+    "cutoff": "2019-04-02",
+    "period_end": "2018-12-31",
+    "grade": 3,
+    "equity": -9513000,
+    "total_assets": 1537349000,
+    "class": "negative"
+   },
+   {
+    "cutoff": "2019-04-15",
+    "period_end": "2018-12-31",
+    "grade": 3,
+    "equity": -9513000,
+    "total_assets": 1537349000,
+    "class": "negative"
+   },
+   {
+    "cutoff": "2019-05-16",
+    "period_end": "2018-12-31",
+    "grade": 3,
+    "equity": -9513000,
+    "total_assets": 1537349000,
+    "class": "negative"
+   },
+   {
+    "cutoff": "2019-06-15",
+    "period_end": "2018-12-31",
+    "grade": 3,
+    "equity": -9513000,
+    "total_assets": 1537349000,
+    "class": "negative"
+   },
+   {
+    "cutoff": "2019-06-24",
+    "period_end": "2018-12-31",
+    "grade": 3,
+    "equity": -9513000,
+    "total_assets": 1537349000,
+    "class": "negative"
+   },
+   {
+    "cutoff": "2019-06-29",
+    "period_end": "2018-12-31",
+    "grade": 3,
+    "equity": -9513000,
+    "total_assets": 1537349000,
+    "class": "negative"
+   },
+   {
+    "cutoff": "2019-07-21",
+    "period_end": "2018-12-31",
+    "grade": 3,
+    "equity": -9513000,
+    "total_assets": 1537349000,
+    "class": "negative"
+   },
+   {
+    "cutoff": "2019-07-24",
+    "period_end": "2018-12-31",
+    "grade": 3,
+    "equity": -9513000,
+    "total_assets": 1537349000,
+    "class": "negative"
+   },
+   {
+    "cutoff": "2019-07-31",
+    "period_end": "2018-12-31",
+    "grade": 3,
+    "equity": -9513000,
+    "total_assets": 1537349000,
+    "class": "negative"
+   },
+   {
+    "cutoff": "2019-08-03",
+    "period_end": "2018-12-31",
+    "grade": 3,
+    "equity": -9513000,
+    "total_assets": 1537349000,
+    "class": "negative"
+   },
+   {
+    "cutoff": "2019-08-20",
+    "period_end": "2018-12-31",
+    "grade": 3,
+    "equity": -9513000,
+    "total_assets": 1537349000,
+    "class": "negative"
+   },
+   {
+    "cutoff": "2021-06-15",
+    "period_end": "2020-12-31",
+    "grade": 1,
+    "equity": 632088000,
+    "total_assets": 2294561000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2022-01-17",
+    "period_end": "2020-12-31",
+    "grade": 1,
+    "equity": 632088000,
+    "total_assets": 2294561000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2022-04-23",
+    "period_end": "2021-12-31",
+    "grade": 2,
+    "equity": 689992000,
+    "total_assets": 2437203000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2022-06-01",
+    "period_end": "2021-12-31",
+    "grade": 2,
+    "equity": 689992000,
+    "total_assets": 2437203000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2022-08-06",
+    "period_end": "2021-12-31",
+    "grade": 2,
+    "equity": 689992000,
+    "total_assets": 2437203000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2022-10-15",
+    "period_end": "2021-12-31",
+    "grade": 2,
+    "equity": 689992000,
+    "total_assets": 2437203000,
+    "class": "normal"
+   }
+  ],
+  "KO": [
+   {
+    "cutoff": "2018-02-25",
+    "period_end": "2017-12-31",
+    "grade": 4,
+    "equity": 17072000000,
+    "total_assets": 87896000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-04-02",
+    "period_end": "2018-12-31",
+    "grade": 4,
+    "equity": 16981000000,
+    "total_assets": 83216000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-04-15",
+    "period_end": "2018-12-31",
+    "grade": 4,
+    "equity": 16981000000,
+    "total_assets": 83216000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-05-16",
+    "period_end": "2018-12-31",
+    "grade": 4,
+    "equity": 16981000000,
+    "total_assets": 83216000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-06-15",
+    "period_end": "2018-12-31",
+    "grade": 4,
+    "equity": 16981000000,
+    "total_assets": 83216000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-06-24",
+    "period_end": "2018-12-31",
+    "grade": 4,
+    "equity": 16981000000,
+    "total_assets": 83216000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-06-29",
+    "period_end": "2018-12-31",
+    "grade": 4,
+    "equity": 16981000000,
+    "total_assets": 83216000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-07-21",
+    "period_end": "2018-12-31",
+    "grade": 4,
+    "equity": 16981000000,
+    "total_assets": 83216000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-07-24",
+    "period_end": "2018-12-31",
+    "grade": 4,
+    "equity": 16981000000,
+    "total_assets": 83216000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-07-31",
+    "period_end": "2018-12-31",
+    "grade": 4,
+    "equity": 16981000000,
+    "total_assets": 83216000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-08-03",
+    "period_end": "2018-12-31",
+    "grade": 4,
+    "equity": 16981000000,
+    "total_assets": 83216000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-08-20",
+    "period_end": "2018-12-31",
+    "grade": 4,
+    "equity": 16981000000,
+    "total_assets": 83216000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2021-06-15",
+    "period_end": "2020-12-31",
+    "grade": 3,
+    "equity": 19299000000,
+    "total_assets": 87296000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2022-01-17",
+    "period_end": "2020-12-31",
+    "grade": 3,
+    "equity": 19299000000,
+    "total_assets": 87296000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2022-04-23",
+    "period_end": "2021-12-31",
+    "grade": 3,
+    "equity": 22999000000,
+    "total_assets": 94354000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2022-06-01",
+    "period_end": "2021-12-31",
+    "grade": 3,
+    "equity": 22999000000,
+    "total_assets": 94354000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2022-08-06",
+    "period_end": "2021-12-31",
+    "grade": 3,
+    "equity": 22999000000,
+    "total_assets": 94354000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2022-10-15",
+    "period_end": "2021-12-31",
+    "grade": 3,
+    "equity": 22999000000,
+    "total_assets": 94354000000,
+    "class": "normal"
+   }
+  ],
+  "LUV": [
+   {
+    "cutoff": "2018-02-25",
+    "period_end": "2017-12-31",
+    "grade": 3,
+    "equity": 10430000000,
+    "total_assets": 25110000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-04-02",
+    "period_end": "2018-12-31",
+    "grade": 3,
+    "equity": 9853000000,
+    "total_assets": 26243000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-04-15",
+    "period_end": "2018-12-31",
+    "grade": 3,
+    "equity": 9853000000,
+    "total_assets": 26243000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-05-16",
+    "period_end": "2018-12-31",
+    "grade": 3,
+    "equity": 9853000000,
+    "total_assets": 26243000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-06-15",
+    "period_end": "2018-12-31",
+    "grade": 3,
+    "equity": 9853000000,
+    "total_assets": 26243000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-06-24",
+    "period_end": "2018-12-31",
+    "grade": 3,
+    "equity": 9853000000,
+    "total_assets": 26243000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-06-29",
+    "period_end": "2018-12-31",
+    "grade": 3,
+    "equity": 9853000000,
+    "total_assets": 26243000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-07-21",
+    "period_end": "2018-12-31",
+    "grade": 3,
+    "equity": 9853000000,
+    "total_assets": 26243000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-07-24",
+    "period_end": "2018-12-31",
+    "grade": 3,
+    "equity": 9853000000,
+    "total_assets": 26243000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-07-31",
+    "period_end": "2018-12-31",
+    "grade": 3,
+    "equity": 9853000000,
+    "total_assets": 26243000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-08-03",
+    "period_end": "2018-12-31",
+    "grade": 3,
+    "equity": 9853000000,
+    "total_assets": 26243000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-08-20",
+    "period_end": "2018-12-31",
+    "grade": 3,
+    "equity": 9853000000,
+    "total_assets": 26243000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2021-06-15",
+    "period_end": "2020-12-31",
+    "grade": 4,
+    "equity": 8876000000,
+    "total_assets": 34588000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2022-01-17",
+    "period_end": "2020-12-31",
+    "grade": 4,
+    "equity": 8876000000,
+    "total_assets": 34588000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2022-04-23",
+    "period_end": "2021-12-31",
+    "grade": 3,
+    "equity": 10414000000,
+    "total_assets": 36320000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2022-06-01",
+    "period_end": "2021-12-31",
+    "grade": 3,
+    "equity": 10414000000,
+    "total_assets": 36320000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2022-08-06",
+    "period_end": "2021-12-31",
+    "grade": 3,
+    "equity": 10414000000,
+    "total_assets": 36320000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2022-10-15",
+    "period_end": "2021-12-31",
+    "grade": 3,
+    "equity": 10414000000,
+    "total_assets": 36320000000,
+    "class": "normal"
+   }
+  ],
+  "PG": [
+   {
+    "cutoff": "2018-02-25",
+    "period_end": "2017-06-30",
+    "grade": 3,
+    "equity": 55778000000,
+    "total_assets": 120406000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-04-02",
+    "period_end": "2018-06-30",
+    "grade": 3,
+    "equity": 52883000000,
+    "total_assets": 118310000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-04-15",
+    "period_end": "2018-06-30",
+    "grade": 3,
+    "equity": 52883000000,
+    "total_assets": 118310000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-05-16",
+    "period_end": "2018-06-30",
+    "grade": 3,
+    "equity": 52883000000,
+    "total_assets": 118310000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-06-15",
+    "period_end": "2018-06-30",
+    "grade": 3,
+    "equity": 52883000000,
+    "total_assets": 118310000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-06-24",
+    "period_end": "2018-06-30",
+    "grade": 3,
+    "equity": 52883000000,
+    "total_assets": 118310000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-06-29",
+    "period_end": "2018-06-30",
+    "grade": 3,
+    "equity": 52883000000,
+    "total_assets": 118310000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-07-21",
+    "period_end": "2018-06-30",
+    "grade": 3,
+    "equity": 52883000000,
+    "total_assets": 118310000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-07-24",
+    "period_end": "2018-06-30",
+    "grade": 3,
+    "equity": 52883000000,
+    "total_assets": 118310000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-07-31",
+    "period_end": "2018-06-30",
+    "grade": 3,
+    "equity": 52883000000,
+    "total_assets": 118310000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-08-03",
+    "period_end": "2018-06-30",
+    "grade": 3,
+    "equity": 52883000000,
+    "total_assets": 118310000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-08-20",
+    "period_end": "2019-06-30",
+    "grade": 3,
+    "equity": 47579000000,
+    "total_assets": 115095000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2021-06-15",
+    "period_end": "2020-06-30",
+    "grade": 2,
+    "equity": 46878000000,
+    "total_assets": 120700000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2022-01-17",
+    "period_end": "2021-06-30",
+    "grade": 3,
+    "equity": 46654000000,
+    "total_assets": 119307000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2022-04-23",
+    "period_end": "2021-06-30",
+    "grade": 3,
+    "equity": 46654000000,
+    "total_assets": 119307000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2022-06-01",
+    "period_end": "2021-06-30",
+    "grade": 3,
+    "equity": 46654000000,
+    "total_assets": 119307000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2022-08-06",
+    "period_end": "2022-06-30",
+    "grade": 3,
+    "equity": 46854000000,
+    "total_assets": 117208000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2022-10-15",
+    "period_end": "2022-06-30",
+    "grade": 3,
+    "equity": 46854000000,
+    "total_assets": 117208000000,
+    "class": "normal"
+   }
+  ],
+  "PPG": [
+   {
+    "cutoff": "2018-02-25",
+    "period_end": "2017-12-31",
+    "grade": 2,
+    "equity": 5558000000,
+    "total_assets": 16538000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-04-02",
+    "period_end": "2018-12-31",
+    "grade": 3,
+    "equity": 4630000000,
+    "total_assets": 16015000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-04-15",
+    "period_end": "2018-12-31",
+    "grade": 3,
+    "equity": 4630000000,
+    "total_assets": 16015000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-05-16",
+    "period_end": "2018-12-31",
+    "grade": 3,
+    "equity": 4630000000,
+    "total_assets": 16015000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-06-15",
+    "period_end": "2018-12-31",
+    "grade": 3,
+    "equity": 4630000000,
+    "total_assets": 16015000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-06-24",
+    "period_end": "2018-12-31",
+    "grade": 3,
+    "equity": 4630000000,
+    "total_assets": 16015000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-06-29",
+    "period_end": "2018-12-31",
+    "grade": 3,
+    "equity": 4630000000,
+    "total_assets": 16015000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-07-21",
+    "period_end": "2018-12-31",
+    "grade": 3,
+    "equity": 4630000000,
+    "total_assets": 16015000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-07-24",
+    "period_end": "2018-12-31",
+    "grade": 3,
+    "equity": 4630000000,
+    "total_assets": 16015000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-07-31",
+    "period_end": "2018-12-31",
+    "grade": 3,
+    "equity": 4630000000,
+    "total_assets": 16015000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-08-03",
+    "period_end": "2018-12-31",
+    "grade": 3,
+    "equity": 4630000000,
+    "total_assets": 16015000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-08-20",
+    "period_end": "2018-12-31",
+    "grade": 3,
+    "equity": 4630000000,
+    "total_assets": 16015000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2021-06-15",
+    "period_end": "2020-12-31",
+    "grade": 3,
+    "equity": 5689000000,
+    "total_assets": 19556000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2022-01-17",
+    "period_end": "2020-12-31",
+    "grade": 3,
+    "equity": 5689000000,
+    "total_assets": 19556000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2022-04-23",
+    "period_end": "2021-12-31",
+    "grade": 3,
+    "equity": 6286000000,
+    "total_assets": 21351000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2022-06-01",
+    "period_end": "2021-12-31",
+    "grade": 3,
+    "equity": 6286000000,
+    "total_assets": 21351000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2022-08-06",
+    "period_end": "2021-12-31",
+    "grade": 3,
+    "equity": 6286000000,
+    "total_assets": 21351000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2022-10-15",
+    "period_end": "2021-12-31",
+    "grade": 3,
+    "equity": 6286000000,
+    "total_assets": 21351000000,
+    "class": "normal"
+   }
+  ],
+  "SLB": [
+   {
+    "cutoff": "2018-02-25",
+    "period_end": "2017-12-31",
+    "grade": 3,
+    "equity": 36842000000,
+    "total_assets": 71987000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-04-02",
+    "period_end": "2018-12-31",
+    "grade": 3,
+    "equity": 36162000000,
+    "total_assets": 70507000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-04-15",
+    "period_end": "2018-12-31",
+    "grade": 3,
+    "equity": 36162000000,
+    "total_assets": 70507000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-05-16",
+    "period_end": "2018-12-31",
+    "grade": 3,
+    "equity": 36162000000,
+    "total_assets": 70507000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-06-15",
+    "period_end": "2018-12-31",
+    "grade": 3,
+    "equity": 36162000000,
+    "total_assets": 70507000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-06-24",
+    "period_end": "2018-12-31",
+    "grade": 3,
+    "equity": 36162000000,
+    "total_assets": 70507000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-06-29",
+    "period_end": "2018-12-31",
+    "grade": 3,
+    "equity": 36162000000,
+    "total_assets": 70507000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-07-21",
+    "period_end": "2018-12-31",
+    "grade": 3,
+    "equity": 36162000000,
+    "total_assets": 70507000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-07-24",
+    "period_end": "2018-12-31",
+    "grade": 3,
+    "equity": 36162000000,
+    "total_assets": 70507000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-07-31",
+    "period_end": "2018-12-31",
+    "grade": 3,
+    "equity": 36162000000,
+    "total_assets": 70507000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-08-03",
+    "period_end": "2018-12-31",
+    "grade": 3,
+    "equity": 36162000000,
+    "total_assets": 70507000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-08-20",
+    "period_end": "2018-12-31",
+    "grade": 3,
+    "equity": 36162000000,
+    "total_assets": 70507000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2021-06-15",
+    "period_end": "2020-12-31",
+    "grade": 4,
+    "equity": 12071000000,
+    "total_assets": 42434000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2022-01-17",
+    "period_end": "2020-12-31",
+    "grade": 4,
+    "equity": 12071000000,
+    "total_assets": 42434000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2022-04-23",
+    "period_end": "2021-12-31",
+    "grade": 3,
+    "equity": 15004000000,
+    "total_assets": 41511000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2022-06-01",
+    "period_end": "2021-12-31",
+    "grade": 3,
+    "equity": 15004000000,
+    "total_assets": 41511000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2022-08-06",
+    "period_end": "2021-12-31",
+    "grade": 3,
+    "equity": 15004000000,
+    "total_assets": 41511000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2022-10-15",
+    "period_end": "2021-12-31",
+    "grade": 3,
+    "equity": 15004000000,
+    "total_assets": 41511000000,
+    "class": "normal"
+   }
+  ],
+  "STLD": [
+   {
+    "cutoff": "2018-02-25",
+    "period_end": "2016-12-31",
+    "grade": 2,
+    "equity": 2927020000,
+    "total_assets": 6423732000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-04-02",
+    "period_end": "2018-12-31",
+    "grade": 1,
+    "equity": 3935071000,
+    "total_assets": 7703563000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-04-15",
+    "period_end": "2018-12-31",
+    "grade": 1,
+    "equity": 3935071000,
+    "total_assets": 7703563000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-05-16",
+    "period_end": "2018-12-31",
+    "grade": 1,
+    "equity": 3935071000,
+    "total_assets": 7703563000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-06-15",
+    "period_end": "2018-12-31",
+    "grade": 1,
+    "equity": 3935071000,
+    "total_assets": 7703563000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-06-24",
+    "period_end": "2018-12-31",
+    "grade": 1,
+    "equity": 3935071000,
+    "total_assets": 7703563000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-06-29",
+    "period_end": "2018-12-31",
+    "grade": 1,
+    "equity": 3935071000,
+    "total_assets": 7703563000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-07-21",
+    "period_end": "2018-12-31",
+    "grade": 1,
+    "equity": 3935071000,
+    "total_assets": 7703563000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-07-24",
+    "period_end": "2018-12-31",
+    "grade": 1,
+    "equity": 3935071000,
+    "total_assets": 7703563000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-07-31",
+    "period_end": "2018-12-31",
+    "grade": 1,
+    "equity": 3935071000,
+    "total_assets": 7703563000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-08-03",
+    "period_end": "2018-12-31",
+    "grade": 1,
+    "equity": 3935071000,
+    "total_assets": 7703563000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-08-20",
+    "period_end": "2018-12-31",
+    "grade": 1,
+    "equity": 3935071000,
+    "total_assets": 7703563000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2021-06-15",
+    "period_end": "2020-12-31",
+    "grade": 4,
+    "equity": 4345164000,
+    "total_assets": 9265562000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2022-01-17",
+    "period_end": "2020-12-31",
+    "grade": 4,
+    "equity": 4345164000,
+    "total_assets": 9265562000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2022-04-23",
+    "period_end": "2021-12-31",
+    "grade": 1,
+    "equity": 6304641000,
+    "total_assets": 12531234000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2022-06-01",
+    "period_end": "2021-12-31",
+    "grade": 1,
+    "equity": 6304641000,
+    "total_assets": 12531234000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2022-08-06",
+    "period_end": "2021-12-31",
+    "grade": 1,
+    "equity": 6304641000,
+    "total_assets": 12531234000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2022-10-15",
+    "period_end": "2021-12-31",
+    "grade": 1,
+    "equity": 6304641000,
+    "total_assets": 12531234000,
+    "class": "normal"
+   }
+  ],
+  "SYK": [
+   {
+    "cutoff": "2018-02-25",
+    "period_end": "2017-12-31",
+    "grade": 2,
+    "equity": 9966000000,
+    "total_assets": 22197000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-04-02",
+    "period_end": "2018-12-31",
+    "grade": 2,
+    "equity": 11730000000,
+    "total_assets": 27229000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-04-15",
+    "period_end": "2018-12-31",
+    "grade": 2,
+    "equity": 11730000000,
+    "total_assets": 27229000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-05-16",
+    "period_end": "2018-12-31",
+    "grade": 2,
+    "equity": 11730000000,
+    "total_assets": 27229000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-06-15",
+    "period_end": "2018-12-31",
+    "grade": 2,
+    "equity": 11730000000,
+    "total_assets": 27229000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-06-24",
+    "period_end": "2018-12-31",
+    "grade": 2,
+    "equity": 11730000000,
+    "total_assets": 27229000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-06-29",
+    "period_end": "2018-12-31",
+    "grade": 2,
+    "equity": 11730000000,
+    "total_assets": 27229000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-07-21",
+    "period_end": "2018-12-31",
+    "grade": 2,
+    "equity": 11730000000,
+    "total_assets": 27229000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-07-24",
+    "period_end": "2018-12-31",
+    "grade": 2,
+    "equity": 11730000000,
+    "total_assets": 27229000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-07-31",
+    "period_end": "2018-12-31",
+    "grade": 2,
+    "equity": 11730000000,
+    "total_assets": 27229000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-08-03",
+    "period_end": "2018-12-31",
+    "grade": 2,
+    "equity": 11730000000,
+    "total_assets": 27229000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-08-20",
+    "period_end": "2018-12-31",
+    "grade": 2,
+    "equity": 11730000000,
+    "total_assets": 27229000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2021-06-15",
+    "period_end": "2020-12-31",
+    "grade": 3,
+    "equity": 13084000000,
+    "total_assets": 34330000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2022-01-17",
+    "period_end": "2020-12-31",
+    "grade": 3,
+    "equity": 13084000000,
+    "total_assets": 34330000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2022-04-23",
+    "period_end": "2021-12-31",
+    "grade": 2,
+    "equity": 14877000000,
+    "total_assets": 34631000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2022-06-01",
+    "period_end": "2021-12-31",
+    "grade": 2,
+    "equity": 14877000000,
+    "total_assets": 34631000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2022-08-06",
+    "period_end": "2021-12-31",
+    "grade": 2,
+    "equity": 14877000000,
+    "total_assets": 34631000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2022-10-15",
+    "period_end": "2021-12-31",
+    "grade": 2,
+    "equity": 14877000000,
+    "total_assets": 34631000000,
+    "class": "normal"
+   }
+  ],
+  "TJX": [
+   {
+    "cutoff": "2018-02-25",
+    "period_end": "2017-01-28",
+    "grade": 1,
+    "equity": 4510599000,
+    "total_assets": 12883808000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-04-02",
+    "period_end": "2018-02-03",
+    "grade": 2,
+    "equity": 5148309000,
+    "total_assets": 14058015000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-04-15",
+    "period_end": "2019-02-02",
+    "grade": 3,
+    "equity": 5048606000,
+    "total_assets": 14326029000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-05-16",
+    "period_end": "2019-02-02",
+    "grade": 3,
+    "equity": 5048606000,
+    "total_assets": 14326029000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-06-15",
+    "period_end": "2019-02-02",
+    "grade": 3,
+    "equity": 5048606000,
+    "total_assets": 14326029000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-06-24",
+    "period_end": "2019-02-02",
+    "grade": 3,
+    "equity": 5048606000,
+    "total_assets": 14326029000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-06-29",
+    "period_end": "2019-02-02",
+    "grade": 3,
+    "equity": 5048606000,
+    "total_assets": 14326029000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-07-21",
+    "period_end": "2019-02-02",
+    "grade": 3,
+    "equity": 5048606000,
+    "total_assets": 14326029000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-07-24",
+    "period_end": "2019-02-02",
+    "grade": 3,
+    "equity": 5048606000,
+    "total_assets": 14326029000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-07-31",
+    "period_end": "2019-02-02",
+    "grade": 3,
+    "equity": 5048606000,
+    "total_assets": 14326029000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-08-03",
+    "period_end": "2019-02-02",
+    "grade": 3,
+    "equity": 5048606000,
+    "total_assets": 14326029000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-08-20",
+    "period_end": "2019-02-02",
+    "grade": 3,
+    "equity": 5048606000,
+    "total_assets": 14326029000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2021-06-15",
+    "period_end": "2021-01-30",
+    "grade": 3,
+    "equity": 5832684000,
+    "total_assets": 30813555000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2022-01-17",
+    "period_end": "2021-01-30",
+    "grade": 3,
+    "equity": 5832684000,
+    "total_assets": 30813555000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2022-04-23",
+    "period_end": "2022-01-29",
+    "grade": 4,
+    "equity": 6002992000,
+    "total_assets": 28461458000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2022-06-01",
+    "period_end": "2022-01-29",
+    "grade": 4,
+    "equity": 6002992000,
+    "total_assets": 28461458000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2022-08-06",
+    "period_end": "2022-01-29",
+    "grade": 4,
+    "equity": 6002992000,
+    "total_assets": 28461458000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2022-10-15",
+    "period_end": "2022-01-29",
+    "grade": 4,
+    "equity": 6002992000,
+    "total_assets": 28461458000,
+    "class": "normal"
+   }
+  ],
+  "TXRH": [
+   {
+    "cutoff": "2018-02-25",
+    "period_end": "2017-12-26",
+    "grade": 2,
+    "equity": 839079000,
+    "total_assets": 1330623000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-04-02",
+    "period_end": "2018-12-25",
+    "grade": 3,
+    "equity": 945569000,
+    "total_assets": 1469276000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-04-15",
+    "period_end": "2018-12-25",
+    "grade": 3,
+    "equity": 945569000,
+    "total_assets": 1469276000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-05-16",
+    "period_end": "2018-12-25",
+    "grade": 3,
+    "equity": 945569000,
+    "total_assets": 1469276000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-06-15",
+    "period_end": "2018-12-25",
+    "grade": 3,
+    "equity": 945569000,
+    "total_assets": 1469276000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-06-24",
+    "period_end": "2018-12-25",
+    "grade": 3,
+    "equity": 945569000,
+    "total_assets": 1469276000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-06-29",
+    "period_end": "2018-12-25",
+    "grade": 3,
+    "equity": 945569000,
+    "total_assets": 1469276000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-07-21",
+    "period_end": "2018-12-25",
+    "grade": 3,
+    "equity": 945569000,
+    "total_assets": 1469276000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-07-24",
+    "period_end": "2018-12-25",
+    "grade": 3,
+    "equity": 945569000,
+    "total_assets": 1469276000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-07-31",
+    "period_end": "2018-12-25",
+    "grade": 3,
+    "equity": 945569000,
+    "total_assets": 1469276000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-08-03",
+    "period_end": "2018-12-25",
+    "grade": 3,
+    "equity": 945569000,
+    "total_assets": 1469276000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-08-20",
+    "period_end": "2018-12-25",
+    "grade": 3,
+    "equity": 945569000,
+    "total_assets": 1469276000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2021-06-15",
+    "period_end": "2020-12-29",
+    "grade": 4,
+    "equity": 927505000,
+    "total_assets": 2325161000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2022-01-17",
+    "period_end": "2020-12-29",
+    "grade": 4,
+    "equity": 927505000,
+    "total_assets": 2325161000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2022-04-23",
+    "period_end": "2021-12-28",
+    "grade": 3,
+    "equity": 1058124000,
+    "total_assets": 2511952000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2022-06-01",
+    "period_end": "2021-12-28",
+    "grade": 3,
+    "equity": 1058124000,
+    "total_assets": 2511952000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2022-08-06",
+    "period_end": "2021-12-28",
+    "grade": 3,
+    "equity": 1058124000,
+    "total_assets": 2511952000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2022-10-15",
+    "period_end": "2021-12-28",
+    "grade": 3,
+    "equity": 1058124000,
+    "total_assets": 2511952000,
+    "class": "normal"
+   }
+  ],
+  "WBD": [
+   {
+    "cutoff": "2018-02-25",
+    "period_end": "2016-12-31",
+    "grade": 3,
+    "equity": 5167000000,
+    "total_assets": 15758000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-04-02",
+    "period_end": "2018-12-31",
+    "grade": 4,
+    "equity": 8386000000,
+    "total_assets": 32550000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-04-15",
+    "period_end": "2018-12-31",
+    "grade": 4,
+    "equity": 8386000000,
+    "total_assets": 32550000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-05-16",
+    "period_end": "2018-12-31",
+    "grade": 4,
+    "equity": 8386000000,
+    "total_assets": 32550000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-06-15",
+    "period_end": "2018-12-31",
+    "grade": 4,
+    "equity": 8386000000,
+    "total_assets": 32550000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-06-24",
+    "period_end": "2018-12-31",
+    "grade": 4,
+    "equity": 8386000000,
+    "total_assets": 32550000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-06-29",
+    "period_end": "2018-12-31",
+    "grade": 4,
+    "equity": 8386000000,
+    "total_assets": 32550000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-07-21",
+    "period_end": "2018-12-31",
+    "grade": 4,
+    "equity": 8386000000,
+    "total_assets": 32550000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-07-24",
+    "period_end": "2018-12-31",
+    "grade": 4,
+    "equity": 8386000000,
+    "total_assets": 32550000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-07-31",
+    "period_end": "2018-12-31",
+    "grade": 4,
+    "equity": 8386000000,
+    "total_assets": 32550000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-08-03",
+    "period_end": "2018-12-31",
+    "grade": 4,
+    "equity": 8386000000,
+    "total_assets": 32550000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-08-20",
+    "period_end": "2018-12-31",
+    "grade": 4,
+    "equity": 8386000000,
+    "total_assets": 32550000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2021-06-15",
+    "period_end": "2020-12-31",
+    "grade": 3,
+    "equity": 10464000000,
+    "total_assets": 34087000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2022-01-17",
+    "period_end": "2020-12-31",
+    "grade": 3,
+    "equity": 10464000000,
+    "total_assets": 34087000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2022-04-23",
+    "period_end": "2021-12-31",
+    "grade": 3,
+    "equity": 11599000000,
+    "total_assets": 34427000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2022-06-01",
+    "period_end": "2021-12-31",
+    "grade": 3,
+    "equity": 11599000000,
+    "total_assets": 34427000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2022-08-06",
+    "period_end": "2021-12-31",
+    "grade": 3,
+    "equity": 11599000000,
+    "total_assets": 34427000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2022-10-15",
+    "period_end": "2021-12-31",
+    "grade": 3,
+    "equity": 11599000000,
+    "total_assets": 34427000000,
+    "class": "normal"
+   }
+  ],
+  "WMT": [
+   {
+    "cutoff": "2018-02-25",
+    "period_end": "2017-01-31",
+    "grade": 3,
+    "equity": 77798000000,
+    "total_assets": 198825000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-04-02",
+    "period_end": "2019-01-31",
+    "grade": 4,
+    "equity": 72496000000,
+    "total_assets": 219295000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-04-15",
+    "period_end": "2019-01-31",
+    "grade": 4,
+    "equity": 72496000000,
+    "total_assets": 219295000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-05-16",
+    "period_end": "2019-01-31",
+    "grade": 4,
+    "equity": 72496000000,
+    "total_assets": 219295000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-06-15",
+    "period_end": "2019-01-31",
+    "grade": 4,
+    "equity": 72496000000,
+    "total_assets": 219295000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-06-24",
+    "period_end": "2019-01-31",
+    "grade": 4,
+    "equity": 72496000000,
+    "total_assets": 219295000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-06-29",
+    "period_end": "2019-01-31",
+    "grade": 4,
+    "equity": 72496000000,
+    "total_assets": 219295000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-07-21",
+    "period_end": "2019-01-31",
+    "grade": 4,
+    "equity": 72496000000,
+    "total_assets": 219295000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-07-24",
+    "period_end": "2019-01-31",
+    "grade": 4,
+    "equity": 72496000000,
+    "total_assets": 219295000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-07-31",
+    "period_end": "2019-01-31",
+    "grade": 4,
+    "equity": 72496000000,
+    "total_assets": 219295000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-08-03",
+    "period_end": "2019-01-31",
+    "grade": 4,
+    "equity": 72496000000,
+    "total_assets": 219295000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2019-08-20",
+    "period_end": "2019-01-31",
+    "grade": 4,
+    "equity": 72496000000,
+    "total_assets": 219295000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2021-06-15",
+    "period_end": "2021-01-31",
+    "grade": 3,
+    "equity": 80925000000,
+    "total_assets": 252496000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2022-01-17",
+    "period_end": "2021-01-31",
+    "grade": 3,
+    "equity": 80925000000,
+    "total_assets": 252496000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2022-04-23",
+    "period_end": "2022-01-31",
+    "grade": 4,
+    "equity": 83253000000,
+    "total_assets": 244860000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2022-06-01",
+    "period_end": "2022-01-31",
+    "grade": 4,
+    "equity": 83253000000,
+    "total_assets": 244860000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2022-08-06",
+    "period_end": "2022-01-31",
+    "grade": 4,
+    "equity": 83253000000,
+    "total_assets": 244860000000,
+    "class": "normal"
+   },
+   {
+    "cutoff": "2022-10-15",
+    "period_end": "2022-01-31",
+    "grade": 4,
+    "equity": 83253000000,
+    "total_assets": 244860000000,
+    "class": "normal"
+   }
+  ],
+  "YUM": [
+   {
+    "cutoff": "2018-02-25",
+    "period_end": "2017-12-31",
+    "grade": 4,
+    "equity": -6334000000,
+    "total_assets": 5311000000,
+    "class": "negative"
+   },
+   {
+    "cutoff": "2019-04-02",
+    "period_end": "2018-12-31",
+    "grade": 3,
+    "equity": -7926000000,
+    "total_assets": 4130000000,
+    "class": "negative"
+   },
+   {
+    "cutoff": "2019-04-15",
+    "period_end": "2018-12-31",
+    "grade": 3,
+    "equity": -7926000000,
+    "total_assets": 4130000000,
+    "class": "negative"
+   },
+   {
+    "cutoff": "2019-05-16",
+    "period_end": "2018-12-31",
+    "grade": 3,
+    "equity": -7926000000,
+    "total_assets": 4130000000,
+    "class": "negative"
+   },
+   {
+    "cutoff": "2019-06-15",
+    "period_end": "2018-12-31",
+    "grade": 3,
+    "equity": -7926000000,
+    "total_assets": 4130000000,
+    "class": "negative"
+   },
+   {
+    "cutoff": "2019-06-24",
+    "period_end": "2018-12-31",
+    "grade": 3,
+    "equity": -7926000000,
+    "total_assets": 4130000000,
+    "class": "negative"
+   },
+   {
+    "cutoff": "2019-06-29",
+    "period_end": "2018-12-31",
+    "grade": 3,
+    "equity": -7926000000,
+    "total_assets": 4130000000,
+    "class": "negative"
+   },
+   {
+    "cutoff": "2019-07-21",
+    "period_end": "2018-12-31",
+    "grade": 3,
+    "equity": -7926000000,
+    "total_assets": 4130000000,
+    "class": "negative"
+   },
+   {
+    "cutoff": "2019-07-24",
+    "period_end": "2018-12-31",
+    "grade": 3,
+    "equity": -7926000000,
+    "total_assets": 4130000000,
+    "class": "negative"
+   },
+   {
+    "cutoff": "2019-07-31",
+    "period_end": "2018-12-31",
+    "grade": 3,
+    "equity": -7926000000,
+    "total_assets": 4130000000,
+    "class": "negative"
+   },
+   {
+    "cutoff": "2019-08-03",
+    "period_end": "2018-12-31",
+    "grade": 3,
+    "equity": -7926000000,
+    "total_assets": 4130000000,
+    "class": "negative"
+   },
+   {
+    "cutoff": "2019-08-20",
+    "period_end": "2018-12-31",
+    "grade": 3,
+    "equity": -7926000000,
+    "total_assets": 4130000000,
+    "class": "negative"
+   },
+   {
+    "cutoff": "2021-06-15",
+    "period_end": "2020-12-31",
+    "grade": 3,
+    "equity": -7891000000,
+    "total_assets": 5852000000,
+    "class": "negative"
+   },
+   {
+    "cutoff": "2022-01-17",
+    "period_end": "2020-12-31",
+    "grade": 3,
+    "equity": -7891000000,
+    "total_assets": 5852000000,
+    "class": "negative"
+   },
+   {
+    "cutoff": "2022-04-23",
+    "period_end": "2021-12-31",
+    "grade": 4,
+    "equity": -8373000000,
+    "total_assets": 5966000000,
+    "class": "negative"
+   },
+   {
+    "cutoff": "2022-06-01",
+    "period_end": "2021-12-31",
+    "grade": 4,
+    "equity": -8373000000,
+    "total_assets": 5966000000,
+    "class": "negative"
+   },
+   {
+    "cutoff": "2022-08-06",
+    "period_end": "2021-12-31",
+    "grade": 4,
+    "equity": -8373000000,
+    "total_assets": 5966000000,
+    "class": "negative"
+   },
+   {
+    "cutoff": "2022-10-15",
+    "period_end": "2021-12-31",
+    "grade": 4,
+    "equity": -8373000000,
+    "total_assets": 5966000000,
+    "class": "negative"
+   }
+  ]
+ }
+}

@@ -311,6 +311,54 @@ non-distressed capital or working-capital structure. Worth deciding together rat
 fixing in isolation, since both are "the bands assume a balance-sheet shape most companies
 have, and some companies deliberately don't."
 
+**Measured whether this explains A2's 21% survivor false-positive rate**
+(`benchmark/harness/negative_equity_check.py`, tracked and reproducible): 33.3% of the 21
+flagged survivors (7) had negative book equity at a cutoff where they were flagged,
+against 13.6% of the 22 never-flagged (3) — a real +19.7pp gap. But AZO and YUM, the two
+companies with the most persistent negative equity in the entire 43-company panel (18/18
+cutoffs each), were never flagged at all — so this is a partial contributor to the
+false-positive rate, not the explanation for it.
+
+## Proposal, not implemented — no cash-conversion metrics (2026-09-27)
+
+Verified absence, not inference: `metrics/ratios.py`'s `METRICS` tuple has no CFO/EBITDA
+ratio, no CFO-versus-net-income comparison, and no accrual-quality measure — the
+`cash_flow` category comprises `fcf_to_debt` and `fcf_margin` only, checked directly
+against the code. Carried over from the original brief's Phase B candidate list; not yet
+given its own decision.
+
+**The consequence stated plainly.** "Cash flow contradicting reported profitability" is a
+named credit-analysis failure mode the engine currently has no way to detect. A company
+with strong reported net income and deteriorating cash generation — the classic
+aggressive-accrual warning sign — scores on `net_margin` and `revenue_growth` with nothing
+flagging the divergence between them.
+
+**Direction, not a spec.** `cfo_to_ebitda` and `cfo_to_net_income` are both computable from
+concepts the engine already resolves (`cfo`, `ebitda`, `net_income`); the harder design
+work is in the trend layer, not the ratio itself — a level alone says little, a
+*diverging* trend against reported earnings is the actual signal. Needs the same
+discipline as anything that would move a score: a hand-computed test, a before/after
+measurement across the 43, and its own DECISIONS entry if it becomes a scored component
+rather than a display-only metric.
+
+## Proposal, not implemented — no refinancing or maturity-wall risk (2026-09-27)
+
+Verified absence, not inference: `config/tag_map.yaml` maps no debt-maturity-schedule tag
+— `LongTermDebtMaturitiesRepaymentsOfPrincipalInNextTwelveMonths` and its multi-year
+successors are absent, checked directly against the file. Carried over from the original
+brief's Phase B candidate list; not yet given its own decision.
+
+**The consequence stated plainly.** The engine can grade leverage and coverage as strong
+in a period immediately before a large tranche of debt comes due, with nothing in the
+output naming that as a distinct risk from ordinary leverage.
+
+**Measure before designing, not the other way round.** Check this tag family's actual
+resolution rate across the 43-company universe before building anything around it — the
+same discipline D66 applied to `Liabilities`: "a check that not every filer can witness
+must be a set-level target, never a per-company gate," and the same test should be run
+before a tag becomes a metric. If coverage turns out thin, that finding — which maturity
+tags exist and how often — is worth recording on its own before any code is written.
+
 ## Later
 - See docs/build-plan.md. First two items for v2: sector thresholds (D48/D72a), then the
   hand-verified golden set above.
