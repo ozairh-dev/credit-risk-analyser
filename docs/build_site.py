@@ -34,7 +34,7 @@ except ModuleNotFoundError:
 ROOT = pathlib.Path(__file__).resolve().parent
 SOURCE = ROOT / "case-study.md"
 OUTPUT = ROOT / "index.html"
-REPO = "https://github.com/8dybvz9fym-cpu/credit-risk-analyser"
+REPO = "https://github.com/ozairh-dev/credit-risk-analyser"
 BLOB = f"{REPO}/blob/main"
 
 # Links shown above the case study. Absolute, because Pages serves this folder

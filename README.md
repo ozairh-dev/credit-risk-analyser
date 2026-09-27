@@ -36,7 +36,9 @@ project has no default, loss or rating data to calibrate against and cannot acqu
 
 **Method, per-case results and the full limitations:
 [`benchmark/results/a2_baseline.md`](benchmark/results/a2_baseline.md).
-The write-up, readable without the repo: [`docs/case-study.md`](docs/case-study.md).**
+The write-up, readable without the repo: [`docs/case-study.md`](docs/case-study.md),
+also published at
+[ozairh-dev.github.io/credit-risk-analyser](https://ozairh-dev.github.io/credit-risk-analyser/).**
 
 ## How it is built
 
