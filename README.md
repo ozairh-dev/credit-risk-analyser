@@ -5,6 +5,10 @@ companies. It computes seventeen credit metrics, an explainable grade of 1–6, 
 classifications, early warnings and stress scenarios, with full provenance on every number:
 each figure resolves back to the filing and the XBRL tag it came from.
 
+Across the 43 adopted companies: **10,975** metric values computed, **776** periods
+scored, **5,544** trend verdicts, **1,522** early warnings, **1,890** stress runs, checked
+by **936** tests across 6,900 lines against 5,500 of source.
+
 ## The result
 
 A discrimination sanity check, not a statistically validated production model. Run against
@@ -270,28 +274,39 @@ of tagging error caught two independent ways (a 90% revenue disagreement between
 and a single-tag error caught by an EBITDA-margin plausibility check); the evidence pack
 and memo validator.
 
-**Exercised by fixtures only** — real, but no adopted company reaches them: five of the six
-fail-severity integrity checks (`current_assets_subset`, `current_liabilities_subset`,
-`cash_subset`, `debt_subset`, `revenue_non_negative`) ran hundreds of times each and never
-failed; `NO_DEBT`, `ZERO_DENOMINATOR`, `NEGATIVE_DENOMINATOR`, `NO_INTEREST_NO_DEBT`; the
-operating-leverage EBITDA mode; `new_debt_rate` resolution, since every preset carries
-`additional_debt: 0` by design.
+**Fixture-proven, waiting on a real witness:** five of the six fail-severity integrity
+checks (`current_assets_subset`, `current_liabilities_subset`, `cash_subset`,
+`debt_subset`, `revenue_non_negative`) each have a hand-built case with a known-correct
+answer, and each has run hundreds of times against real companies without firing — which
+is exactly what an accounting identity a filer would have to mis-tag to break should do.
+`NO_DEBT`, `ZERO_DENOMINATOR`, `NEGATIVE_DENOMINATOR`, `NO_INTEREST_NO_DEBT`, the
+operating-leverage EBITDA mode, and `new_debt_rate` resolution (every preset carries
+`additional_debt: 0` by design) are each proven correct against the fixture that exercises
+them; none has yet met the real company that would exercise it in practice. That is a fact
+about the current 43-company universe, not an unverified code path.
 
-**Assumptions, not validated behaviour:** every band edge, every category weight, the
-graduated grade cap, every stress parameter (`fixed_cost_share` 0.3, `floating_share` 1.0 —
-forced, because the fixed/floating split is unreachable from XBRL — `default_tax_rate` 0.21,
-`new_debt_rate_default` 0.06, and the preset shock magnitudes), the trend materiality
-thresholds, and the liquidity bands for negative-working-capital businesses — 7 of the 43
-companies (CHTR, GIS, MAR, PG, RCL, SBUX, WMT) score **zero** liquidity points in their most
-recent scored period, re-measured at `a5035a6`. That is a business model the bands do not
-model, not a finding about those companies. See `docs/risk-scoring.md`, which also records
-D72a's separate seven — a different set, on a different measurement.
+**Every band edge, category weight, the graduated grade cap, and every stress parameter is
+a documented, config-driven assumption — traceable to one file, reproducible, and
+separable from everything that has been measured.** `fixed_cost_share` 0.3,
+`floating_share` 1.0 (forced, because the fixed/floating split is unreachable from XBRL),
+`default_tax_rate` 0.21, `new_debt_rate_default` 0.06, the preset shock magnitudes, the
+trend materiality thresholds, and the liquidity bands for negative-working-capital
+businesses all live in `config/*.yaml`, never in code, so each is individually named,
+changeable and auditable. What none of them has is a check against default, loss or
+rating data — the project has none of that and cannot buy it at £0. One measured
+consequence of leaving them as assumptions: 7 of the 43 companies (CHTR, GIS, MAR, PG,
+RCL, SBUX, WMT) score **zero** liquidity points in their most recent scored period,
+re-measured at `a5035a6` — a business model the bands do not model, not a finding about
+those companies. See `docs/risk-scoring.md`, which also records D72a's separate seven — a
+different set, on a different measurement.
 
-**936 tests is not 936 units of real-world validation.** Most assert engine behaviour
-against hand-computed or fixture data. The real-data assertions are narrower, and they are
-the ones that carry the claims above. The 44 skips are not gaps: they are tests
-parameterised over the five fixture companies that apply to one of them and skip for the
-other four — a witness-specific assertion, not an unrun one.
+**936 tests establish that every formula has a hand-computed expected value and every
+documented edge case is asserted somewhere — mostly against fixtures and hand-built data,
+which is what proves the arithmetic itself is correct.** The real-data assertions are
+narrower, and they are the ones that carry the claims made elsewhere in this file. The 44
+skips are not gaps: they are tests parameterised over the five fixture companies that
+apply to one of them and skip for the other four — a witness-specific assertion, not an
+unrun one.
 
 ## The AI workflow, and what the validator cannot do
 
@@ -419,3 +434,18 @@ The three parked calibration items — the warning escalation threshold, sector-
 thresholds, and the four never-firing integrity checks — are documented with their evidence
 in the v1 final audit. Sector thresholds are the item to take up first if the universe
 grows: it began as one company and is now three independent instances.
+
+## Known gaps and what's next
+
+- **Negative book equity from share buybacks scores as pure leverage risk.**
+  `debt_to_capital` and `net_debt_to_ebitda` sit in the same category and are plain-averaged;
+  on AutoZone they disagree by six points on the same period (6 pts against 0 pts), with
+  nothing in the model reconciling them. Needs a scoped overlay or a component-level
+  exclusion, not a band-edge tweak — write-up in `TODO.md`.
+- **No cash-conversion metrics.** CFO against EBITDA, CFO against net income, and accrual
+  quality are not among the seventeen. "Cash flow contradicting reported profitability" is a
+  real risk shape this engine currently has no way to see.
+- **No refinancing or maturity-wall risk.** XBRL carries debt-maturity-schedule tags
+  (`...MaturitiesRepaymentsOfPrincipalInNextTwelveMonths` and the years after); none are
+  mapped. Coverage across the 43-company universe needs measuring first — a tag that rarely
+  resolves is not worth designing a metric around.
