@@ -337,7 +337,15 @@ precisely why it does not lead.
 817 observations come from 43 companies, the 175 flagged ones from **21**, and the strict
 measure's numerators are narrower still: the 33 strict-negative flagged observations come
 from just **7 distinct companies** (DPZ, HLT, LYV, MCD, MCK, SBUX, WYNN) and the 87
-not-flagged ones from **9**. These are not 817 independent draws — the same
+not-flagged ones from **9**. Four companies dominate outright: AZO, YUM, DPZ and MCD
+are strict-negative at all 19 of their cutoffs each, and between them account for **15 of
+the 33** strict-negative flagged observations and **61 of the 87** strict-negative
+not-flagged ones — yet their flagging rates range from 0 of 19 (AZO, YUM) through 2 of 19
+(MCD) to 13 of 19 (DPZ) on identical persistent negative equity, so the comparison
+reflects these four companies' individual flagging patterns rather than a population-level
+effect. Observed, not hypothesised: book equity cannot be what drives the flag, since
+companies with identical equity profiles are flagged at wholly different rates. These are
+not 817 independent draws — the same
 pseudo-replication the README states for the AUC, arriving here with a much smaller
 effective n behind it. The split disagreement shows it directly: **+2.1pp on dev against
 +8.5pp on holdout** for the strict measure, a factor of four apart on the same definition.
