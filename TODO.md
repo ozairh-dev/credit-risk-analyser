@@ -311,21 +311,43 @@ non-distressed capital or working-capital structure. Worth deciding together rat
 fixing in isolation, since both are "the bands assume a balance-sheet shape most companies
 have, and some companies deliberately don't."
 
-**Measured whether this explains A2's 21% survivor false-positive rate**
-(`benchmark/harness/negative_equity_check.py`, tracked and reproducible): 33.3% of the 21
-flagged survivors (7) had negative book equity at a cutoff where they were flagged,
-against 13.6% of the 22 never-flagged (3) — a real +19.7pp gap. But AZO and YUM, the two
-companies with the most persistent negative equity in the entire 43-company panel (18/18
-cutoffs each), were never flagged at all — so this is a partial contributor to the
-false-positive rate, not the explanation for it.
+**Measured whether this explains the flagging pattern**
+(`benchmark/harness/negative_equity_check.py`, tracked and reproducible — this is a
+distinct-company rate, not the 21% pooled company-cutoff false-positive rate reported
+elsewhere): of the 21 distinct survivor companies flagged at least once, 33.3% (7) had
+negative book equity at a cutoff where they were flagged, against 13.6% of the 22
+never-flagged (3) — a real +19.7pp gap.
+
+**Correction (2026-09-28): the original write-up's exclusivity claim was wrong, caught by
+review and independently re-verified.** It said AZO and YUM were "the two companies with
+the most persistent negative equity... never flagged at all," implying they were unique.
+Checked across all 18 admitted cutoffs rather than only each company's flagging cutoffs:
+**AZO, YUM, DPZ and MCD are all negative at every single one (18/18)** — yet AZO and YUM
+were never flagged while DPZ was flagged 12 of 18 times and MCD 2 of 18. Persistence of
+negative equity alone plainly does not predict flagging, which if anything strengthens
+"partial contributor, not the explanation" — but the specific "two most persistent" framing
+was false, and the corrected picture belongs on the record in its place. The measurement
+also samples the two groups asymmetrically (flagged companies checked only at their
+flagging cutoff(s), some just once; never-flagged checked at all 18) — not yet corrected,
+so the +19.7pp figure itself should be treated as provisional until the script is
+re-measured with symmetric sampling.
 
 ## Proposal, not implemented — no cash-conversion metrics (2026-09-27)
 
-Verified absence, not inference: `metrics/ratios.py`'s `METRICS` tuple has no CFO/EBITDA
-ratio, no CFO-versus-net-income comparison, and no accrual-quality measure — the
-`cash_flow` category comprises `fcf_to_debt` and `fcf_margin` only, checked directly
-against the code. Carried over from the original brief's Phase B candidate list; not yet
-given its own decision.
+Verified absence, not inference: no `cfo_to_ebitda`, `cfo_to_net_income` or
+accrual-quality metric exists anywhere in the code, checked directly against
+`metrics/ratios.py`'s `METRICS` tuple and `docs/credit-methodology.md`.
+
+**Correction (2026-09-28):** the original write-up here also claimed "the `cash_flow`
+category comprises `fcf_to_debt` and `fcf_margin` only" as something checked against
+`ratios.py` — wrong, caught by review. `ratios.py`'s `METRICS` tuple has **four**
+cash-flow entries: `fcf_margin`, `fcf_to_debt`, `cfo_to_debt`, `capex_to_revenue`.
+`cfo_to_debt` (`cfo / total_debt`) is a real, working, documented CFO-based ratio — it
+just isn't `cfo_to_ebitda` or `cfo_to_net_income`, the two specific comparisons this gap is
+about, and it isn't *scored*: `scoring/engine.py`'s `CATEGORIES` dict only scores
+`fcf_to_debt` and `fcf_margin` from that group, which is the two-item list the original
+sentence actually described, attributed to the wrong file. Carried over from the original
+brief's Phase B candidate list; not yet given its own decision.
 
 **The consequence stated plainly.** "Cash flow contradicting reported profitability" is a
 named credit-analysis failure mode the engine currently has no way to detect. A company
