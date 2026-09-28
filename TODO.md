@@ -322,21 +322,32 @@ version evaluates every survivor at every one of the 19 cutoffs, for both groups
 **the unit of analysis is the company-cutoff observation** (817 of them: 175 flagged, 642
 not), not the company, stated explicitly since the earlier version never was.
 
-**The effect survives, but it is much smaller than first reported — neither zero nor the
-original +19.7pp:**
+**Headline, strict definition: +5.3pp — 18.9% of flagged observations (33/175) show
+negative book equity against 13.6% of not-flagged (87/642).** Strict leads because it is
+the engine's own `negative_equity` warning (`equity <= 0`, `trends/engine.py`), a
+definition this project already committed to and uses elsewhere, rather than one picked
+for this investigation.
 
-| | flagged obs | not-flagged obs | difference |
-|---|---|---|---|
-| Strict (engine's own `negative_equity` warning, `equity <= 0`) | 18.9% (33/175) | 13.6% (87/642) | **+5.3pp** |
-| Loose (negative or <5% of total assets) | 27.4% (48/175) | 15.4% (99/642) | **+12.0pp** |
+*Sensitivity check, not the headline:* a looser band — negative **or** positive but under
+5% of total assets — gives 27.4% (48/175) against 15.4% (99/642), **+12.0pp**. That
+threshold was chosen after seeing the data and roughly doubles the effect, which is
+precisely why it does not lead.
 
-Positive under both definitions and both splits checked separately — dev +2.1pp (strict) /
-+8.1pp (loose), holdout +8.5pp / +16.0pp — so the effect doesn't rest on one split alone,
-though the two splits disagree by roughly a factor of four on the strict measure, worth
-recording rather than averaged away. **The original +19.7pp was substantially an artefact of
-the asymmetric sampling, not the real magnitude of the association**: correcting the sampling
-didn't add a caveat to the same number, it moved the number by 2-4x. "Partial contributor, not
-the explanation" is still the right characterisation — what changed is how partial.
+**The estimate is not stably sized at this sample, and the clustering is the reason.** The
+817 observations come from 43 companies, the 175 flagged ones from **21**, and the strict
+measure's numerators are narrower still: the 33 strict-negative flagged observations come
+from just **7 distinct companies** (DPZ, HLT, LYV, MCD, MCK, SBUX, WYNN) and the 87
+not-flagged ones from **9**. These are not 817 independent draws — the same
+pseudo-replication the README states for the AUC, arriving here with a much smaller
+effective n behind it. The split disagreement shows it directly: **+2.1pp on dev against
++8.5pp on holdout** for the strict measure, a factor of four apart on the same definition.
+
+**So the honest conclusion is narrower than "partial contributor": negative book equity is
+a modest contributor at most, and this data cannot size it confidently.** The original
++19.7pp was substantially an artefact of the asymmetric sampling — correcting the sampling
+moved the number by 2-4x rather than adding a caveat to it — and what replaces it is an
+estimate whose own dev/holdout range spans most of its magnitude. That statement says what
+is known and what is not, which the earlier framing did not.
 
 ## Proposal, not implemented — no cash-conversion metrics (2026-09-27)
 
